@@ -713,29 +713,57 @@ class TechnicalAnalysisService
             
             $isSilentAccum = ($range15 <= 7.0);
 
+            // Calculate Correction Depth from 60-day local peak ($fibHigh)
+            $localPeak = $fibHigh;
+            $localBottom = $fibLow;
+            $correctionDepth = $localPeak > 0 ? (($localPeak - $currentPrice) / $localPeak) * 100 : 0.0;
+            
+            // Calculate Box Position Pct (Option 2)
+            $boxHeight = $localPeak - $localBottom;
+            $boxPosition = $boxHeight > 0 ? (($currentPrice - $localBottom) / $boxHeight) * 100 : 0.0;
+            
+            if ($boxPosition <= 20.0) {
+                $boxZone = "Lantai Bawah (Buy Zone) 🟢";
+                $boxColor = "#00e676";
+            } elseif ($boxPosition >= 80.0) {
+                $boxZone = "Atap Atas (Sell Zone) 🔴";
+                $boxColor = "#ff1744";
+            } else {
+                $boxZone = "Area Tengah (Neutral) 🟡";
+                $boxColor = "#ffb300";
+            }
+
+            // Build the reversal note suffix based on correction depth
+            $corrNote = "";
+            if ($correctionDepth >= 30.0) {
+                $corrNote = " Koin telah terkoreksi dalam sebesar " . round($correctionDepth, 1) . "% dari puncak lokalnya ($" . round($localPeak, 4) . "), meminimalisir risiko penurunan lanjutan.";
+            } else {
+                $corrNote = " Koreksi dari puncak lokal masih tergolong dangkal (" . round($correctionDepth, 1) . "% dari $" . round($localPeak, 4) . "). Hati-hati terhadap potensi kelanjutan tren turun.";
+            }
+
             if ($volumeRatio >= 1.5) {
                 $reversalClass = 'KUAT (STRONG) 🟢';
                 $reversalColor = '#00e676';
-                $reversalNote = "Terjadi lonjakan volume masif di dasar (selling climax/accumulation). Potensi target pemulihan tinggi (+50% s.d. +85%+) didukung minat beli institusi.";
+                $reversalNote = "Terjadi lonjakan volume masif di dasar (selling climax/accumulation). Potensi target pemulihan tinggi (+50% s.d. +85%+) didukung minat beli institusi." . $corrNote;
             } elseif ($volumeRatio >= 0.9) {
                 if ($isSilentAccum) {
                     $reversalClass = 'KUAT (Silent Accumulation) 🟢';
                     $reversalColor = '#00e676';
-                    $reversalNote = "Volume harian sedang disertai akumulasi senyap selama 15 hari terakhir dengan rentang harga sangat ketat (" . round($range15, 1) . "%). Potensi pemulihan kuat (+50% s.d. +85%+).";
+                    $reversalNote = "Volume harian sedang disertai akumulasi senyap selama 15 hari terakhir dengan rentang harga sangat ketat (" . round($range15, 1) . "%). Potensi pemulihan kuat (+50% s.d. +85%+)." . $corrNote;
                 } else {
                     $reversalClass = 'MODERAT (MODERATE) 🟡';
                     $reversalColor = '#ffb300';
-                    $reversalNote = "Volume transaksi normal ke sedang harian. Potensi rebound teknikal/oversold bounce (+25% s.d. +50%).";
+                    $reversalNote = "Volume transaksi normal ke sedang harian. Potensi rebound teknikal/oversold bounce (+25% s.d. +50%)." . $corrNote;
                 }
             } else {
                 if ($isSilentAccum) {
                     $reversalClass = 'MODERAT (Silent Accumulation) 🟡';
                     $reversalColor = '#ffb300';
-                    $reversalNote = "Volume harian sepi, namun terdeteksi akumulasi senyap selama 15 hari terakhir dengan rentang harga sangat ketat (" . round($range15, 1) . "%). Struktur dasar sangat kokoh, potensi rebound meningkat.";
+                    $reversalNote = "Volume harian sepi, namun terdeteksi akumulasi senyap selama 15 hari terakhir dengan rentang harga sangat ketat (" . round($range15, 1) . "%). Struktur dasar sangat kokoh, potensi rebound meningkat." . $corrNote;
                 } else {
                     $reversalClass = 'LEMAH (WEAK) 🔴';
                     $reversalColor = '#ff1744';
-                    $reversalNote = "Volume transaksi sangat sepi. Penurunan terhenti karena penjual habis tenaga, namun kurang akumulasi beli baru. Rawan jebakan pantulan sesaat (bull trap < 25%).";
+                    $reversalNote = "Volume transaksi sangat sepi. Penurunan terhenti karena penjual habis tenaga, namun kurang akumulasi beli baru. Rawan jebakan pantulan sesaat (bull trap < 25%)." . $corrNote;
                 }
             }
 
@@ -783,6 +811,9 @@ class TechnicalAnalysisService
                 'reversal_class' => $reversalClass,
                 'reversal_color' => $reversalColor,
                 'reversal_note' => $reversalNote,
+                'box_position_pct' => round($boxPosition, 1),
+                'box_zone' => $boxZone,
+                'box_color' => $boxColor,
             ];
 
         } catch (\Exception $e) {

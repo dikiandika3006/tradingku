@@ -169,7 +169,11 @@
                     <span id="analisa-reversal-class" style="font-size: 1.15rem; font-weight: 800; color: white;">--</span>
                     <span style="font-size: 0.8rem; color: var(--text-muted);">Rasio Vol: <strong id="analisa-reversal-ratio" style="color: white; font-family: monospace;">-</strong></span>
                 </div>
-                <p id="analisa-reversal-note" style="font-size: 0.8rem; color: #cbd5e1; line-height: 1.45; margin: 0; font-style: italic;">--</p>
+                <p id="analisa-reversal-note" style="font-size: 0.8rem; color: #cbd5e1; line-height: 1.45; margin: 0; font-style: italic; margin-bottom: 0.5rem;">--</p>
+                <div style="border-top: 1px solid rgba(255,255,255,0.06); padding-top: 0.5rem; margin-top: 0.5rem; display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem;">
+                    <span style="color: var(--text-muted); font-weight: 600;">Posisi Kotak (60D):</span>
+                    <strong id="analisa-box-zone" style="color: white;">--</strong>
+                </div>
             </div>
 
             <!-- Levels List -->
@@ -650,6 +654,10 @@
                     
                     document.getElementById('analisa-reversal-note').textContent = analysis.reversal_note;
                     document.getElementById('analisa-reversal-card').style.borderLeftColor = analysis.reversal_color;
+                    
+                    const boxZoneEl = document.getElementById('analisa-box-zone');
+                    boxZoneEl.textContent = `${analysis.box_zone} (${analysis.box_position_pct}%)`;
+                    boxZoneEl.style.color = analysis.box_color;
                     
                     document.getElementById('analisa-advice').textContent = analysis.advice;
                     
