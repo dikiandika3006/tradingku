@@ -9,4 +9,4 @@ Artisan::command('inspire', function () {
 
 use Illuminate\Support\Facades\Schedule;
 
-Schedule::command('telegram:check-price-alerts')->everyFifteenMinutes();
+Schedule::command('telegram:check-price-alerts')->everyMinute();
