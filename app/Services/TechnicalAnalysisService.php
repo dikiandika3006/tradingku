@@ -695,6 +695,30 @@ class TechnicalAnalysisService
                 $advice = "Rasio Risk-to-Reward kurang menguntungkan saat ini (potensi kerugian mendekati atau lebih besar dari keuntungan). Tren saat ini: {$trend}." . $liqAdvice . " Disarankan untuk mencari peluang di koin lain.";
             }
 
+            // Calculate Volume Ratio for Reversal Strength Prediction (Today vs 20-Day SMA)
+            $volumes = [];
+            foreach ($klines as $k) {
+                $volumes[] = (float)$k[5];
+            }
+            $todayVolume = end($volumes);
+            $prev20Volumes = array_slice($volumes, -21, 20); // last 20 days excluding today
+            $avgVol20 = count($prev20Volumes) > 0 ? (array_sum($prev20Volumes) / count($prev20Volumes)) : 1.0;
+            $volumeRatio = $avgVol20 > 0 ? ($todayVolume / $avgVol20) : 1.0;
+
+            if ($volumeRatio >= 1.5) {
+                $reversalClass = 'KUAT (STRONG) 🟢';
+                $reversalColor = '#00e676';
+                $reversalNote = "Terjadi lonjakan volume masif di dasar (selling climax/accumulation). Potensi target pemulihan tinggi (+50% s.d. +85%+) didukung minat beli institusi.";
+            } elseif ($volumeRatio >= 0.9) {
+                $reversalClass = 'MODERAT (MODERATE) 🟡';
+                $reversalColor = '#ffb300';
+                $reversalNote = "Volume transaksi normal ke sedang harian. Potensi rebound teknikal/oversold bounce (+25% s.d. +50%).";
+            } else {
+                $reversalClass = 'LEMAH (WEAK) 🔴';
+                $reversalColor = '#ff1744';
+                $reversalNote = "Volume transaksi sangat sepi. Penurunan terhenti karena penjual habis tenaga, namun kurang akumulasi beli baru. Rawan jebakan pantulan sesaat (bull trap < 25%).";
+            }
+
             return [
                 'symbol' => $symbol,
                 'current_price' => $currentPrice,
@@ -735,6 +759,10 @@ class TechnicalAnalysisService
                 'oi_value_formatted' => $this->formatLiquidation($oiValue),
                 'oi_change_pct_formatted' => $this->formatPercentageChange($oiChangePct),
                 'has_coinalyze_key' => !empty($coinalyzeKey),
+                'reversal_ratio' => round($volumeRatio, 2),
+                'reversal_class' => $reversalClass,
+                'reversal_color' => $reversalColor,
+                'reversal_note' => $reversalNote,
             ];
 
         } catch (\Exception $e) {

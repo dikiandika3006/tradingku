@@ -162,6 +162,16 @@
                 </div>
             </div>
 
+            <!-- Reversal Strength Prediction -->
+            <div id="analisa-reversal-card" style="background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.08); padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; border-left: 4px solid var(--color-primary);">
+                <span style="font-size: 0.72rem; color: var(--text-muted); display: block; font-weight: 700; text-transform: uppercase; margin-bottom: 0.45rem; letter-spacing: 0.5px;">Kekuatan Reversal (Analisis Volume Harian)</span>
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem;">
+                    <span id="analisa-reversal-class" style="font-size: 1.15rem; font-weight: 800; color: white;">--</span>
+                    <span style="font-size: 0.8rem; color: var(--text-muted);">Rasio Vol: <strong id="analisa-reversal-ratio" style="color: white; font-family: monospace;">-</strong></span>
+                </div>
+                <p id="analisa-reversal-note" style="font-size: 0.8rem; color: #cbd5e1; line-height: 1.45; margin: 0; font-style: italic;">--</p>
+            </div>
+
             <!-- Levels List -->
             <div style="margin-bottom: 1.5rem;">
                 <h4 style="font-size: 0.85rem; font-weight: 700; color: white; text-transform: uppercase; margin-bottom: 0.75rem; letter-spacing: 0.5px; margin-top: 0;">Level Pivot Teknikal (1D)</h4>
@@ -628,6 +638,18 @@
                     document.getElementById('analisa-r1').textContent = `$${parseFloat(analysis.r1).toFixed(4)}`;
                     document.getElementById('analisa-r2').textContent = `$${parseFloat(analysis.r2).toFixed(4)}`;
                     document.getElementById('analisa-r3').textContent = `$${parseFloat(analysis.r3).toFixed(4)}`;
+                    
+                    // Reversal Strength Prediction
+                    const revClassEl = document.getElementById('analisa-reversal-class');
+                    revClassEl.textContent = analysis.reversal_class;
+                    revClassEl.style.color = analysis.reversal_color;
+                    
+                    const revRatioEl = document.getElementById('analisa-reversal-ratio');
+                    revRatioEl.textContent = analysis.reversal_ratio + 'x';
+                    revRatioEl.style.color = analysis.reversal_color;
+                    
+                    document.getElementById('analisa-reversal-note').textContent = analysis.reversal_note;
+                    document.getElementById('analisa-reversal-card').style.borderLeftColor = analysis.reversal_color;
                     
                     document.getElementById('analisa-advice').textContent = analysis.advice;
                     
