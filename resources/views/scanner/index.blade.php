@@ -306,11 +306,31 @@
     let pollingInterval = null;
 
     const timeframeSelect = document.getElementById("timeframe-select");
-    let selectedTimeframe = timeframeSelect ? timeframeSelect.value : '1day';
+    
+    // Restore selected timeframe from localStorage
+    let savedTimeframe = localStorage.getItem('scanner_timeframe') || '1day';
+    if (timeframeSelect) {
+        timeframeSelect.value = savedTimeframe;
+    }
+    let selectedTimeframe = savedTimeframe;
+
+    function updateTimeframeUI() {
+        const oversoldDesc = document.getElementById("stat-oversold-desc");
+        const rsiHeader = document.getElementById("rsi-header-text");
+        if (selectedTimeframe === '4hour') {
+            if (oversoldDesc) oversoldDesc.textContent = "Stoch RSI <= 27 & RSI < 40";
+            if (rsiHeader) rsiHeader.textContent = "RSI (4H)";
+        } else {
+            if (oversoldDesc) oversoldDesc.textContent = "Stoch RSI < 7 & RSI < 40";
+            if (rsiHeader) rsiHeader.textContent = "RSI (1D)";
+        }
+    }
+    updateTimeframeUI();
 
     if (timeframeSelect) {
         timeframeSelect.addEventListener("change", function() {
             selectedTimeframe = this.value;
+            localStorage.setItem('scanner_timeframe', selectedTimeframe);
             clearInterval(pollingInterval);
             setScanningState(false);
             
@@ -323,16 +343,7 @@
                 </tr>
             `;
             
-            const oversoldDesc = document.getElementById("stat-oversold-desc");
-            const rsiHeader = document.getElementById("rsi-header-text");
-            if (selectedTimeframe === '4hour') {
-                if (oversoldDesc) oversoldDesc.textContent = "Stoch RSI <= 27 & RSI < 40";
-                if (rsiHeader) rsiHeader.textContent = "RSI (4H)";
-            } else {
-                if (oversoldDesc) oversoldDesc.textContent = "Stoch RSI < 7 & RSI < 40";
-                if (rsiHeader) rsiHeader.textContent = "RSI (1D)";
-            }
-            
+            updateTimeframeUI();
             loadScannerAllResults();
         });
     }
