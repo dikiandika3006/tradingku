@@ -564,26 +564,17 @@ class TechnicalAnalysisService
             $oiValue = null;
             $oiChangePct = null;
 
+            // 1. If Coinalyze API Key is present, query Coinalyze aggregated futures OHLCV & OI (matches Coinglass 1:1)
             if (!empty($coinalyzeKey)) {
-                // Fetch OHLCV (Volume)
+                // Fetch OHLCV (Aggregated Futures Volume across exchanges)
                 try {
-                    $ohlcvResponse = Http::timeout(4)->get("https://api.coinalyze.net/v1/ohlcv-history", [
+                    $ohlcvResponse = Http::timeout(5)->get("https://api.coinalyze.net/v1/ohlcv-history", [
                         'symbols' => $coinalyzeSymbol,
                         'interval' => '4hour',
                         'from' => now()->subDays(4)->timestamp,
                         'to' => now()->timestamp,
                         'api_key' => $coinalyzeKey
                     ]);
-
-                    if (!$ohlcvResponse->successful() || empty($ohlcvResponse->json())) {
-                        $ohlcvResponse = Http::timeout(4)->get("https://api.coinalyze.net/v1/ohlcv-history", [
-                            'symbols' => $symbol,
-                            'interval' => '4hour',
-                            'from' => now()->subDays(4)->timestamp,
-                            'to' => now()->timestamp,
-                            'api_key' => $coinalyzeKey
-                        ]);
-                    }
 
                     if ($ohlcvResponse->successful()) {
                         $ohlcvData = $ohlcvResponse->json();
@@ -614,25 +605,15 @@ class TechnicalAnalysisService
                     \Log::warning("Coinalyze OHLCV API failed: " . $ex->getMessage());
                 }
 
-                // Fetch Open Interest
+                // Fetch Open Interest (Aggregated Futures Open Interest)
                 try {
-                    $oiResponse = Http::timeout(4)->get("https://api.coinalyze.net/v1/open-interest-history", [
+                    $oiResponse = Http::timeout(5)->get("https://api.coinalyze.net/v1/open-interest-history", [
                         'symbols' => $coinalyzeSymbol,
                         'interval' => '4hour',
                         'from' => now()->subDays(4)->timestamp,
                         'to' => now()->timestamp,
                         'api_key' => $coinalyzeKey
                     ]);
-
-                    if (!$oiResponse->successful() || empty($oiResponse->json())) {
-                        $oiResponse = Http::timeout(4)->get("https://api.coinalyze.net/v1/open-interest-history", [
-                            'symbols' => $symbol,
-                            'interval' => '4hour',
-                            'from' => now()->subDays(4)->timestamp,
-                            'to' => now()->timestamp,
-                            'api_key' => $coinalyzeKey
-                        ]);
-                    }
 
                     if ($oiResponse->successful()) {
                         $oiData = $oiResponse->json();
@@ -643,7 +624,6 @@ class TechnicalAnalysisService
                                 $currentOI = (float)(end($history)['c'] ?? 0.0);
                                 $prevOI = (float)($history[count($history) - 7]['c'] ?? 0.0);
 
-                                // Convert Open Interest from coin quantity to USD value
                                 $oiValue = $currentOI * $currentPrice;
                                 $oiChangePct = $prevOI > 0 ? (($currentOI - $prevOI) / $prevOI) * 100 : 0.0;
                             }
@@ -654,43 +634,27 @@ class TechnicalAnalysisService
                 }
             }
 
-            // Fallback / Enhancement: Query Binance Futures Public API for real-time Futures Volume & Open Interest (matching Coinglass)
+            // 2. Fallback: KuCoin Futures Public API if volume24h or oiValue is still empty
             if (empty($volume24h) || empty($oiValue)) {
                 try {
                     $cleanSym = str_replace(['-', '_PERP.A', '_PERP'], '', strtoupper($symbol));
-                    if (!str_ends_with($cleanSym, 'USDT')) {
-                        $cleanSym .= 'USDT';
-                    }
+                    $kucoinFutSym = str_ends_with($cleanSym, 'USDT') ? $cleanSym . 'M' : $cleanSym . 'USDTM';
 
-                    // 1. Binance Futures 24h Ticker (Futures Volume)
-                    if (empty($volume24h)) {
-                        $fapiTicker = Http::timeout(3)->get("https://fapi.binance.com/fapi/v1/ticker/24hr", [
-                            'symbol' => $cleanSym
-                        ]);
-                        if ($fapiTicker->successful()) {
-                            $tickerData = $fapiTicker->json();
-                            if (isset($tickerData['quoteVolume'])) {
-                                $volume24h = (float)$tickerData['quoteVolume'];
-                                $volumeChangePct = (float)($tickerData['priceChangePercent'] ?? 0.0);
-                            }
+                    $kcRes = Http::timeout(4)->get("https://api-futures.kucoin.com/api/v1/contracts/{$kucoinFutSym}");
+                    if ($kcRes->successful()) {
+                        $kcData = $kcRes->json()['data'] ?? [];
+                        if (empty($volume24h) && isset($kcData['turnoverOf24h'])) {
+                            $volume24h = (float)$kcData['turnoverOf24h'];
+                            $volumeChangePct = ((float)($kcData['priceChgPct'] ?? 0.0)) * 100;
                         }
-                    }
-
-                    // 2. Binance Futures Open Interest
-                    if (empty($oiValue)) {
-                        $fapiOi = Http::timeout(3)->get("https://fapi.binance.com/fapi/v1/openInterest", [
-                            'symbol' => $cleanSym
-                        ]);
-                        if ($fapiOi->successful()) {
-                            $oiData = $fapiOi->json();
-                            if (isset($oiData['openInterest'])) {
-                                $tokenOI = (float)$oiData['openInterest'];
-                                $oiValue = $tokenOI * $currentPrice;
-                            }
+                        if (empty($oiValue) && isset($kcData['openInterest'])) {
+                            $tokenOI = (float)$kcData['openInterest'];
+                            $markPrice = (float)($kcData['markPrice'] ?? $currentPrice);
+                            $oiValue = $tokenOI * $markPrice;
                         }
                     }
                 } catch (\Exception $ex) {
-                    \Log::warning("Binance Futures fallback failed: " . $ex->getMessage());
+                    \Log::warning("KuCoin Futures API fallback failed: " . $ex->getMessage());
                 }
             }
 
