@@ -564,47 +564,52 @@ class TechnicalAnalysisService
             $oiValue = null;
             $oiChangePct = null;
 
-            // 1. If Coinalyze API Key is present, query Coinalyze aggregated futures OHLCV & OI (matches Coinglass 1:1)
-            if (!empty($coinalyzeKey)) {
-                // Fetch OHLCV (Aggregated Futures Volume across exchanges)
-                try {
-                    $ohlcvResponse = Http::timeout(5)->get("https://api.coinalyze.net/v1/ohlcv-history", [
-                        'symbols' => $coinalyzeSymbol,
-                        'interval' => '4hour',
-                        'from' => now()->subDays(4)->timestamp,
-                        'to' => now()->timestamp,
-                        'api_key' => $coinalyzeKey
-                    ]);
-
-                    if ($ohlcvResponse->successful()) {
-                        $ohlcvData = $ohlcvResponse->json();
-                        if (!empty($ohlcvData) && is_array($ohlcvData)) {
-                            $symbolData = $ohlcvData[0] ?? null;
-                            $history = $symbolData['history'] ?? [];
-                            if (is_array($history) && count($history) >= 12) {
-                                // Last 6 candles (Current 24h)
-                                $current24hHist = array_slice($history, -6);
-                                $currentVol = 0.0;
-                                foreach ($current24hHist as $h) {
-                                    $currentVol += (float)($h['v'] ?? 0.0) * (float)($h['c'] ?? 0.0);
-                                }
-
-                                // Preceding 6 candles (Previous 24h)
-                                $prev24hHist = array_slice($history, -12, 6);
-                                $prevVol = 0.0;
-                                foreach ($prev24hHist as $h) {
-                                    $prevVol += (float)($h['v'] ?? 0.0) * (float)($h['c'] ?? 0.0);
-                                }
-
-                                $volume24h = $currentVol;
-                                $volumeChangePct = $prevVol > 0 ? (($currentVol - $prevVol) / $prevVol) * 100 : 0.0;
-                            }
-                        }
-                    }
-                } catch (\Exception $ex) {
-                    \Log::warning("Coinalyze OHLCV API failed: " . $ex->getMessage());
+            // 1. Fetch Binance Futures Public API for real-time Futures Volume & Open Interest (matches Coinglass 1:1)
+            try {
+                $cleanSym = str_replace(['-', '_PERP.A', '_PERP'], '', strtoupper($symbol));
+                if (!str_ends_with($cleanSym, 'USDT')) {
+                    $cleanSym .= 'USDT';
                 }
 
+                // Binance Futures 24h Ticker (Futures Volume & 24h Change)
+                $fapiTicker = Http::timeout(4)
+                    ->withHeaders([
+                        'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+                    ])
+                    ->get("https://fapi.binance.com/fapi/v1/ticker/24hr", [
+                        'symbol' => $cleanSym
+                    ]);
+
+                if ($fapiTicker->successful()) {
+                    $tickerData = $fapiTicker->json();
+                    if (isset($tickerData['quoteVolume'])) {
+                        $volume24h = (float)$tickerData['quoteVolume'];
+                        $volumeChangePct = (float)($tickerData['priceChangePercent'] ?? 0.0);
+                    }
+                }
+
+                // Binance Futures Open Interest
+                $fapiOi = Http::timeout(4)
+                    ->withHeaders([
+                        'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+                    ])
+                    ->get("https://fapi.binance.com/fapi/v1/openInterest", [
+                        'symbol' => $cleanSym
+                    ]);
+
+                if ($fapiOi->successful()) {
+                    $oiData = $fapiOi->json();
+                    if (isset($oiData['openInterest'])) {
+                        $tokenOI = (float)$oiData['openInterest'];
+                        $oiValue = $tokenOI * $currentPrice;
+                    }
+                }
+            } catch (\Exception $ex) {
+                \Log::warning("Binance Futures API fetch failed: " . $ex->getMessage());
+            }
+
+            // 2. Fetch Coinalyze Open Interest history for 24h OI % Change & fallback
+            if (!empty($coinalyzeKey)) {
                 // Fetch Open Interest (Aggregated Futures Open Interest)
                 try {
                     $oiResponse = Http::timeout(5)->get("https://api.coinalyze.net/v1/open-interest-history", [
@@ -624,7 +629,9 @@ class TechnicalAnalysisService
                                 $currentOI = (float)(end($history)['c'] ?? 0.0);
                                 $prevOI = (float)($history[count($history) - 7]['c'] ?? 0.0);
 
-                                $oiValue = $currentOI * $currentPrice;
+                                if (empty($oiValue)) {
+                                    $oiValue = $currentOI * $currentPrice;
+                                }
                                 $oiChangePct = $prevOI > 0 ? (($currentOI - $prevOI) / $prevOI) * 100 : 0.0;
                             }
                         }
