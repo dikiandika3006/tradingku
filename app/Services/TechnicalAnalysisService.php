@@ -643,13 +643,54 @@ class TechnicalAnalysisService
                                 $currentOI = (float)(end($history)['c'] ?? 0.0);
                                 $prevOI = (float)($history[count($history) - 7]['c'] ?? 0.0);
 
-                                $oiValue = $currentOI;
+                                // Convert Open Interest from coin quantity to USD value
+                                $oiValue = $currentOI * $currentPrice;
                                 $oiChangePct = $prevOI > 0 ? (($currentOI - $prevOI) / $prevOI) * 100 : 0.0;
                             }
                         }
                     }
                 } catch (\Exception $ex) {
                     \Log::warning("Coinalyze OI API failed: " . $ex->getMessage());
+                }
+            }
+
+            // Fallback / Enhancement: Query Binance Futures Public API for real-time Futures Volume & Open Interest (matching Coinglass)
+            if (empty($volume24h) || empty($oiValue)) {
+                try {
+                    $cleanSym = str_replace(['-', '_PERP.A', '_PERP'], '', strtoupper($symbol));
+                    if (!str_ends_with($cleanSym, 'USDT')) {
+                        $cleanSym .= 'USDT';
+                    }
+
+                    // 1. Binance Futures 24h Ticker (Futures Volume)
+                    if (empty($volume24h)) {
+                        $fapiTicker = Http::timeout(3)->get("https://fapi.binance.com/fapi/v1/ticker/24hr", [
+                            'symbol' => $cleanSym
+                        ]);
+                        if ($fapiTicker->successful()) {
+                            $tickerData = $fapiTicker->json();
+                            if (isset($tickerData['quoteVolume'])) {
+                                $volume24h = (float)$tickerData['quoteVolume'];
+                                $volumeChangePct = (float)($tickerData['priceChangePercent'] ?? 0.0);
+                            }
+                        }
+                    }
+
+                    // 2. Binance Futures Open Interest
+                    if (empty($oiValue)) {
+                        $fapiOi = Http::timeout(3)->get("https://fapi.binance.com/fapi/v1/openInterest", [
+                            'symbol' => $cleanSym
+                        ]);
+                        if ($fapiOi->successful()) {
+                            $oiData = $fapiOi->json();
+                            if (isset($oiData['openInterest'])) {
+                                $tokenOI = (float)$oiData['openInterest'];
+                                $oiValue = $tokenOI * $currentPrice;
+                            }
+                        }
+                    }
+                } catch (\Exception $ex) {
+                    \Log::warning("Binance Futures fallback failed: " . $ex->getMessage());
                 }
             }
 
