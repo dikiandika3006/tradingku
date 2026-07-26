@@ -740,10 +740,10 @@ class TechnicalAnalysisService
                 $advice = "Rasio Risk-to-Reward kurang menguntungkan saat ini (potensi kerugian mendekati atau lebih besar dari keuntungan). Tren saat ini: {$trend}." . $liqAdvice . " Disarankan untuk mencari peluang di koin lain.";
             }
 
-            // Calculate Volume Ratio for Reversal Strength Prediction (Today 24h vs 20-Day SMA)
+            // Calculate Volume Ratio for Reversal Strength Prediction (Today Daily Volume vs 20-Day SMA)
             $dailyUsdtVolumes = [];
             foreach ($klines as $k) {
-                $vUsdt = isset($k[6]) ? (float)$k[6] : ((float)($k[5] ?? 0) * (float)($k[4] ?? 0));
+                $vUsdt = isset($k[6]) && (float)$k[6] > 0 ? (float)$k[6] : ((float)($k[5] ?? 0) * (float)($k[4] ?? 0));
                 if ($vUsdt > 0) {
                     $dailyUsdtVolumes[] = $vUsdt;
                 }
@@ -751,10 +751,10 @@ class TechnicalAnalysisService
 
             $prev20Volumes = array_slice($dailyUsdtVolumes, -21, 20); // last 20 days excluding today
             $avgVol20 = count($prev20Volumes) > 0 ? (array_sum($prev20Volumes) / count($prev20Volumes)) : 1.0;
+            $todayDailyVol = !empty($dailyUsdtVolumes) ? end($dailyUsdtVolumes) : 1.0;
             
-            // Use current 24h rolling volume if available for accurate real-time comparison
-            $evalVol = ($volume24h !== null && $volume24h > 0) ? $volume24h : (end($dailyUsdtVolumes) ?: 1.0);
-            $volumeRatio = $avgVol20 > 0 ? ($evalVol / $avgVol20) : 1.0;
+            // Exact apples-to-apples ratio of today's volume relative to its 20-day moving average
+            $volumeRatio = ($avgVol20 > 0 && $todayDailyVol > 0) ? ($todayDailyVol / $avgVol20) : 1.0;
 
             // Calculate Consolidation / Silent Accumulation Factor (Last 15 days)
             $last15Closes = array_slice($closes, -15);
