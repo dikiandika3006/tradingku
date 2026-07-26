@@ -657,19 +657,10 @@ class TechnicalAnalysisService
                 } catch (\Exception $e) {}
 
                 if ($aggregatedVol > 0) {
-                    // Ensure volume reflects full global futures market (Bybit + Binance + OKX + others)
-                    if ($aggregatedVol < 10000000) {
-                        $volume24h = $aggregatedVol * 4.2; // Global market benchmark multiplier
-                    } else {
-                        $volume24h = $aggregatedVol;
-                    }
+                    $volume24h = $aggregatedVol;
                 }
                 if ($aggregatedOI > 0) {
-                    if ($aggregatedOI < 15000000) {
-                        $oiValue = $aggregatedOI * 5.6; // Global OI benchmark multiplier
-                    } else {
-                        $oiValue = $aggregatedOI;
-                    }
+                    $oiValue = $aggregatedOI;
                 }
             } catch (\Exception $ex) {
                 \Log::warning("Aggregated Futures calculation failed: " . $ex->getMessage());
