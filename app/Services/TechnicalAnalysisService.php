@@ -736,15 +736,21 @@ class TechnicalAnalysisService
                 $advice = "Rasio Risk-to-Reward kurang menguntungkan saat ini (potensi kerugian mendekati atau lebih besar dari keuntungan). Tren saat ini: {$trend}." . $liqAdvice . " Disarankan untuk mencari peluang di koin lain.";
             }
 
-            // Calculate Volume Ratio for Reversal Strength Prediction (Today vs 20-Day SMA)
-            $volumes = [];
+            // Calculate Volume Ratio for Reversal Strength Prediction (Today 24h vs 20-Day SMA)
+            $dailyUsdtVolumes = [];
             foreach ($klines as $k) {
-                $volumes[] = (float)$k[5];
+                $vUsdt = isset($k[6]) ? (float)$k[6] : ((float)($k[5] ?? 0) * (float)($k[4] ?? 0));
+                if ($vUsdt > 0) {
+                    $dailyUsdtVolumes[] = $vUsdt;
+                }
             }
-            $todayVolume = end($volumes);
-            $prev20Volumes = array_slice($volumes, -21, 20); // last 20 days excluding today
+
+            $prev20Volumes = array_slice($dailyUsdtVolumes, -21, 20); // last 20 days excluding today
             $avgVol20 = count($prev20Volumes) > 0 ? (array_sum($prev20Volumes) / count($prev20Volumes)) : 1.0;
-            $volumeRatio = $avgVol20 > 0 ? ($todayVolume / $avgVol20) : 1.0;
+            
+            // Use current 24h rolling volume if available for accurate real-time comparison
+            $evalVol = ($volume24h !== null && $volume24h > 0) ? $volume24h : (end($dailyUsdtVolumes) ?: 1.0);
+            $volumeRatio = $avgVol20 > 0 ? ($evalVol / $avgVol20) : 1.0;
 
             // Calculate Consolidation / Silent Accumulation Factor (Last 15 days)
             $last15Closes = array_slice($closes, -15);
