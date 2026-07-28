@@ -26,7 +26,13 @@
 
             <div class="form-group">
                 <label for="deriv_symbol" class="form-label">Symbol (e.g. STRK, FET)</label>
-                <input type="text" name="symbol" id="deriv_symbol" class="form-control" placeholder="STRK" style="text-transform: uppercase;" required>
+                <div style="display: flex; gap: 0.5rem;">
+                    <input type="text" name="symbol" id="deriv_symbol" class="form-control" placeholder="FET" style="text-transform: uppercase;" required>
+                    <button type="button" id="btnAutoFill" class="btn btn-secondary" style="padding: 0.6rem; font-size: 0.75rem; white-space: nowrap;" title="Ambil data dari Binance Futures">
+                        Auto-Fill
+                    </button>
+                </div>
+                <div id="autoFillStatus" style="margin-top: 0.4rem; font-size: 0.7rem; display: none;"></div>
             </div>
 
             <div style="border-top: 1px solid var(--border-light); margin: 1rem 0; padding-top: 1rem;">
@@ -256,4 +262,92 @@
         {{ $analyses->links() }}
     </div>
 </div>
+@endsection
+
+@section('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const btnAutoFill = document.getElementById('btnAutoFill');
+    const symbolInput = document.getElementById('deriv_symbol');
+    const statusEl = document.getElementById('autoFillStatus');
+
+    function showStatus(message, type) {
+        statusEl.style.display = 'block';
+        statusEl.textContent = message;
+        statusEl.style.color = type === 'error' ? 'var(--color-danger)' :
+                               type === 'success' ? 'var(--color-success)' : 'var(--color-secondary)';
+    }
+
+    btnAutoFill.addEventListener('click', async function() {
+        const symbol = symbolInput.value.trim().toUpperCase();
+        if (!symbol) {
+            showStatus('Masukkan symbol terlebih dahulu', 'error');
+            return;
+        }
+
+        btnAutoFill.disabled = true;
+        btnAutoFill.textContent = 'Loading...';
+        showStatus('Mengambil data dari Binance Futures...', 'info');
+
+        try {
+            const response = await fetch(`/api/derivatives/live/${symbol}`);
+            const result = await response.json();
+
+            if (!result.success) {
+                showStatus(result.message || 'Gagal mengambil data', 'error');
+                return;
+            }
+
+            const d = result.data;
+
+            // Fill form fields
+            if (d.funding_rate !== null && d.funding_rate !== undefined) {
+                document.getElementById('funding_rate').value = parseFloat(d.funding_rate * 100).toFixed(4);
+            }
+            if (d.ls_ratio_volume) {
+                document.getElementById('ls_ratio_volume').value = parseFloat(d.ls_ratio_volume).toFixed(4);
+            }
+            if (d.ls_ratio_accounts) {
+                document.getElementById('ls_ratio_accounts').value = parseFloat(d.ls_ratio_accounts).toFixed(4);
+            }
+            if (d.ls_ratio_top_traders) {
+                document.getElementById('ls_ratio_top_traders').value = parseFloat(d.ls_ratio_top_traders).toFixed(4);
+            }
+            if (d.open_interest_change !== undefined) {
+                document.getElementById('open_interest_change').value = parseFloat(d.open_interest_change).toFixed(2);
+            }
+            if (d.volume_change !== undefined) {
+                document.getElementById('volume_change').value = parseFloat(d.volume_change).toFixed(2);
+            }
+            if (d.price_change !== undefined) {
+                document.getElementById('price_change').value = parseFloat(d.price_change).toFixed(2);
+            }
+
+            // Update symbol to clean version
+            symbolInput.value = d.symbol || symbol;
+
+            let statusMsg = `✅ Data ${d.symbol} berhasil diambil`;
+            if (d.current_price) {
+                statusMsg += ` | Harga: $${parseFloat(d.current_price).toFixed(4)}`;
+            }
+            statusMsg += ' | Liquidation isi manual dari Coinglass';
+            showStatus(statusMsg, 'success');
+
+        } catch (err) {
+            showStatus('Error: ' + err.message, 'error');
+        } finally {
+            btnAutoFill.disabled = false;
+            btnAutoFill.textContent = 'Auto-Fill';
+        }
+    });
+
+    // Enter key on symbol input triggers auto-fill
+    symbolInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            btnAutoFill.click();
+        }
+    });
+});
+</script>
 @endsection

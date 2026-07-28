@@ -3,10 +3,18 @@
 namespace App\Http\Controllers;
 
 use App\Models\DerivativesAnalysis;
+use App\Services\BinanceFuturesService;
 use Illuminate\Http\Request;
 
 class DerivativesController extends Controller
 {
+    protected $binanceService;
+
+    public function __construct(BinanceFuturesService $binanceService)
+    {
+        $this->binanceService = $binanceService;
+    }
+
     /**
      * Display derivatives analyses list + input form.
      */
@@ -52,6 +60,26 @@ class DerivativesController extends Controller
         DerivativesAnalysis::create($data);
 
         return redirect()->route('derivatives.index')->with('success', 'Analisa derivatives berhasil disimpan.');
+    }
+
+    /**
+     * API: Fetch live derivatives data from Binance Futures for auto-fill.
+     */
+    public function getLiveData($symbol)
+    {
+        $data = $this->binanceService->getDerivativesData($symbol);
+
+        if (!$data) {
+            return response()->json([
+                'success' => false,
+                'message' => "Gagal mengambil data derivatives untuk {$symbol}. Pastikan symbol terdaftar di Binance Futures."
+            ], 404);
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => $data,
+        ]);
     }
 
     /**
