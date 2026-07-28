@@ -8,6 +8,7 @@ use App\Http\Controllers\PortfolioController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\SettingController;
 use App\Http\Controllers\ScannerController;
+use App\Http\Controllers\DerivativesController;
 use Illuminate\Support\Facades\Route;
 
 // Public Auth Routes
@@ -83,6 +84,11 @@ Route::middleware(['auth'])->group(function () {
 
         // Scanner Routes
         Route::get('/scanner', [ScannerController::class, 'index'])->name('scanner.index');
+
+        // Derivatives Analysis Routes
+        Route::get('/derivatives', [DerivativesController::class, 'index'])->name('derivatives.index');
+        Route::post('/derivatives', [DerivativesController::class, 'store'])->name('derivatives.store');
+        Route::delete('/derivatives/{id}', [DerivativesController::class, 'destroy'])->name('derivatives.destroy');
 
         // Database Sync Routes (Browser-Bridge)
         Route::post('/api/database/apply-queries', [SettingController::class, 'applyPendingQueries'])->name('api.database.apply-queries');
