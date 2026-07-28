@@ -40,19 +40,19 @@
             </div>
 
             <div class="form-group">
-                <label for="ls_ratio_volume" class="form-label">L/S Ratio Volume (24h) <span style="color: var(--color-danger);">*</span></label>
-                <input type="number" name="ls_ratio_volume" id="ls_ratio_volume" step="any" class="form-control" placeholder="0.0752" required>
-                <small style="color: var(--text-muted); font-size: 0.7rem;">Angka dari Coinglass "Long/Short (24h)"</small>
+                <label for="ls_ratio_volume" class="form-label">L/S Ratio (24h) <span style="color: var(--color-danger);">*</span> <span style="font-size: 0.6rem; color: #f59e0b;">📋 COINGLASS</span></label>
+                <input type="number" name="ls_ratio_volume" id="ls_ratio_volume" step="any" class="form-control" placeholder="0.0775" required>
+                <small style="color: var(--text-muted); font-size: 0.7rem;">Angka dari Coinglass "Long/Short (24h)" — data multi-exchange</small>
             </div>
 
             <div class="form-grid-2col" style="margin-bottom: 1rem;">
                 <div class="form-group" style="margin-bottom: 0;">
-                    <label for="ls_ratio_accounts" class="form-label">L/S Ratio Akun</label>
-                    <input type="number" name="ls_ratio_accounts" id="ls_ratio_accounts" step="any" class="form-control" placeholder="1.9656">
+                    <label for="ls_ratio_accounts" class="form-label">L/S Akun Binance <span style="font-size: 0.55rem; color: var(--color-success);">🔄 AUTO</span></label>
+                    <input type="number" name="ls_ratio_accounts" id="ls_ratio_accounts" step="any" class="form-control" placeholder="1.9568">
                 </div>
                 <div class="form-group" style="margin-bottom: 0;">
-                    <label for="ls_ratio_top_traders" class="form-label">L/S Top Traders</label>
-                    <input type="number" name="ls_ratio_top_traders" id="ls_ratio_top_traders" step="any" class="form-control" placeholder="2.5423">
+                    <label for="ls_ratio_top_traders" class="form-label">L/S Top Traders <span style="font-size: 0.55rem; color: var(--color-success);">🔄 AUTO</span></label>
+                    <input type="number" name="ls_ratio_top_traders" id="ls_ratio_top_traders" step="any" class="form-control" placeholder="2.5112">
                 </div>
             </div>
 
@@ -61,24 +61,24 @@
             </div>
 
             <div class="form-group">
-                <label for="funding_rate" class="form-label">Funding Rate</label>
-                <input type="number" name="funding_rate" id="funding_rate" step="any" class="form-control" placeholder="0.0752">
+                <label for="funding_rate" class="form-label">Funding Rate <span style="font-size: 0.55rem; color: var(--color-success);">🔄 AUTO</span></label>
+                <input type="number" name="funding_rate" id="funding_rate" step="any" class="form-control" placeholder="0.0100">
             </div>
 
             <div class="form-grid-2col" style="margin-bottom: 1rem;">
                 <div class="form-group" style="margin-bottom: 0;">
-                    <label for="open_interest_change" class="form-label">OI Change (%) <span style="color: var(--color-danger);">*</span></label>
-                    <input type="number" name="open_interest_change" id="open_interest_change" step="any" class="form-control" placeholder="+13.86" required>
+                    <label for="open_interest_change" class="form-label">OI Change (%) <span style="color: var(--color-danger);">*</span> <span style="font-size: 0.6rem; color: #f59e0b;">📋 CG</span></label>
+                    <input type="number" name="open_interest_change" id="open_interest_change" step="any" class="form-control" placeholder="+17.08" required>
                 </div>
                 <div class="form-group" style="margin-bottom: 0;">
-                    <label for="volume_change" class="form-label">Volume Change (%) <span style="color: var(--color-danger);">*</span></label>
-                    <input type="number" name="volume_change" id="volume_change" step="any" class="form-control" placeholder="+668.59" required>
+                    <label for="volume_change" class="form-label">Volume Change (%) <span style="color: var(--color-danger);">*</span> <span style="font-size: 0.6rem; color: #f59e0b;">📋 CG</span></label>
+                    <input type="number" name="volume_change" id="volume_change" step="any" class="form-control" placeholder="+770.89" required>
                 </div>
             </div>
 
             <div class="form-group">
-                <label for="price_change" class="form-label">Price Change (%) <span style="color: var(--color-danger);">*</span></label>
-                <input type="number" name="price_change" id="price_change" step="any" class="form-control" placeholder="-7.31" required>
+                <label for="price_change" class="form-label">Price Change (%) <span style="color: var(--color-danger);">*</span> <span style="font-size: 0.55rem; color: var(--color-success);">🔄 AUTO</span></label>
+                <input type="number" name="price_change" id="price_change" step="any" class="form-control" placeholder="-8.14" required>
             </div>
 
             <div style="border-top: 1px solid var(--border-light); margin: 1rem 0; padding-top: 1rem;">
@@ -300,24 +300,15 @@ document.addEventListener('DOMContentLoaded', function() {
 
             const d = result.data;
 
-            // Fill form fields
+            // Auto-fill: Binance-only data (akurat)
             if (d.funding_rate !== null && d.funding_rate !== undefined) {
                 document.getElementById('funding_rate').value = parseFloat(d.funding_rate * 100).toFixed(4);
-            }
-            if (d.ls_ratio_volume) {
-                document.getElementById('ls_ratio_volume').value = parseFloat(d.ls_ratio_volume).toFixed(4);
             }
             if (d.ls_ratio_accounts) {
                 document.getElementById('ls_ratio_accounts').value = parseFloat(d.ls_ratio_accounts).toFixed(4);
             }
             if (d.ls_ratio_top_traders) {
                 document.getElementById('ls_ratio_top_traders').value = parseFloat(d.ls_ratio_top_traders).toFixed(4);
-            }
-            if (d.open_interest_change !== undefined) {
-                document.getElementById('open_interest_change').value = parseFloat(d.open_interest_change).toFixed(2);
-            }
-            if (d.volume_change !== undefined) {
-                document.getElementById('volume_change').value = parseFloat(d.volume_change).toFixed(2);
             }
             if (d.price_change !== undefined) {
                 document.getElementById('price_change').value = parseFloat(d.price_change).toFixed(2);
@@ -326,11 +317,21 @@ document.addEventListener('DOMContentLoaded', function() {
             // Update symbol to clean version
             symbolInput.value = d.symbol || symbol;
 
-            let statusMsg = `✅ Data ${d.symbol} berhasil diambil`;
+            // Highlight fields that need manual input
+            const manualFields = ['ls_ratio_volume', 'open_interest_change', 'volume_change'];
+            manualFields.forEach(id => {
+                const el = document.getElementById(id);
+                if (el && !el.value) {
+                    el.style.border = '1px solid #f59e0b';
+                    el.style.boxShadow = '0 0 6px rgba(245, 158, 11, 0.2)';
+                }
+            });
+
+            let statusMsg = `🔄 Data Binance ${d.symbol} terisi`;
             if (d.current_price) {
-                statusMsg += ` | Harga: $${parseFloat(d.current_price).toFixed(4)}`;
+                statusMsg += ` | $${parseFloat(d.current_price).toFixed(4)}`;
             }
-            statusMsg += ' | Liquidation isi manual dari Coinglass';
+            statusMsg += '\n📋 L/S Ratio (24h), OI%, Vol% → isi manual dari Coinglass';
             showStatus(statusMsg, 'success');
 
         } catch (err) {
