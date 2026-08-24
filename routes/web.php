@@ -61,6 +61,9 @@ Route::middleware(['auth'])->group(function () {
         // Open Orders Route
         Route::get('/open-orders', [PortfolioController::class, 'openOrders'])->name('portfolio.open-orders');
 
+        // Monthly Report Route
+        Route::get('/portfolio/monthly-report', [PortfolioController::class, 'monthlyReport'])->name('portfolio.monthly-report');
+
         // User Management Routes
         Route::get('/user', [UserController::class, 'index'])->name('user.index');
         Route::post('/user', [UserController::class, 'store'])->name('user.store');
