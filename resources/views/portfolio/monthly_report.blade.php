@@ -103,8 +103,9 @@
                     <th style="padding: 0.75rem 1rem; text-align: right;">Realized PNL</th>
                     <th style="padding: 0.75rem 1rem; text-align: right;">Floating PNL (Holding)</th>
                     <th style="padding: 0.75rem 1rem; text-align: right;">True Net PNL Bulan Ini</th>
-                    <th style="padding: 0.75rem 1rem; text-align: right;">Akumulasi Ekuitas (True MoM)</th>
-                    <th style="padding: 0.75rem 1rem; text-align: center;">Pertumbuhan MoM</th>
+                    <th style="padding: 0.75rem 1rem; text-align: right;">Valuasi Saldo Portofolio</th>
+                    <th style="padding: 0.75rem 1rem; text-align: right;">Pertumbuhan Saldo (MoM)</th>
+                    <th style="padding: 0.75rem 1rem; text-align: center;">Pertumbuhan %</th>
                     <th style="padding: 0.75rem 1rem; text-align: center;">Status Kesehatan</th>
                 </tr>
             </thead>
@@ -124,8 +125,10 @@
                         $floatingPnlVal = $report['floating_pnl_usdt'] ?? 0;
                         $trueNetPnlVal = $report['true_net_pnl_usdt'] ?? $realizedPnlVal;
                         $trueNetPnlIdrVal = $report['true_net_pnl_idr'] ?? 0;
-                        $trueCumPnlVal = $report['true_cumulative_pnl_usdt'] ?? $report['cumulative_pnl_usdt'] ?? 0;
-                        $trueCumPnlIdrVal = $report['true_cumulative_pnl_idr'] ?? $report['cumulative_pnl_idr'] ?? 0;
+                        $portValUsdt = $report['portfolio_valuation_usdt'] ?? 0;
+                        $portValIdr = $report['portfolio_valuation_idr'] ?? 0;
+                        $nomGrowthUsdt = $report['nominal_growth_usdt'] ?? 0;
+                        $nomGrowthIdr = $report['nominal_growth_idr'] ?? 0;
                     @endphp
                     <td style="padding: 1rem; text-align: right; font-weight: 600;" class="{{ $realizedPnlVal >= 0 ? 'text-success' : 'text-danger' }}">
                         {{ $realizedPnlVal >= 0 ? '+' : '' }}${{ number_format($realizedPnlVal, 2) }}
@@ -143,10 +146,16 @@
                             ≈ {{ $trueNetPnlVal >= 0 ? '+' : '' }}Rp {{ number_format($trueNetPnlIdrVal, 0, ',', '.') }}
                         </div>
                     </td>
-                    <td style="padding: 1rem; text-align: right; font-weight: 700;" class="{{ $trueCumPnlVal >= 0 ? 'text-success' : 'text-danger' }}">
-                        {{ $trueCumPnlVal >= 0 ? '+' : '' }}${{ number_format($trueCumPnlVal, 2) }}
+                    <td style="padding: 1rem; text-align: right; font-weight: 700; color: #fff;">
+                        ${{ number_format($portValUsdt, 2) }}
+                        <div style="font-size: 0.75rem; font-weight: 400; opacity: 0.8; color: var(--text-muted);">
+                            ≈ Rp {{ number_format($portValIdr, 0, ',', '.') }}
+                        </div>
+                    </td>
+                    <td style="padding: 1rem; text-align: right; font-weight: 700;" class="{{ $nomGrowthUsdt >= 0 ? 'text-success' : 'text-danger' }}">
+                        {{ $nomGrowthUsdt >= 0 ? '+' : '' }}${{ number_format($nomGrowthUsdt, 2) }}
                         <div style="font-size: 0.75rem; font-weight: 400; opacity: 0.8;">
-                            ≈ {{ $trueCumPnlVal >= 0 ? '+' : '' }}Rp {{ number_format($trueCumPnlIdrVal, 0, ',', '.') }}
+                            ≈ {{ $nomGrowthUsdt >= 0 ? '+' : '' }}Rp {{ number_format($nomGrowthIdr, 0, ',', '.') }}
                         </div>
                     </td>
                     <td style="padding: 1rem; text-align: center;">

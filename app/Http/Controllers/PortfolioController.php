@@ -652,18 +652,18 @@ class PortfolioController extends Controller
 
         ksort($monthlyGroups);
 
-        // Initial Starting Capital Baseline (Total Cost / Asset Valuation)
+        // Initial Starting Portfolio Valuation Baseline
         $initialCapitalUsdt = 0.0;
         foreach ($portfolio['assets'] ?? [] as $assetData) {
             $initialCapitalUsdt += (float)($assetData['value_usdt'] ?? 0);
         }
         if ($initialCapitalUsdt <= 0) {
-            $initialCapitalUsdt = 1000.0; // Fallback baseline capital
+            $initialCapitalUsdt = 1000.0; // Fallback baseline
         }
 
-        // 4. Compute Cumulative Running Total, True Net Equity and True MoM Capital Growth
+        // 4. Compute Cumulative Running Total, End-of-Month Portfolio Valuation, and MoM Growth
         $cumulativePnlUsdt = 0.0;
-        $prevEquityUsdt = $initialCapitalUsdt;
+        $prevPortfolioValuationUsdt = $initialCapitalUsdt;
         $monthlyReports = [];
         $latestYm = array_key_last($monthlyGroups);
 
@@ -675,12 +675,18 @@ class PortfolioController extends Controller
             $trueNetPnlUsdt = $data['net_pnl_usdt'] + $floatingPnlUsdt;
             $trueCumulativePnlUsdt = $cumulativePnlUsdt + $floatingPnlUsdt;
 
-            $endingEquityUsdt = $initialCapitalUsdt + $trueCumulativePnlUsdt;
+            // End-of-Month Portfolio Valuation Balance
+            $portfolioValuationUsdt = $initialCapitalUsdt + $trueCumulativePnlUsdt;
+            $portfolioValuationIdr = $portfolioValuationUsdt * $usdtIdr;
 
-            // True MoM Capital Growth %: (Ending Equity - Starting Equity) / Starting Equity * 100%
+            // Nominal Growth (+/- USDT & Rp) compared to previous month
+            $nominalGrowthUsdt = $portfolioValuationUsdt - $prevPortfolioValuationUsdt;
+            $nominalGrowthIdr = $nominalGrowthUsdt * $usdtIdr;
+
+            // Growth percentage %
             $momGrowthPercent = 0.0;
-            if ($prevEquityUsdt > 0) {
-                $momGrowthPercent = (($endingEquityUsdt - $prevEquityUsdt) / $prevEquityUsdt) * 100.0;
+            if ($prevPortfolioValuationUsdt > 0) {
+                $momGrowthPercent = ($nominalGrowthUsdt / $prevPortfolioValuationUsdt) * 100.0;
             }
 
             $winRate = $data['trades_count'] > 0 ? ($data['win_count'] / $data['trades_count']) * 100.0 : 0.0;
@@ -725,12 +731,16 @@ class PortfolioController extends Controller
                 'cumulative_pnl_idr' => $cumulativePnlUsdt * $usdtIdr,
                 'true_cumulative_pnl_usdt' => $trueCumulativePnlUsdt,
                 'true_cumulative_pnl_idr' => $trueCumulativePnlUsdt * $usdtIdr,
+                'portfolio_valuation_usdt' => $portfolioValuationUsdt,
+                'portfolio_valuation_idr' => $portfolioValuationIdr,
+                'nominal_growth_usdt' => $nominalGrowthUsdt,
+                'nominal_growth_idr' => $nominalGrowthIdr,
                 'mom_growth_percent' => $momGrowthPercent,
                 'health_badge' => $healthBadge,
                 'top_asset' => $topAsset
             ];
 
-            $prevEquityUsdt = $endingEquityUsdt;
+            $prevPortfolioValuationUsdt = $portfolioValuationUsdt;
         }
 
         // Apply Year Filter if specified
