@@ -652,9 +652,18 @@ class PortfolioController extends Controller
 
         ksort($monthlyGroups);
 
-        // 4. Compute Cumulative Running Total, True Net Equity and MoM Growth (This Month vs Last Month PNL)
+        // Initial Starting Capital Baseline (Total Cost / Asset Valuation)
+        $initialCapitalUsdt = 0.0;
+        foreach ($portfolio['assets'] ?? [] as $assetData) {
+            $initialCapitalUsdt += (float)($assetData['value_usdt'] ?? 0);
+        }
+        if ($initialCapitalUsdt <= 0) {
+            $initialCapitalUsdt = 1000.0; // Fallback baseline capital
+        }
+
+        // 4. Compute Cumulative Running Total, True Net Equity and True MoM Capital Growth
         $cumulativePnlUsdt = 0.0;
-        $prevNetPnlUsdt = null;
+        $prevEquityUsdt = $initialCapitalUsdt;
         $monthlyReports = [];
         $latestYm = array_key_last($monthlyGroups);
 
@@ -666,15 +675,15 @@ class PortfolioController extends Controller
             $trueNetPnlUsdt = $data['net_pnl_usdt'] + $floatingPnlUsdt;
             $trueCumulativePnlUsdt = $cumulativePnlUsdt + $floatingPnlUsdt;
 
-            $winRate = $data['trades_count'] > 0 ? ($data['win_count'] / $data['trades_count']) * 100.0 : 0.0;
+            $endingEquityUsdt = $initialCapitalUsdt + $trueCumulativePnlUsdt;
 
-            // MoM Growth %: Compare This Month's Net PNL vs Previous Month's Net PNL
+            // True MoM Capital Growth %: (Ending Equity - Starting Equity) / Starting Equity * 100%
             $momGrowthPercent = 0.0;
-            if ($prevNetPnlUsdt !== null && $prevNetPnlUsdt != 0) {
-                $momGrowthPercent = (($trueNetPnlUsdt - $prevNetPnlUsdt) / abs($prevNetPnlUsdt)) * 100.0;
-            } elseif ($trueNetPnlUsdt != 0) {
-                $momGrowthPercent = 100.0;
+            if ($prevEquityUsdt > 0) {
+                $momGrowthPercent = (($endingEquityUsdt - $prevEquityUsdt) / $prevEquityUsdt) * 100.0;
             }
+
+            $winRate = $data['trades_count'] > 0 ? ($data['win_count'] / $data['trades_count']) * 100.0 : 0.0;
 
             // Health Status Indicator
             $healthBadge = '🟢 Sehat (Profit Clean)';
@@ -721,7 +730,7 @@ class PortfolioController extends Controller
                 'top_asset' => $topAsset
             ];
 
-            $prevNetPnlUsdt = $trueNetPnlUsdt;
+            $prevEquityUsdt = $endingEquityUsdt;
         }
 
         // Apply Year Filter if specified
