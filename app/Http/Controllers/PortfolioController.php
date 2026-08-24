@@ -652,9 +652,9 @@ class PortfolioController extends Controller
 
         ksort($monthlyGroups);
 
-        // 4. Compute Cumulative Running Total, True Net Equity and MoM Growth
+        // 4. Compute Cumulative Running Total, True Net Equity and MoM Growth (This Month vs Last Month PNL)
         $cumulativePnlUsdt = 0.0;
-        $prevCumulativePnlUsdt = 0.0;
+        $prevNetPnlUsdt = null;
         $monthlyReports = [];
         $latestYm = array_key_last($monthlyGroups);
 
@@ -668,10 +668,11 @@ class PortfolioController extends Controller
 
             $winRate = $data['trades_count'] > 0 ? ($data['win_count'] / $data['trades_count']) * 100.0 : 0.0;
 
+            // MoM Growth %: Compare This Month's Net PNL vs Previous Month's Net PNL
             $momGrowthPercent = 0.0;
-            if ($prevCumulativePnlUsdt != 0) {
-                $momGrowthPercent = (($trueCumulativePnlUsdt - $prevCumulativePnlUsdt) / abs($prevCumulativePnlUsdt)) * 100.0;
-            } elseif ($trueCumulativePnlUsdt != 0) {
+            if ($prevNetPnlUsdt !== null && $prevNetPnlUsdt != 0) {
+                $momGrowthPercent = (($trueNetPnlUsdt - $prevNetPnlUsdt) / abs($prevNetPnlUsdt)) * 100.0;
+            } elseif ($trueNetPnlUsdt != 0) {
                 $momGrowthPercent = 100.0;
             }
 
@@ -720,7 +721,7 @@ class PortfolioController extends Controller
                 'top_asset' => $topAsset
             ];
 
-            $prevCumulativePnlUsdt = $trueCumulativePnlUsdt;
+            $prevNetPnlUsdt = $trueNetPnlUsdt;
         }
 
         // Apply Year Filter if specified
