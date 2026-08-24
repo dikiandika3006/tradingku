@@ -703,6 +703,8 @@ class PortfolioController extends Controller
                 'profit_idr' => $data['profit_usdt'] * $usdtIdr,
                 'loss_usdt' => $data['loss_usdt'],
                 'loss_idr' => $data['loss_usdt'] * $usdtIdr,
+                'realized_pnl_usdt' => $data['net_pnl_usdt'],
+                'realized_pnl_idr' => $data['net_pnl_usdt'] * $usdtIdr,
                 'net_pnl_usdt' => $data['net_pnl_usdt'],
                 'net_pnl_idr' => $data['net_pnl_usdt'] * $usdtIdr,
                 'floating_pnl_usdt' => $floatingPnlUsdt,

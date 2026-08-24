@@ -119,26 +119,34 @@
                             {{ $report['trades_count'] }} trade
                         </span>
                     </td>
-                    <td style="padding: 1rem; text-align: right; font-weight: 600;" class="{{ $report['realized_pnl_usdt'] >= 0 ? 'text-success' : 'text-danger' }}">
-                        {{ $report['realized_pnl_usdt'] >= 0 ? '+' : '' }}${{ number_format($report['realized_pnl_usdt'], 2) }}
+                    @php
+                        $realizedPnlVal = $report['realized_pnl_usdt'] ?? $report['net_pnl_usdt'] ?? 0;
+                        $floatingPnlVal = $report['floating_pnl_usdt'] ?? 0;
+                        $trueNetPnlVal = $report['true_net_pnl_usdt'] ?? $realizedPnlVal;
+                        $trueNetPnlIdrVal = $report['true_net_pnl_idr'] ?? 0;
+                        $trueCumPnlVal = $report['true_cumulative_pnl_usdt'] ?? $report['cumulative_pnl_usdt'] ?? 0;
+                        $trueCumPnlIdrVal = $report['true_cumulative_pnl_idr'] ?? $report['cumulative_pnl_idr'] ?? 0;
+                    @endphp
+                    <td style="padding: 1rem; text-align: right; font-weight: 600;" class="{{ $realizedPnlVal >= 0 ? 'text-success' : 'text-danger' }}">
+                        {{ $realizedPnlVal >= 0 ? '+' : '' }}${{ number_format($realizedPnlVal, 2) }}
                     </td>
-                    <td style="padding: 1rem; text-align: right; font-weight: 600;" class="{{ $report['floating_pnl_usdt'] >= 0 ? 'text-success' : 'text-danger' }}">
-                        @if($report['floating_pnl_usdt'] != 0)
-                            {{ $report['floating_pnl_usdt'] >= 0 ? '+' : '' }}${{ number_format($report['floating_pnl_usdt'], 2) }}
+                    <td style="padding: 1rem; text-align: right; font-weight: 600;" class="{{ $floatingPnlVal >= 0 ? 'text-success' : 'text-danger' }}">
+                        @if($floatingPnlVal != 0)
+                            {{ $floatingPnlVal >= 0 ? '+' : '' }}${{ number_format($floatingPnlVal, 2) }}
                         @else
                             <span style="color: var(--text-muted); font-weight: 400;">$0.00</span>
                         @endif
                     </td>
-                    <td style="padding: 1rem; text-align: right; font-weight: 700;" class="{{ $report['true_net_pnl_usdt'] >= 0 ? 'text-success' : 'text-danger' }}">
-                        {{ $report['true_net_pnl_usdt'] >= 0 ? '+' : '' }}${{ number_format($report['true_net_pnl_usdt'], 2) }}
+                    <td style="padding: 1rem; text-align: right; font-weight: 700;" class="{{ $trueNetPnlVal >= 0 ? 'text-success' : 'text-danger' }}">
+                        {{ $trueNetPnlVal >= 0 ? '+' : '' }}${{ number_format($trueNetPnlVal, 2) }}
                         <div style="font-size: 0.75rem; font-weight: 400; opacity: 0.8;">
-                            ≈ {{ $report['true_net_pnl_usdt'] >= 0 ? '+' : '' }}Rp {{ number_format($report['true_net_pnl_idr'], 0, ',', '.') }}
+                            ≈ {{ $trueNetPnlVal >= 0 ? '+' : '' }}Rp {{ number_format($trueNetPnlIdrVal, 0, ',', '.') }}
                         </div>
                     </td>
-                    <td style="padding: 1rem; text-align: right; font-weight: 700;" class="{{ $report['true_cumulative_pnl_usdt'] >= 0 ? 'text-success' : 'text-danger' }}">
-                        {{ $report['true_cumulative_pnl_usdt'] >= 0 ? '+' : '' }}${{ number_format($report['true_cumulative_pnl_usdt'], 2) }}
+                    <td style="padding: 1rem; text-align: right; font-weight: 700;" class="{{ $trueCumPnlVal >= 0 ? 'text-success' : 'text-danger' }}">
+                        {{ $trueCumPnlVal >= 0 ? '+' : '' }}${{ number_format($trueCumPnlVal, 2) }}
                         <div style="font-size: 0.75rem; font-weight: 400; opacity: 0.8;">
-                            ≈ {{ $report['true_cumulative_pnl_usdt'] >= 0 ? '+' : '' }}Rp {{ number_format($report['true_cumulative_pnl_idr'], 0, ',', '.') }}
+                            ≈ {{ $trueCumPnlVal >= 0 ? '+' : '' }}Rp {{ number_format($trueCumPnlIdrVal, 0, ',', '.') }}
                         </div>
                     </td>
                     <td style="padding: 1rem; text-align: center;">
