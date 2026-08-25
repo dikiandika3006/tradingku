@@ -226,15 +226,18 @@
         <div style="display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; margin-bottom: 1.5rem;">
             <div style="display: flex; flex-direction: column; gap: 0.25rem;">
                 <label for="local_url" class="form-label" style="margin-bottom: 0;">URL Dashboard Lokal</label>
-                <input type="text" id="local_url" class="form-control" value="http://localhost:8080" placeholder="http://localhost:8080" style="background: rgba(0, 0, 0, 0.2); border: 1px solid rgba(255, 255, 255, 0.1); width: 280px; font-family: monospace;">
+                <input type="text" id="local_url" class="form-control" value="http://127.0.0.1:8000" placeholder="http://127.0.0.1:8000" style="background: rgba(0, 0, 0, 0.2); border: 1px solid rgba(255, 255, 255, 0.1); width: 280px; font-family: monospace;">
             </div>
+            <button type="button" id="btnAutoDetect" class="btn btn-secondary" style="padding: 0.8rem 1.25rem; margin-top: 1.25rem;" title="Pindai port lokal yang umum dipakai dan isi otomatis">
+                🔍 Deteksi Otomatis
+            </button>
             <button type="button" id="btnCheckSync" class="btn btn-secondary" style="padding: 0.8rem 1.5rem; margin-top: 1.25rem;">
                 Cek Perubahan Lokal
             </button>
         </div>
 
         <div id="syncStatus" style="background: rgba(255, 255, 255, 0.02); border: 1px dashed rgba(255, 255, 255, 0.1); padding: 1rem; border-radius: 8px; font-size: 0.85rem; color: var(--text-muted); line-height: 1.5;">
-            Masukkan URL local server Anda (misal: <code>http://localhost:8080</code>) dan klik <strong>Cek Perubahan Lokal</strong> untuk memindai antrean perubahan database yang tertunda.
+            Klik <strong>🔍 Deteksi Otomatis</strong> untuk memindai port lokal yang umum dipakai, lalu <strong>Cek Perubahan Lokal</strong> untuk melihat antrean perubahan yang tertunda. URL yang berhasil akan diingat otomatis.
         </div>
 
         <div style="margin-top: 1.5rem; display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
@@ -258,10 +261,103 @@
 document.addEventListener("DOMContentLoaded", function() {
     const btnCheck = document.getElementById("btnCheckSync");
     const btnRun = document.getElementById("btnRunSync");
+    const btnAuto = document.getElementById("btnAutoDetect");
     const localUrlInput = document.getElementById("local_url");
     const statusDiv = document.getElementById("syncStatus");
-    
+
     let pendingQueries = [];
+
+    // --- Auto-deteksi URL dashboard lokal ---------------------------------
+    const LOCAL_URL_KEY = "pelagic_local_url";
+
+    // Urutan kandidat: artisan serve, XAMPP, lalu port dev lain
+    const URL_CANDIDATES = [
+        "http://127.0.0.1:8000",
+        "http://localhost:8000",
+        "http://127.0.0.1:8080",
+        "http://localhost:8080",
+        "http://localhost/pelagic_dashboard/public",
+        "http://127.0.0.1",
+        "http://localhost",
+        "http://127.0.0.1:8888",
+        "http://localhost:3000"
+    ];
+
+    // Ping satu kandidat; resolve dengan URL-nya kalau balas JSON yang valid
+    function probeCandidate(base, timeoutMs) {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), timeoutMs || 2500);
+
+        return fetch(`${base}/api/database/pending-queries`, {
+            method: "GET",
+            mode: "cors",
+            signal: controller.signal,
+            headers: { "Accept": "application/json" }
+        })
+        .then(response => {
+            if (!response.ok) throw new Error("bukan 200");
+            return response.json();
+        })
+        .then(data => {
+            if (!data || typeof data !== "object") throw new Error("bukan JSON");
+            return base;
+        })
+        .finally(() => clearTimeout(timer));
+    }
+
+    function autoDetectLocalUrl(silent) {
+        if (btnAuto) {
+            btnAuto.disabled = true;
+            btnAuto.textContent = "Memindai...";
+        }
+        if (!silent) {
+            statusDiv.innerHTML = `<span style="color: var(--color-secondary);">Memindai ${URL_CANDIDATES.length} alamat lokal yang umum dipakai...</span>`;
+        }
+
+        return Promise.any(URL_CANDIDATES.map(probeCandidate))
+            .then(found => {
+                localUrlInput.value = found;
+                try { localStorage.setItem(LOCAL_URL_KEY, found); } catch (e) {}
+                statusDiv.innerHTML = `<span style="color: #22c55e;">✔ Server lokal ditemukan di <code>${found}</code>. Klik <strong>Cek Perubahan Lokal</strong> untuk melanjutkan.</span>`;
+                return found;
+            })
+            .catch(() => {
+                if (!silent) {
+                    const isHttps = window.location.protocol === "https:";
+                    statusDiv.innerHTML = `
+                        <span style="color: #ef4444;">✖ Tidak ada server lokal yang merespons.</span><br>
+                        <span style="color: var(--text-muted);">Periksa berurutan:</span>
+                        <ol style="margin: 0.5rem 0 0 1.2rem; color: var(--text-muted);">
+                            <li>Server lokal menyala? Jalankan <code>php artisan serve</code> di folder project.</li>
+                            <li>Catat port yang tertulis di terminal (biasanya <code>8000</code>), lalu isi manual.</li>
+                            ${isHttps ? `<li><strong>Halaman ini HTTPS, server lokal HTTP.</strong> Firefox memblokir kombinasi ini. Pakai Chrome/Edge, atau buka dashboard lokal langsung di <code>http://127.0.0.1:8000</code> dan jalankan sinkronisasi dari sana.</li>` : ``}
+                        </ol>`;
+                }
+                return null;
+            })
+            .finally(() => {
+                if (btnAuto) {
+                    btnAuto.disabled = false;
+                    btnAuto.textContent = "🔍 Deteksi Otomatis";
+                }
+            });
+    }
+
+    // Pakai URL yang terakhir berhasil; kalau belum ada, deteksi diam-diam
+    try {
+        const saved = localStorage.getItem(LOCAL_URL_KEY);
+        if (saved) {
+            localUrlInput.value = saved;
+        } else {
+            autoDetectLocalUrl(true);
+        }
+    } catch (e) {}
+
+    if (btnAuto) {
+        btnAuto.addEventListener("click", function() {
+            autoDetectLocalUrl(false);
+        });
+    }
 
     // Helper to format timestamps
     function formatTime(unixTimestamp) {
@@ -300,9 +396,12 @@ document.addEventListener("DOMContentLoaded", function() {
             .then(data => {
                 btnCheck.disabled = false;
                 btnCheck.textContent = "Cek Perubahan Lokal";
-                
+
+                // URL ini terbukti jalan — ingat untuk kunjungan berikutnya
+                try { localStorage.setItem(LOCAL_URL_KEY, localUrl); } catch (e) {}
+
                 pendingQueries = data;
-                
+
                 if (pendingQueries.length === 0) {
                     statusDiv.innerHTML = '<span style="color: #10b981; font-weight: 600;">✔ Sinkron! Database produksi Anda sudah sama dengan data local. Tidak ada perubahan yang tertunda.</span>';
                     btnRun.style.display = "none";
