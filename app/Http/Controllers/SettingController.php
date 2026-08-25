@@ -242,6 +242,26 @@ class SettingController extends Controller
 
         $queries = $request->input('queries');
 
+        // Saring dulu SEBELUM apa pun dieksekusi. Antrean ini datang dari browser,
+        // jadi isinya tidak boleh dipercaya begitu saja.
+        $rejected = [];
+        foreach ($queries as $i => $q) {
+            $reason = $this->rejectionReasonFor($q['sql']);
+            if ($reason !== null) {
+                $rejected[] = "#{$i}: {$reason} -- " . mb_substr(preg_replace('/\s+/', ' ', $q['sql']), 0, 120);
+            }
+        }
+
+        if (!empty($rejected)) {
+            Log::warning("Sinkronisasi ditolak, ada query berbahaya:\n" . implode("\n", $rejected));
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Sinkronisasi dibatalkan. ' . count($rejected) . ' query ditolak karena berpotensi merusak data produksi:',
+                'rejected' => $rejected,
+            ], 422);
+        }
+
         try {
             DB::transaction(function () use ($queries) {
                 // Disable foreign keys temporarily
@@ -268,6 +288,43 @@ class SettingController extends Controller
                 'message' => 'Gagal menerapkan query: ' . $e->getMessage()
             ], 500);
         }
+    }
+
+    /**
+     * Periksa satu SQL dari antrean sinkronisasi.
+     *
+     * @return string|null Alasan penolakan, atau null kalau aman dieksekusi.
+     */
+    protected function rejectionReasonFor(string $sql): ?string
+    {
+        $normalized = trim(preg_replace('/\s+/', ' ', $sql));
+
+        // Satu pernyataan saja per entri — cegah SQL tambahan diselipkan lewat ";"
+        if (preg_match('/;\s*\S/', $normalized)) {
+            return 'Berisi lebih dari satu pernyataan SQL';
+        }
+
+        // Hanya perubahan data yang diizinkan
+        if (!preg_match('/^(insert|update|delete)\s/i', $normalized)) {
+            return 'Hanya INSERT, UPDATE, dan DELETE yang diizinkan';
+        }
+
+        // DDL & perintah berbahaya lain tidak boleh menumpang di mana pun
+        if (preg_match('/\b(drop|truncate|alter|create|rename|grant|revoke|shutdown|into\s+outfile|load\s+data)\b/i', $normalized)) {
+            return 'Mengandung perintah DDL/berbahaya';
+        }
+
+        // Ini yang paling penting: DELETE/UPDATE tanpa WHERE menyapu seluruh tabel
+        if (preg_match('/^(delete|update)\s/i', $normalized) && !preg_match('/\swhere\s/i', $normalized)) {
+            return 'DELETE/UPDATE tanpa klausa WHERE (akan mengenai seluruh tabel)';
+        }
+
+        // Batasi ke tabel yang memang ikut disinkronkan
+        if (!preg_match('/\b(trades|watchlists|settings|users|monthly_portfolio_snapshots)\b/i', $normalized)) {
+            return 'Menyasar tabel di luar daftar yang boleh disinkronkan';
+        }
+
+        return null;
     }
 
     /**

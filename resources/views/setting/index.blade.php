@@ -472,6 +472,19 @@ document.addEventListener("DOMContentLoaded", function() {
             .then(response => {
                 if (!response.ok) {
                     return response.json().then(err => {
+                        // Query yang ditolak penjaga keamanan: tampilkan satu per satu
+                        if (Array.isArray(err.rejected) && err.rejected.length) {
+                            const daftar = err.rejected
+                                .map(r => `<li style="margin-bottom: 0.35rem; word-break: break-all;"><code>${r.replace(/</g, "&lt;")}</code></li>`)
+                                .join("");
+                            statusDiv.innerHTML = `
+                                <span style="color: #ef4444; font-weight: 600;">⛔ ${err.message}</span>
+                                <ul style="margin: 0.75rem 0 0 1.2rem; color: var(--text-muted); font-size: 0.8rem;">${daftar}</ul>
+                                <div style="margin-top: 0.75rem; color: var(--text-muted);">
+                                    Tidak ada perubahan yang diterapkan ke produksi. Bersihkan antrean lokal, lalu ulangi dari perubahan yang sah saja.
+                                </div>`;
+                            throw new Error("__sudah_ditampilkan__");
+                        }
                         throw new Error(err.message || "Gagal menerapkan perubahan ke server produksi.");
                     });
                 }
@@ -514,7 +527,10 @@ document.addEventListener("DOMContentLoaded", function() {
             .catch(err => {
                 btnRun.disabled = false;
                 btnRun.textContent = `Sinkron ${pendingQueries.length} Perubahan ke Produksi`;
-                statusDiv.innerHTML = `<span style="color: #ef4444; font-weight: 600;">✖ Kegagalan Sinkronisasi:</span><br><span style="font-size: 0.8rem; color: var(--text-muted);">${err.message}</span>`;
+                // Daftar query yang ditolak sudah dirender di atas — jangan timpa
+                if (err.message !== "__sudah_ditampilkan__") {
+                    statusDiv.innerHTML = `<span style="color: #ef4444; font-weight: 600;">✖ Kegagalan Sinkronisasi:</span><br><span style="font-size: 0.8rem; color: var(--text-muted);">${err.message}</span>`;
+                }
                 console.error(err);
             });
         });
