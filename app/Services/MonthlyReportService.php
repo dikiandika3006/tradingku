@@ -71,8 +71,12 @@ class MonthlyReportService
             } else {
                 $endingUsdt[$ym] = $anchor;
                 $endingIdr[$ym]  = $anchor * $usdtIdr;
-                $truePnl = $monthlyGroups[$ym]['net_pnl_usdt']
-                    + ($ym === $latestYm ? $floating['total_usdt'] : 0.0);
+
+                $floatingDelta = ($ym === $latestYm)
+                    ? $floating['total_usdt'] - $this->floatingBaseline($ym, $yms, $snapshots)
+                    : 0.0;
+
+                $truePnl = $monthlyGroups[$ym]['net_pnl_usdt'] + $floatingDelta;
             }
 
             // Saldo awal bulan ini = saldo akhir bulan sebelumnya
@@ -89,7 +93,14 @@ class MonthlyReportService
 
             $row = $snap
                 ? $this->rowFromSnapshot($snap, $data)
-                : $this->rowFromLive($ym, $data, $floating, $latestYm, $usdtIdr);
+                : $this->rowFromLive(
+                    $ym,
+                    $data,
+                    $floating,
+                    $latestYm,
+                    $usdtIdr,
+                    $this->floatingBaseline($ym, $yms, $snapshots)
+                );
 
             $row['portfolio_valuation_usdt'] = $endingUsdt[$ym];
             $row['portfolio_valuation_idr']  = $endingIdr[$ym];
@@ -140,10 +151,22 @@ class MonthlyReportService
 
     /**
      * Satu baris laporan dari data live (bulan berjalan / bulan belum terkunci).
+     *
+     * @param float $floatingBaseline Floating PNL yang sudah terkunci di bulan sebelumnya.
      */
-    protected function rowFromLive(string $ym, array $data, array $floating, string $latestYm, float $usdtIdr): array
-    {
-        $floatingPnlUsdt = ($ym === $latestYm) ? $floating['total_usdt'] : 0.0;
+    protected function rowFromLive(
+        string $ym,
+        array $data,
+        array $floating,
+        string $latestYm,
+        float $usdtIdr,
+        float $floatingBaseline = 0.0
+    ): array {
+        // Yang dilaporkan adalah PERGERAKAN unrealized bulan ini, bukan akumulasi
+        // sepanjang masa: total unrealized sekarang dikurangi yang sudah dibukukan
+        // di snapshot bulan lalu. Tanpa ini, keuntungan mengambang yang sama akan
+        // dihitung ulang tiap bulan.
+        $floatingPnlUsdt = ($ym === $latestYm) ? ($floating['total_usdt'] - $floatingBaseline) : 0.0;
         $trueNetPnlUsdt  = $data['net_pnl_usdt'] + $floatingPnlUsdt;
         $winRate = $data['trades_count'] > 0 ? ($data['win_count'] / $data['trades_count']) * 100.0 : 0.0;
 
@@ -223,6 +246,28 @@ class MonthlyReportService
             'is_finalized'      => true,
             'cut_off_date'      => $snap->cut_off_date,
         ];
+    }
+
+    /**
+     * Floating PNL yang sudah dibukukan di snapshot bulan sebelumnya.
+     *
+     * Dipakai sebagai titik nol supaya unrealized bulan berjalan dihitung sebagai
+     * selisih, bukan akumulasi. Nol kalau bulan sebelumnya belum terkunci — dalam
+     * kondisi itu tidak ada baseline yang sah, jadi floating dilaporkan penuh.
+     *
+     * @param array<int, string> $yms Daftar periode, urut kronologis.
+     */
+    protected function floatingBaseline(string $ym, array $yms, $snapshots): float
+    {
+        $pos = array_search($ym, $yms, true);
+
+        if ($pos === false || $pos === 0) {
+            return 0.0;
+        }
+
+        $prevSnap = $snapshots->get($yms[$pos - 1]);
+
+        return $prevSnap ? (float)$prevSnap->floating_pnl_usdt : 0.0;
     }
 
     /**

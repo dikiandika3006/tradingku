@@ -94,6 +94,13 @@ class AppServiceProvider extends ServiceProvider
             }
         }
 
+        // Token "remember me" diregenerasi tiap kali login — itu derau sesi, bukan
+        // perubahan data. Isinya kredensial, jadi jangan sampai menumpuk di file
+        // antrean atau tampil di layar saat pratinjau sinkronisasi.
+        if (stripos($sql, 'remember_token') !== false) {
+            return null;
+        }
+
         // Susun ulang SQL lengkap dengan bindings-nya
         foreach ($query->bindings as $binding) {
             if ($binding instanceof \DateTime) {
