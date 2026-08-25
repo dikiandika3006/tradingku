@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Trade;
+use App\Services\MonthlyReportService;
 use App\Services\TokocryptoService;
 use Illuminate\Http\Request;
 
@@ -434,329 +435,36 @@ class PortfolioController extends Controller
         ]);
     }
 
+
     /**
      * Display Month-to-Month (MoM) Cumulative Portfolio Movement Report with Floating PNL & True Net Equity.
+     *
+     * Perhitungan didelegasikan ke MonthlyReportService (Monthly Portfolio Snapshot Engine):
+     * bulan yang sudah di-cut-off dibaca dari snapshot (immutable), bulan berjalan dihitung live.
      */
-    public function monthlyReport(Request $request)
+    public function monthlyReport(Request $request, MonthlyReportService $reportService)
     {
         $selectedYear = $request->input('year', 'all');
 
-        // Fetch all BUY and SELL trades ordered chronologically
-        $trades = Trade::whereIn('type', ['BUY', 'SELL'])
-            ->orderBy('trade_time', 'asc')
-            ->get();
-
-        $prices = $this->tokocryptoService->getAllPrices();
-        $portfolio = $this->tokocryptoService->getPortfolio();
-        $usdtIdr = $portfolio['usdt_idr_rate'] ?? 16000.0;
-
-        $fiatStables = ['USDT', 'BIDR', 'IDRT', 'BUSD', 'USDC', 'IDR'];
-
-        // 1. Calculate Floating PNL (Unrealized PNL) for current active holdings
-        $totalFloatingPnlUsdt = 0.0;
-        $totalFloatingLossUsdt = 0.0;
-        $totalFloatingProfitUsdt = 0.0;
-
-        foreach ($portfolio['assets'] ?? [] as $assetData) {
-            $assetName = $assetData['asset'];
-            $totalAmount = (float)$assetData['total'];
-            $currentPrice = (float)$assetData['price'];
-            $valueUsdt = (float)$assetData['value_usdt'];
-
-            if (in_array($assetName, $fiatStables) || $totalAmount <= 0) {
-                continue;
-            }
-
-            $buyTrades = Trade::where('symbol', 'like', $assetName . '%')
-                ->where('type', 'BUY')
-                ->get();
-
-            $totalBuyAmount = 0.0;
-            $totalBuyCostUsdt = 0.0;
-
-            foreach ($buyTrades as $trade) {
-                $tradeSymbol = $trade->symbol;
-                $tradePrice = (float)$trade->price;
-                $tradeAmount = (float)$trade->amount;
-
-                $quote = 'USDT';
-                foreach (['USDT', 'BIDR', 'IDRT', 'BUSD', 'IDR'] as $q) {
-                    if (str_ends_with($tradeSymbol, $q) && strlen($tradeSymbol) > strlen($q)) {
-                        $quote = $q;
-                        break;
-                    }
-                }
-
-                $priceInUsdt = $tradePrice;
-                if ($quote === 'BIDR' || $quote === 'IDRT' || $quote === 'IDR') {
-                    $rate = $prices['USDTIDR'] ?? ($prices['USDT' . $quote] ?? ($prices['USDTIDRT'] ?? 16400.0));
-                    if ($rate > 100) {
-                        $priceInUsdt = $tradePrice / $rate;
-                    } else {
-                        $priceInUsdt = $tradePrice / 16400.0;
-                    }
-                }
-
-                $totalBuyAmount += $tradeAmount;
-                $totalBuyCostUsdt += ($priceInUsdt * $tradeAmount);
-            }
-
-            $avgBuyPriceUsdt = $totalBuyAmount > 0 ? ($totalBuyCostUsdt / $totalBuyAmount) : $currentPrice;
-            $assetCostUsdt = $totalAmount * $avgBuyPriceUsdt;
-            $unrealizedPnlUsdt = $valueUsdt - $assetCostUsdt;
-
-            $totalFloatingPnlUsdt += $unrealizedPnlUsdt;
-            if ($unrealizedPnlUsdt < 0) {
-                $totalFloatingLossUsdt += abs($unrealizedPnlUsdt);
-            } else {
-                $totalFloatingProfitUsdt += $unrealizedPnlUsdt;
-            }
-        }
-
-        // 2. Group trades by asset to calculate realized PNL using FIFO/Average Cost
-        $tradesByAsset = [];
-        foreach ($trades as $trade) {
-            $symbol = strtoupper(trim($trade->symbol));
-            
-            $base = $symbol;
-            $quote = 'USDT';
-            foreach (['USDT', 'BIDR', 'IDRT', 'BUSD', 'USDC', 'BTC', 'ETH', 'BNB', 'IDR'] as $q) {
-                if (str_ends_with($symbol, $q) && strlen($symbol) > strlen($q)) {
-                    $base = substr($symbol, 0, -strlen($q));
-                    $quote = $q;
-                    break;
-                }
-            }
-
-            if (in_array($base, $fiatStables)) {
-                continue;
-            }
-
-            $trade->base_asset = $base;
-            $trade->quote_asset = $quote;
-            $tradesByAsset[$base][] = $trade;
-        }
-
-        $realizedTrades = [];
-        $availableYears = [];
-
-        foreach ($tradesByAsset as $asset => $assetTrades) {
-            $runningAmount = 0.0;
-            $runningCostUsdt = 0.0;
-
-            foreach ($assetTrades as $trade) {
-                $amount = (float)$trade->amount;
-                $price = (float)$trade->price;
-                $quote = $trade->quote_asset;
-
-                $priceInUsdt = $price;
-                if ($quote === 'BIDR' || $quote === 'IDRT' || $quote === 'IDR') {
-                    $rate = $prices['USDTIDR'] ?? ($prices['USDT' . $quote] ?? ($prices['USDTIDRT'] ?? 16000.0));
-                    if ($rate > 100) {
-                        $priceInUsdt = $price / $rate;
-                    } else {
-                        $priceInUsdt = $price / 16000.0;
-                    }
-                }
-
-                $type = strtoupper(trim($trade->type));
-
-                if ($type === 'BUY') {
-                    $runningAmount += $amount;
-                    $runningCostUsdt += ($priceInUsdt * $amount);
-                } elseif ($type === 'SELL') {
-                    $avgBuyPriceUsdt = $runningAmount > 0 ? ($runningCostUsdt / $runningAmount) : 0.0;
-                    $pnlUsdt = ($priceInUsdt - $avgBuyPriceUsdt) * $amount;
-                    
-                    $tradeDate = \Carbon\Carbon::parse($trade->trade_time);
-                    $yearMonth = $tradeDate->format('Y-m');
-                    $year = $tradeDate->format('Y');
-
-                    if (!in_array($year, $availableYears)) {
-                        $availableYears[] = $year;
-                    }
-
-                    $realizedTrades[] = [
-                        'asset' => $asset,
-                        'symbol' => $trade->symbol,
-                        'amount' => $amount,
-                        'sell_price_usdt' => $priceInUsdt,
-                        'avg_buy_price_usdt' => $avgBuyPriceUsdt,
-                        'pnl_usdt' => $pnlUsdt,
-                        'trade_time' => $trade->trade_time,
-                        'year_month' => $yearMonth,
-                        'year' => $year,
-                        'month_name' => $tradeDate->translatedFormat('F Y')
-                    ];
-
-                    $runningAmount = max(0.0, $runningAmount - $amount);
-                    $runningCostUsdt = $runningAmount * $avgBuyPriceUsdt;
-                }
-            }
-        }
-
-        rsort($availableYears);
-
-        // 3. Group realized trades by Month (chronologically)
-        $currentYearMonth = date('Y-m');
-        $monthlyGroups = [];
-
-        foreach ($realizedTrades as $rt) {
-            $ym = $rt['year_month'];
-            if (!isset($monthlyGroups[$ym])) {
-                $monthlyGroups[$ym] = [
-                    'year_month' => $ym,
-                    'year' => $rt['year'],
-                    'month_name' => $rt['month_name'],
-                    'trades_count' => 0,
-                    'win_count' => 0,
-                    'loss_count' => 0,
-                    'profit_usdt' => 0.0,
-                    'loss_usdt' => 0.0,
-                    'net_pnl_usdt' => 0.0,
-                    'asset_pnls' => []
-                ];
-            }
-
-            $monthlyGroups[$ym]['trades_count']++;
-            if ($rt['pnl_usdt'] > 0) {
-                $monthlyGroups[$ym]['win_count']++;
-                $monthlyGroups[$ym]['profit_usdt'] += $rt['pnl_usdt'];
-            } else {
-                $monthlyGroups[$ym]['loss_count']++;
-                $monthlyGroups[$ym]['loss_usdt'] += abs($rt['pnl_usdt']);
-            }
-
-            $monthlyGroups[$ym]['net_pnl_usdt'] += $rt['pnl_usdt'];
-
-            $ast = $rt['asset'];
-            $monthlyGroups[$ym]['asset_pnls'][$ast] = ($monthlyGroups[$ym]['asset_pnls'][$ast] ?? 0.0) + $rt['pnl_usdt'];
-        }
-
-        // Ensure current active month exists in groups
-        if (!isset($monthlyGroups[$currentYearMonth])) {
-            $currentDate = now();
-            $monthlyGroups[$currentYearMonth] = [
-                'year_month' => $currentYearMonth,
-                'year' => $currentDate->format('Y'),
-                'month_name' => $currentDate->translatedFormat('F Y'),
-                'trades_count' => 0,
-                'win_count' => 0,
-                'loss_count' => 0,
-                'profit_usdt' => 0.0,
-                'loss_usdt' => 0.0,
-                'net_pnl_usdt' => 0.0,
-                'asset_pnls' => []
-            ];
-        }
-
-        ksort($monthlyGroups);
-
-        // Initial Starting Portfolio Valuation Baseline
-        $initialCapitalUsdt = 0.0;
-        foreach ($portfolio['assets'] ?? [] as $assetData) {
-            $initialCapitalUsdt += (float)($assetData['value_usdt'] ?? 0);
-        }
-        if ($initialCapitalUsdt <= 0) {
-            $initialCapitalUsdt = 1000.0; // Fallback baseline
-        }
-
-        // 4. Compute Cumulative Running Total, End-of-Month Portfolio Valuation, and MoM Growth
-        $cumulativePnlUsdt = 0.0;
-        $prevPortfolioValuationUsdt = $initialCapitalUsdt;
-        $monthlyReports = [];
-        $latestYm = array_key_last($monthlyGroups);
-
-        foreach ($monthlyGroups as $ym => $data) {
-            $cumulativePnlUsdt += $data['net_pnl_usdt'];
-            
-            // Attach current floating PNL to the latest active month
-            $floatingPnlUsdt = ($ym === $latestYm) ? $totalFloatingPnlUsdt : 0.0;
-            $trueNetPnlUsdt = $data['net_pnl_usdt'] + $floatingPnlUsdt;
-            $trueCumulativePnlUsdt = $cumulativePnlUsdt + $floatingPnlUsdt;
-
-            // End-of-Month Portfolio Valuation Balance
-            $portfolioValuationUsdt = $initialCapitalUsdt + $trueCumulativePnlUsdt;
-            $portfolioValuationIdr = $portfolioValuationUsdt * $usdtIdr;
-
-            // Nominal Growth (+/- USDT & Rp) compared to previous month
-            $nominalGrowthUsdt = $portfolioValuationUsdt - $prevPortfolioValuationUsdt;
-            $nominalGrowthIdr = $nominalGrowthUsdt * $usdtIdr;
-
-            // Growth percentage %
-            $momGrowthPercent = 0.0;
-            if ($prevPortfolioValuationUsdt > 0) {
-                $momGrowthPercent = ($nominalGrowthUsdt / $prevPortfolioValuationUsdt) * 100.0;
-            }
-
-            $winRate = $data['trades_count'] > 0 ? ($data['win_count'] / $data['trades_count']) * 100.0 : 0.0;
-
-            // Health Status Indicator
-            $healthBadge = '🟢 Sehat (Profit Clean)';
-            if ($trueNetPnlUsdt < 0) {
-                if (abs($floatingPnlUsdt) > abs($data['net_pnl_usdt'])) {
-                    $healthBadge = '🔴 Floating Loss Dominan';
-                } else {
-                    $healthBadge = '🟡 Rugi Moderat';
-                }
-            }
-
-            $topAsset = '-';
-            if (!empty($data['asset_pnls'])) {
-                arsort($data['asset_pnls']);
-                $topAsset = array_key_first($data['asset_pnls']);
-            }
-
-            $monthlyReports[] = [
-                'year_month' => $ym,
-                'year' => $data['year'],
-                'month_name' => $data['month_name'],
-                'trades_count' => $data['trades_count'],
-                'win_count' => $data['win_count'],
-                'loss_count' => $data['loss_count'],
-                'win_rate' => $winRate,
-                'profit_usdt' => $data['profit_usdt'],
-                'profit_idr' => $data['profit_usdt'] * $usdtIdr,
-                'loss_usdt' => $data['loss_usdt'],
-                'loss_idr' => $data['loss_usdt'] * $usdtIdr,
-                'realized_pnl_usdt' => $data['net_pnl_usdt'],
-                'realized_pnl_idr' => $data['net_pnl_usdt'] * $usdtIdr,
-                'net_pnl_usdt' => $data['net_pnl_usdt'],
-                'net_pnl_idr' => $data['net_pnl_usdt'] * $usdtIdr,
-                'floating_pnl_usdt' => $floatingPnlUsdt,
-                'floating_pnl_idr' => $floatingPnlUsdt * $usdtIdr,
-                'true_net_pnl_usdt' => $trueNetPnlUsdt,
-                'true_net_pnl_idr' => $trueNetPnlUsdt * $usdtIdr,
-                'cumulative_pnl_usdt' => $cumulativePnlUsdt,
-                'cumulative_pnl_idr' => $cumulativePnlUsdt * $usdtIdr,
-                'true_cumulative_pnl_usdt' => $trueCumulativePnlUsdt,
-                'true_cumulative_pnl_idr' => $trueCumulativePnlUsdt * $usdtIdr,
-                'portfolio_valuation_usdt' => $portfolioValuationUsdt,
-                'portfolio_valuation_idr' => $portfolioValuationIdr,
-                'nominal_growth_usdt' => $nominalGrowthUsdt,
-                'nominal_growth_idr' => $nominalGrowthIdr,
-                'mom_growth_percent' => $momGrowthPercent,
-                'health_badge' => $healthBadge,
-                'top_asset' => $topAsset
-            ];
-
-            $prevPortfolioValuationUsdt = $portfolioValuationUsdt;
-        }
+        $data           = $reportService->build();
+        $monthlyReports = $data['reports'];
+        $usdtIdr        = $data['usdt_idr_rate'];
 
         // Apply Year Filter if specified
         $filteredReports = $monthlyReports;
         if ($selectedYear !== 'all') {
-            $filteredReports = array_filter($monthlyReports, function($r) use ($selectedYear) {
+            $filteredReports = array_values(array_filter($monthlyReports, function ($r) use ($selectedYear) {
                 return $r['year'] === $selectedYear;
-            });
-            $filteredReports = array_values($filteredReports);
+            }));
         }
 
         // Calculate Executive KPI Summary
-        $allTimeNetPnlUsdt = $cumulativePnlUsdt;
-        $trueNetPortfolioPnlUsdt = $cumulativePnlUsdt + $totalFloatingPnlUsdt;
-        $bestMonth = null;
-        $worstMonth = null;
+        $allTimeNetPnlUsdt      = $data['all_time_net_pnl_usdt'];
+        $totalFloatingPnlUsdt   = $data['total_floating_pnl_usdt'];
+        $trueNetPortfolioPnlUsdt = $allTimeNetPnlUsdt + $totalFloatingPnlUsdt;
+
+        $bestMonth       = null;
+        $worstMonth      = null;
         $totalWinRateSum = 0.0;
 
         foreach ($monthlyReports as $r) {
@@ -771,21 +479,31 @@ class PortfolioController extends Controller
 
         $avgMonthlyWinRate = count($monthlyReports) > 0 ? ($totalWinRateSum / count($monthlyReports)) : 0.0;
 
+        // Status cut-off engine untuk ditampilkan di header laporan
+        $finalizedCount = 0;
+        foreach ($monthlyReports as $r) {
+            if (!empty($r['is_finalized'])) {
+                $finalizedCount++;
+            }
+        }
+
         return view('portfolio.monthly_report', [
-            'monthly_reports' => array_reverse($filteredReports), // Newest month first for table
-            'chart_reports' => $filteredReports, // Chronological order for charts
-            'available_years' => $availableYears,
-            'selected_year' => $selectedYear,
-            'all_time_net_pnl_usdt' => $allTimeNetPnlUsdt,
-            'all_time_net_pnl_idr' => $allTimeNetPnlUsdt * $usdtIdr,
-            'total_floating_pnl_usdt' => $totalFloatingPnlUsdt,
-            'total_floating_pnl_idr' => $totalFloatingPnlUsdt * $usdtIdr,
+            'monthly_reports'           => array_reverse($filteredReports), // Newest month first for table
+            'chart_reports'             => $filteredReports, // Chronological order for charts
+            'available_years'           => $data['available_years'],
+            'selected_year'             => $selectedYear,
+            'all_time_net_pnl_usdt'     => $allTimeNetPnlUsdt,
+            'all_time_net_pnl_idr'      => $allTimeNetPnlUsdt * $usdtIdr,
+            'total_floating_pnl_usdt'   => $totalFloatingPnlUsdt,
+            'total_floating_pnl_idr'    => $totalFloatingPnlUsdt * $usdtIdr,
             'true_net_portfolio_pnl_usdt' => $trueNetPortfolioPnlUsdt,
-            'true_net_portfolio_pnl_idr' => $trueNetPortfolioPnlUsdt * $usdtIdr,
-            'best_month' => $bestMonth,
-            'worst_month' => $worstMonth,
-            'avg_monthly_win_rate' => $avgMonthlyWinRate,
-            'usdt_idr_rate' => $usdtIdr
+            'true_net_portfolio_pnl_idr'  => $trueNetPortfolioPnlUsdt * $usdtIdr,
+            'best_month'                => $bestMonth,
+            'worst_month'               => $worstMonth,
+            'avg_monthly_win_rate'      => $avgMonthlyWinRate,
+            'usdt_idr_rate'             => $usdtIdr,
+            'current_year_month'        => $data['current_year_month'],
+            'finalized_months_count'    => $finalizedCount,
         ]);
     }
 }

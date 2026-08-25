@@ -114,6 +114,17 @@
                 <tr style="border-bottom: 1px solid rgba(255, 255, 255, 0.05); font-size: 0.9rem;">
                     <td style="padding: 1rem; font-weight: 600; color: #fff;">
                         {{ $report['month_name'] }}
+                        @if(!empty($report['is_finalized']))
+                            <span title="Dikunci pada {{ $report['cut_off_date'] }} — nilai tidak akan berubah lagi"
+                                  style="display: inline-block; margin-left: 0.4rem; background: rgba(148, 163, 184, 0.15); color: #94a3b8; padding: 0.1rem 0.45rem; border-radius: 5px; font-size: 0.7rem; font-weight: 600; vertical-align: middle;">
+                                🔒 FINAL
+                            </span>
+                        @else
+                            <span title="Bulan berjalan — nilai masih bergerak mengikuti harga pasar"
+                                  style="display: inline-block; margin-left: 0.4rem; background: rgba(34, 197, 94, 0.15); color: #22c55e; padding: 0.1rem 0.45rem; border-radius: 5px; font-size: 0.7rem; font-weight: 600; vertical-align: middle;">
+                                ● LIVE
+                            </span>
+                        @endif
                     </td>
                     <td style="padding: 1rem; text-align: center;">
                         <span class="badge" style="background: rgba(255,255,255,0.08); padding: 0.25rem 0.6rem; border-radius: 6px; font-weight: 600;">
