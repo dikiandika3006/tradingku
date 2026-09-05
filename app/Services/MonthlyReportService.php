@@ -105,25 +105,31 @@ class MonthlyReportService
             $row['portfolio_valuation_usdt'] = $endingUsdt[$ym];
             $row['portfolio_valuation_idr']  = $endingIdr[$ym];
 
-            // Pertumbuhan nominal & persen vs valuasi akhir bulan sebelumnya
-            if ($snap) {
-                $row['nominal_growth_usdt'] = (float)$snap->nominal_growth_usdt;
-                $row['nominal_growth_idr']  = (float)$snap->nominal_growth_idr;
-                $row['mom_growth_percent']  = (float)$snap->mom_growth_percent;
-            } elseif ($prevValuationUsdt !== null) {
-                $growth = $endingUsdt[$ym] - $prevValuationUsdt;
-                $row['nominal_growth_usdt'] = $growth;
-                $row['nominal_growth_idr']  = $growth * $usdtIdr;
-                $row['mom_growth_percent']  = $prevValuationUsdt > 0
-                    ? ($growth / $prevValuationUsdt) * 100.0
-                    : 0.0;
-            } else {
-                $growth   = $row['true_net_pnl_usdt'];
-                $starting = $endingUsdt[$ym] - $growth;
-                $row['nominal_growth_usdt'] = $growth;
-                $row['nominal_growth_idr']  = $growth * $usdtIdr;
-                $row['mom_growth_percent']  = $starting > 0 ? ($growth / $starting) * 100.0 : 0.0;
-            }
+            // Kurs terkunci untuk bulan yang sudah di-cut-off, kurs berjalan untuk sisanya
+            $rate = ($snap && $snap->ending_valuation_usdt > 0)
+                ? $snap->ending_valuation_idr / $snap->ending_valuation_usdt
+                : $usdtIdr;
+
+            // PERTUMBUHAN = kinerja trading murni (True Net PNL), BUKAN selisih saldo.
+            // Selisih saldo ikut bergerak saat dana disuntik atau ditarik, dan itu
+            // bukan hasil trading sehingga tidak boleh dihitung sebagai pertumbuhan.
+            $growth = $row['true_net_pnl_usdt'];
+
+            // Bagian perubahan saldo yang TIDAK dijelaskan oleh PNL = setoran bersih
+            // (setoran dikurangi penarikan). Nilainya turunan dari angka-angka yang
+            // sudah terkunci, jadi ikut immutable untuk bulan yang sudah di-cut-off.
+            $netDepositUsdt = $prevValuationUsdt !== null
+                ? ($endingUsdt[$ym] - $prevValuationUsdt) - $growth
+                : 0.0;
+
+            // Basis persentase: saldo awal bulan = saldo akhir bulan sebelumnya
+            $basisUsdt = $prevValuationUsdt ?? ($endingUsdt[$ym] - $growth);
+
+            $row['nominal_growth_usdt'] = $growth;
+            $row['nominal_growth_idr']  = $row['true_net_pnl_idr'];
+            $row['mom_growth_percent']  = $basisUsdt > 0 ? ($growth / $basisUsdt) * 100.0 : 0.0;
+            $row['net_deposit_usdt']    = $netDepositUsdt;
+            $row['net_deposit_idr']     = $netDepositUsdt * $rate;
 
             // Kumulatif dirantai ulang agar konsisten lintas snapshot
             $cumulativePnlUsdt += $row['realized_pnl_usdt'];

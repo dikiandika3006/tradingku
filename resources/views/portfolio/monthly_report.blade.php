@@ -103,6 +103,7 @@
                     <th style="padding: 0.75rem 1rem; text-align: right;">Realized PNL</th>
                     <th style="padding: 0.75rem 1rem; text-align: right;">Floating PNL (Holding)</th>
                     <th style="padding: 0.75rem 1rem; text-align: right;">True Net PNL Bulan Ini</th>
+                    <th style="padding: 0.75rem 1rem; text-align: right;" title="Setoran dikurangi penarikan dana. Bukan hasil trading, jadi tidak dihitung sebagai pertumbuhan.">Setoran / Tarik Dana</th>
                     <th style="padding: 0.75rem 1rem; text-align: right;">Valuasi Saldo Portofolio</th>
                     <th style="padding: 0.75rem 1rem; text-align: right;">Pertumbuhan Saldo (MoM)</th>
                     <th style="padding: 0.75rem 1rem; text-align: center;">Pertumbuhan %</th>
@@ -140,6 +141,8 @@
                         $portValIdr = $report['portfolio_valuation_idr'] ?? 0;
                         $nomGrowthUsdt = $report['nominal_growth_usdt'] ?? 0;
                         $nomGrowthIdr = $report['nominal_growth_idr'] ?? 0;
+                        $netDepositUsdt = $report['net_deposit_usdt'] ?? 0;
+                        $netDepositIdr = $report['net_deposit_idr'] ?? 0;
                     @endphp
                     <td style="padding: 1rem; text-align: right; font-weight: 600;" class="{{ $realizedPnlVal >= 0 ? 'text-success' : 'text-danger' }}">
                         {{ $realizedPnlVal >= 0 ? '+' : '' }}${{ number_format($realizedPnlVal, 2) }}
@@ -156,6 +159,16 @@
                         <div style="font-size: 0.75rem; font-weight: 400; opacity: 0.8;">
                             ≈ {{ $trueNetPnlVal >= 0 ? '+' : '' }}Rp {{ number_format($trueNetPnlIdrVal, 0, ',', '.') }}
                         </div>
+                    </td>
+                    <td style="padding: 1rem; text-align: right; font-weight: 600;">
+                        @if(abs($netDepositUsdt) >= 0.01)
+                            <span style="color: #60a5fa;">{{ $netDepositUsdt >= 0 ? '+' : '−' }}${{ number_format(abs($netDepositUsdt), 2) }}</span>
+                            <div style="font-size: 0.75rem; font-weight: 400; opacity: 0.8; color: var(--text-muted);">
+                                {{ $netDepositUsdt >= 0 ? 'setoran dana' : 'penarikan dana' }}
+                            </div>
+                        @else
+                            <span style="color: var(--text-muted); font-weight: 400;">—</span>
+                        @endif
                     </td>
                     <td style="padding: 1rem; text-align: right; font-weight: 700; color: #fff;">
                         ${{ number_format($portValUsdt, 2) }}
@@ -186,7 +199,7 @@
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="8" style="text-align: center; padding: 2rem; color: var(--text-muted);">
+                    <td colspan="10" style="text-align: center; padding: 2rem; color: var(--text-muted);">
                         Belum ada riwayat transaksi terealisasi (Closed Position) yang dapat ditampilkan.
                     </td>
                 </tr>
