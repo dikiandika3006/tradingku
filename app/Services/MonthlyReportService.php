@@ -295,7 +295,7 @@ class MonthlyReportService
                 continue;
             }
 
-            $buyTrades = Trade::where('symbol', 'like', $assetName . '%')
+            $buyTrades = Trade::forBaseAsset($assetName)
                 ->where('type', 'BUY')
                 ->get();
 

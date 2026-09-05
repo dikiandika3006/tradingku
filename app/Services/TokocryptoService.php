@@ -157,22 +157,18 @@ class TokocryptoService
                     $total = $price * $amount;
                 }
 
-                if ($type === 'DEPOSIT') {
-                    $holdings[$symbol] = ($holdings[$symbol] ?? 0.0) + $amount;
-                } elseif ($type === 'WITHDRAW') {
-                    $holdings[$symbol] = ($holdings[$symbol] ?? 0.0) - $amount;
-                } else {
-                    // Identify the main crypto asset (e.g. BTC from BTCUSDT)
-                    $asset = $symbol;
-                    $quote = null;
-                    foreach (['USDT', 'BIDR', 'IDRT', 'BUSD', 'USDC', 'BTC', 'ETH', 'BNB', 'IDR'] as $q) {
-                        if (str_ends_with($symbol, $q) && strlen($symbol) > strlen($q)) {
-                            $asset = substr($symbol, 0, -strlen($q));
-                            $quote = $q;
-                            break;
-                        }
-                    }
+                // Simbol dipecah dengan cara yang sama untuk SEMUA tipe transaksi,
+                // supaya setoran bersimbol pasangan (mis. "USDTIDR") menambah saldo
+                // aset dasarnya (USDT) dan bukan menciptakan aset fiktif "USDTIDR".
+                [$asset, $quote] = Trade::splitSymbol($symbol);
 
+                if ($type === 'DEPOSIT' || $type === 'WITHDRAW') {
+                    // Beda dengan BUY/SELL: sisi quote TIDAK disentuh. Dana setoran
+                    // berasal dari luar portofolio, jadi mendebit IDR di sini akan
+                    // memunculkan saldo fiat negatif yang tidak pernah ada.
+                    $sign = ($type === 'DEPOSIT') ? 1 : -1;
+                    $holdings[$asset] = ($holdings[$asset] ?? 0.0) + ($sign * $amount);
+                } else {
                     if ($type === 'BUY') {
                         $holdings[$asset] = ($holdings[$asset] ?? 0.0) + $amount;
                         if ($quote) {

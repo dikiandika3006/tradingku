@@ -39,7 +39,7 @@ class PortfolioController extends Controller
             $valueUsdt = $assetData['value_usdt'];
 
             // Find all BUY trades in database for this asset to calculate average buy price
-            $buyTrades = Trade::where('symbol', 'like', $assetName . '%')
+            $buyTrades = Trade::forBaseAsset($assetName)
                 ->where('type', 'BUY')
                 ->get();
 
@@ -90,7 +90,7 @@ class PortfolioController extends Controller
             $pnlPercent = $avgBuyPriceUsdt > 0 ? (($currentPrice - $avgBuyPriceUsdt) / $avgBuyPriceUsdt) * 100 : 0.0;
 
             // Find earliest BUY trade date to calculate holding duration
-            $firstBuyTrade = Trade::where('symbol', 'like', $assetName . '%')
+            $firstBuyTrade = Trade::forBaseAsset($assetName)
                 ->where('type', 'BUY')
                 ->orderBy('trade_time', 'asc')
                 ->first();
@@ -315,7 +315,7 @@ class PortfolioController extends Controller
             $valueUsdt = $assetData['value_usdt'];
 
             // Find all BUY trades in database for this asset to calculate average buy price
-            $buyTrades = Trade::where('symbol', 'like', $assetName . '%')
+            $buyTrades = Trade::forBaseAsset($assetName)
                 ->where('type', 'BUY')
                 ->get();
 

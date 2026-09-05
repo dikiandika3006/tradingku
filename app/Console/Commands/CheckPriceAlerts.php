@@ -121,7 +121,7 @@ class CheckPriceAlerts extends Command
 
             if (abs($percentChange) >= $threshold) {
                 // Calculate average buy price for this asset from trades table
-                $buyTrades = \App\Models\Trade::where('symbol', 'like', $asset . '%')
+                $buyTrades = \App\Models\Trade::forBaseAsset($asset)
                     ->where('type', 'BUY')
                     ->get();
 

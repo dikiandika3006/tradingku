@@ -6,6 +6,53 @@ use Illuminate\Database\Eloquent\Model;
 
 class Trade extends Model
 {
+    /**
+     * Mata uang quote yang dikenali, diurutkan agar yang lebih panjang diperiksa
+     * lebih dulu jika ambigu.
+     */
+    public const QUOTE_ASSETS = ['USDT', 'BIDR', 'IDRT', 'BUSD', 'USDC', 'BTC', 'ETH', 'BNB', 'IDR'];
+
+    /**
+     * Pecah simbol pasangan menjadi [aset dasar, aset quote].
+     *
+     *   "FETIDR"   -> ["FET",  "IDR"]
+     *   "BTCUSDT"  -> ["BTC",  "USDT"]
+     *   "USDTIDR"  -> ["USDT", "IDR"]     (beli USDT memakai IDR)
+     *   "USDT"     -> ["USDT", null]      (tanpa pasangan)
+     *
+     * @return array{0: string, 1: string|null}
+     */
+    public static function splitSymbol(string $symbol): array
+    {
+        $symbol = strtoupper(trim($symbol));
+
+        foreach (self::QUOTE_ASSETS as $quote) {
+            if (str_ends_with($symbol, $quote) && strlen($symbol) > strlen($quote)) {
+                return [substr($symbol, 0, -strlen($quote)), $quote];
+            }
+        }
+
+        return [$symbol, null];
+    }
+
+    /**
+     * Batasi query ke transaksi yang aset DASAR-nya persis $asset.
+     *
+     * Lebih tepat daripada LIKE "{$asset}%", yang bisa menangkap koin lain
+     * yang kebetulan berawalan sama.
+     */
+    public function scopeForBaseAsset($query, string $asset)
+    {
+        $asset = strtoupper(trim($asset));
+
+        $symbols = [$asset];
+        foreach (self::QUOTE_ASSETS as $quote) {
+            $symbols[] = $asset . $quote;
+        }
+
+        return $query->whereIn('symbol', $symbols);
+    }
+
     protected $fillable = [
         'symbol',
         'type',
