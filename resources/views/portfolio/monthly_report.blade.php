@@ -100,12 +100,12 @@
                 <tr style="border-bottom: 1px solid rgba(255, 255, 255, 0.1); color: var(--text-muted); font-size: 0.85rem;">
                     <th style="padding: 0.75rem 1rem;">Bulan & Tahun</th>
                     <th style="padding: 0.75rem 1rem; text-align: center;">Total Trade</th>
-                    <th style="padding: 0.75rem 1rem; text-align: right;">Realized PNL</th>
-                    <th style="padding: 0.75rem 1rem; text-align: right;">Floating PNL (Holding)</th>
-                    <th style="padding: 0.75rem 1rem; text-align: right;">True Net PNL Bulan Ini</th>
+                    <th style="padding: 0.75rem 1rem; text-align: right;" title="Laba/rugi yang sudah terkunci dari penjualan bulan ini.">Realized PNL</th>
+                    <th style="padding: 0.75rem 1rem; text-align: right;" title="PERUBAHAN laba mengambang selama bulan ini — bukan posisinya. Lihat kolom Floating Berjalan untuk posisinya.">&Delta; Floating</th>
+                    <th style="padding: 0.75rem 1rem; text-align: right;" title="Realized + perubahan floating. Inilah hasil trading bulan ini, dan angka inilah yang dipakai sebagai pertumbuhan.">Kinerja Bulan Ini</th>
+                    <th style="padding: 0.75rem 1rem; text-align: right;" title="POSISI laba mengambang pada akhir bulan ini: total seluruh keuntungan/kerugian yang belum direalisasi dari posisi terbuka.">Floating Berjalan</th>
                     <th style="padding: 0.75rem 1rem; text-align: right;" title="Setoran dikurangi penarikan dana. Bukan hasil trading, jadi tidak dihitung sebagai pertumbuhan.">Setoran / Tarik Dana</th>
                     <th style="padding: 0.75rem 1rem; text-align: right;">Valuasi Saldo Portofolio</th>
-                    <th style="padding: 0.75rem 1rem; text-align: right;">Pertumbuhan Saldo (MoM)</th>
                     <th style="padding: 0.75rem 1rem; text-align: center;">Pertumbuhan %</th>
                     <th style="padding: 0.75rem 1rem; text-align: center;">Status Kesehatan</th>
                 </tr>
@@ -139,10 +139,10 @@
                         $trueNetPnlIdrVal = $report['true_net_pnl_idr'] ?? 0;
                         $portValUsdt = $report['portfolio_valuation_usdt'] ?? 0;
                         $portValIdr = $report['portfolio_valuation_idr'] ?? 0;
-                        $nomGrowthUsdt = $report['nominal_growth_usdt'] ?? 0;
-                        $nomGrowthIdr = $report['nominal_growth_idr'] ?? 0;
                         $netDepositUsdt = $report['net_deposit_usdt'] ?? 0;
                         $netDepositIdr = $report['net_deposit_idr'] ?? 0;
+                        $floatRunUsdt = $report['floating_running_usdt'] ?? 0;
+                        $floatRunIdr = $report['floating_running_idr'] ?? 0;
                     @endphp
                     <td style="padding: 1rem; text-align: right; font-weight: 600;" class="{{ $realizedPnlVal >= 0 ? 'text-success' : 'text-danger' }}">
                         {{ $realizedPnlVal >= 0 ? '+' : '' }}${{ number_format($realizedPnlVal, 2) }}
@@ -160,6 +160,16 @@
                             ≈ {{ $trueNetPnlVal >= 0 ? '+' : '' }}Rp {{ number_format($trueNetPnlIdrVal, 0, ',', '.') }}
                         </div>
                     </td>
+                    <td style="padding: 1rem; text-align: right; font-weight: 600;" class="{{ $floatRunUsdt >= 0 ? 'text-success' : 'text-danger' }}">
+                        @if(abs($floatRunUsdt) >= 0.01)
+                            {{ $floatRunUsdt >= 0 ? '+' : '' }}${{ number_format($floatRunUsdt, 2) }}
+                            <div style="font-size: 0.75rem; font-weight: 400; opacity: 0.8; color: var(--text-muted);">
+                                posisi terbuka
+                            </div>
+                        @else
+                            <span style="color: var(--text-muted); font-weight: 400;">$0.00</span>
+                        @endif
+                    </td>
                     <td style="padding: 1rem; text-align: right; font-weight: 600;">
                         @if(abs($netDepositUsdt) >= 0.01)
                             <span style="color: #60a5fa;">{{ $netDepositUsdt >= 0 ? '+' : '−' }}${{ number_format(abs($netDepositUsdt), 2) }}</span>
@@ -174,12 +184,6 @@
                         ${{ number_format($portValUsdt, 2) }}
                         <div style="font-size: 0.75rem; font-weight: 400; opacity: 0.8; color: var(--text-muted);">
                             ≈ Rp {{ number_format($portValIdr, 0, ',', '.') }}
-                        </div>
-                    </td>
-                    <td style="padding: 1rem; text-align: right; font-weight: 700;" class="{{ $nomGrowthUsdt >= 0 ? 'text-success' : 'text-danger' }}">
-                        {{ $nomGrowthUsdt >= 0 ? '+' : '' }}${{ number_format($nomGrowthUsdt, 2) }}
-                        <div style="font-size: 0.75rem; font-weight: 400; opacity: 0.8;">
-                            ≈ {{ $nomGrowthUsdt >= 0 ? '+' : '' }}Rp {{ number_format($nomGrowthIdr, 0, ',', '.') }}
                         </div>
                     </td>
                     <td style="padding: 1rem; text-align: center;">

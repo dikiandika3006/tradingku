@@ -84,8 +84,9 @@ class MonthlyReportService
         }
 
         // --- Susun baris laporan ---
-        $cumulativePnlUsdt = 0.0;
-        $prevValuationUsdt = null;
+        $cumulativePnlUsdt   = 0.0;
+        $floatingRunningUsdt = 0.0;
+        $prevValuationUsdt   = null;
         $reports = [];
 
         foreach ($monthlyGroups as $ym => $data) {
@@ -130,6 +131,14 @@ class MonthlyReportService
             $row['mom_growth_percent']  = $basisUsdt > 0 ? ($growth / $basisUsdt) * 100.0 : 0.0;
             $row['net_deposit_usdt']    = $netDepositUsdt;
             $row['net_deposit_idr']     = $netDepositUsdt * $rate;
+
+            // POSISI floating pada akhir bulan ini = akumulasi seluruh perubahan
+            // sampai bulan ini. Dilaporkan berdampingan dengan perubahannya supaya
+            // "untung bulan ini" dan "di mana posisi terbuka berdiri" terbaca
+            // bersamaan, tanpa perlu dihitung sendiri oleh pembaca.
+            $floatingRunningUsdt += $row['floating_pnl_usdt'];
+            $row['floating_running_usdt'] = $floatingRunningUsdt;
+            $row['floating_running_idr']  = $floatingRunningUsdt * $rate;
 
             // Kumulatif dirantai ulang agar konsisten lintas snapshot
             $cumulativePnlUsdt += $row['realized_pnl_usdt'];
@@ -271,9 +280,20 @@ class MonthlyReportService
             return 0.0;
         }
 
-        $prevSnap = $snapshots->get($yms[$pos - 1]);
+        // Yang tersimpan di snapshot adalah PERUBAHAN floating per bulan, bukan
+        // posisinya. Baseline yang benar adalah akumulasi seluruh bulan sebelumnya
+        // — bukan hanya bulan terakhir. Membaca satu bulan terakhir saja kebetulan
+        // benar selama bulan-bulan awal masih nol, lalu meleset setelahnya.
+        $running = 0.0;
 
-        return $prevSnap ? (float)$prevSnap->floating_pnl_usdt : 0.0;
+        for ($i = 0; $i < $pos; $i++) {
+            $snap = $snapshots->get($yms[$i]);
+            if ($snap) {
+                $running += (float)$snap->floating_pnl_usdt;
+            }
+        }
+
+        return $running;
     }
 
     /**
