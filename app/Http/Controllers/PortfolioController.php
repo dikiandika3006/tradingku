@@ -51,10 +51,25 @@ class PortfolioController extends Controller
                 $avgBuyPriceUsdt = $currentPrice;
             }
 
-            // Calculate cost and PNL for current holdings
-            $assetCostUsdt = $totalAmount * $avgBuyPriceUsdt;
-            $unrealizedPnlUsdt = $valueUsdt - $assetCostUsdt;
-            $pnlPercent = $avgBuyPriceUsdt > 0 ? (($currentPrice - $avgBuyPriceUsdt) / $avgBuyPriceUsdt) * 100 : 0.0;
+            // Aset yang tidak bisa dinilai tidak boleh punya modal maupun PNL.
+            // Rupiah tidak punya harga pasar (harga = 0), dan saldonya bisa negatif
+            // selama setoran fiat belum dijurnal masuk. Mengalikan saldo negatif
+            // dengan harga rata-rata menghasilkan modal minus miliaran rupiah yang
+            // lalu merusak seluruh total di halaman ini.
+            $canBeValued = $currentPrice > 0 && $totalAmount > 0;
+
+            if ($canBeValued) {
+                $assetCostUsdt = $totalAmount * $avgBuyPriceUsdt;
+                $unrealizedPnlUsdt = $valueUsdt - $assetCostUsdt;
+                $pnlPercent = $avgBuyPriceUsdt > 0
+                    ? (($currentPrice - $avgBuyPriceUsdt) / $avgBuyPriceUsdt) * 100
+                    : 0.0;
+            } else {
+                $avgBuyPriceUsdt = 0.0;
+                $assetCostUsdt = 0.0;
+                $unrealizedPnlUsdt = 0.0;
+                $pnlPercent = 0.0;
+            }
 
             // Durasi dihitung sejak posisi yang SEKARANG dibuka, bukan sejak
             // pembelian pertama yang mungkin sudah lama dijual habis.
@@ -96,6 +111,7 @@ class PortfolioController extends Controller
                 'pnl_percent' => $pnlPercent,
                 'duration_text' => $durationText,
                 'first_buy_date' => $firstBuyDate ? $firstBuyDate->format('Y-m-d') : null,
+                'can_be_valued' => $canBeValued,
                 'source' => $assetData['source']
             ];
         }

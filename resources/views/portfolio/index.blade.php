@@ -116,10 +116,14 @@
                             </div>
                         </td>
                         <td style="font-family: monospace;">
-                            ${{ number_format($asset['cost_usdt'], 2) }}
-                            <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.15rem;">
-                                Rp {{ number_format($asset['cost_idr'], 0, ',', '.') }}
-                            </div>
+                            @if($asset['can_be_valued'] ?? true)
+                                ${{ number_format($asset['cost_usdt'], 2) }}
+                                <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.15rem;">
+                                    Rp {{ number_format($asset['cost_idr'], 0, ',', '.') }}
+                                </div>
+                            @else
+                                <span style="color: var(--text-muted);">&mdash;</span>
+                            @endif
                         </td>
                         <td style="font-family: monospace; font-weight: 600;">
                             ${{ number_format($asset['value_usdt'], 2) }}
@@ -127,8 +131,10 @@
                                 Rp {{ number_format($asset['value_idr'], 0, ',', '.') }}
                             </div>
                         </td>
-                        <td style="font-family: monospace; font-weight: 600;" class="{{ $asset['pnl_usdt'] >= 0 ? 'text-success' : 'text-danger' }}">
-                            @if($asset['pnl_usdt'] >= 0)
+                        <td style="font-family: monospace; font-weight: 600;" class="{{ ($asset['can_be_valued'] ?? true) ? ($asset['pnl_usdt'] >= 0 ? 'text-success' : 'text-danger') : '' }}">
+                            @if(!($asset['can_be_valued'] ?? true))
+                                <span style="color: var(--text-muted);">&mdash;</span>
+                            @elseif($asset['pnl_usdt'] >= 0)
                                 +${{ number_format($asset['pnl_usdt'], 2) }}
                                 <div style="font-size: 0.75rem; margin-top: 0.15rem;">
                                     +Rp {{ number_format($asset['pnl_idr'], 0, ',', '.') }}
@@ -140,8 +146,12 @@
                                 </div>
                             @endif
                         </td>
-                        <td style="font-family: monospace; font-weight: 700;" class="{{ $asset['pnl_percent'] >= 0 ? 'text-success' : 'text-danger' }}">
-                            {{ $asset['pnl_percent'] >= 0 ? '+' : '' }}{{ number_format($asset['pnl_percent'], 2) }}%
+                        <td style="font-family: monospace; font-weight: 700;" class="{{ ($asset['can_be_valued'] ?? true) ? ($asset['pnl_percent'] >= 0 ? 'text-success' : 'text-danger') : '' }}">
+                            @if($asset['can_be_valued'] ?? true)
+                                {{ $asset['pnl_percent'] >= 0 ? '+' : '' }}{{ number_format($asset['pnl_percent'], 2) }}%
+                            @else
+                                <span style="color: var(--text-muted);" title="Tidak punya harga pasar, jadi tidak bisa dinilai">tidak dinilai</span>
+                            @endif
                         </td>
                         <td style="font-size: 0.75rem; color: var(--text-muted); font-style: italic;">
                             {{ $asset['source'] }}
