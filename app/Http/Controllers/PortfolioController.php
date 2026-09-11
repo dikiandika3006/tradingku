@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Trade;
+use App\Services\CostBasisService;
 use App\Services\MonthlyReportService;
 use App\Services\TokocryptoService;
 use Illuminate\Http\Request;
@@ -19,7 +20,7 @@ class PortfolioController extends Controller
     /**
      * Display portfolio page and detailed asset statistics.
      */
-    public function index()
+    public function index(CostBasisService $costBasisService)
     {
         // Fetch current balances (either from API or mock database balances)
         $portfolio = $this->tokocryptoService->getPortfolio();
@@ -38,49 +39,15 @@ class PortfolioController extends Controller
             $currentPrice = $assetData['price'];
             $valueUsdt = $assetData['value_usdt'];
 
-            // Find all BUY trades in database for this asset to calculate average buy price
-            $buyTrades = Trade::forBaseAsset($assetName)
-                ->where('type', 'BUY')
-                ->get();
+            // Modal sisa posisi memakai rata-rata berjalan: penjualan mengurangi
+            // kolam biaya, sehingga posisi yang sempat tutup tidak lagi menyeret
+            // harga beli lamanya ke dalam rata-rata posisi yang baru dibuka.
+            $basis = $costBasisService->forAsset($assetName, $prices);
 
-            $totalBuyAmount = 0.0;
-            $totalBuyCostUsdt = 0.0;
+            $avgBuyPriceUsdt = $basis['avg_price_usdt'];
 
-            foreach ($buyTrades as $trade) {
-                $tradeSymbol = $trade->symbol;
-                $tradePrice = (float)$trade->price;
-                $tradeAmount = (float)$trade->amount;
-
-                // Detect quote currency of trade (e.g. BIDR, USDT, IDRT)
-                $quote = 'USDT';
-                foreach (['USDT', 'BIDR', 'IDRT', 'BUSD', 'IDR'] as $q) {
-                    if (str_ends_with($tradeSymbol, $q) && strlen($tradeSymbol) > strlen($q)) {
-                        $quote = $q;
-                        break;
-                    }
-                }
-
-                // Standardize trade price to USDT
-                $priceInUsdt = $tradePrice;
-                if ($quote === 'BIDR' || $quote === 'IDRT' || $quote === 'IDR') {
-                    // Try to use active USDTIDR rate first as BIDR is stale on Tokocrypto
-                    $rate = $prices['USDTIDR'] ?? ($prices['USDT' . $quote] ?? ($prices['USDTIDRT'] ?? 16400.0));
-                    if ($rate > 100) {
-                        $priceInUsdt = $tradePrice / $rate;
-                    } else {
-                        $priceInUsdt = $tradePrice / 16400.0;
-                    }
-                }
-
-                $totalBuyAmount += $tradeAmount;
-                $totalBuyCostUsdt += ($priceInUsdt * $tradeAmount);
-            }
-
-            // Weighted average buy price in USDT
-            $avgBuyPriceUsdt = $totalBuyAmount > 0 ? ($totalBuyCostUsdt / $totalBuyAmount) : 0.0;
-
-            // If we have no BUY trades logged, fallback average price to current price
-            if ($avgBuyPriceUsdt === 0.0) {
+            // Tanpa riwayat transaksi, anggap modal = harga pasar (PNL nol)
+            if ($avgBuyPriceUsdt <= 0.0) {
                 $avgBuyPriceUsdt = $currentPrice;
             }
 
@@ -89,13 +56,9 @@ class PortfolioController extends Controller
             $unrealizedPnlUsdt = $valueUsdt - $assetCostUsdt;
             $pnlPercent = $avgBuyPriceUsdt > 0 ? (($currentPrice - $avgBuyPriceUsdt) / $avgBuyPriceUsdt) * 100 : 0.0;
 
-            // Find earliest BUY trade date to calculate holding duration
-            $firstBuyTrade = Trade::forBaseAsset($assetName)
-                ->where('type', 'BUY')
-                ->orderBy('trade_time', 'asc')
-                ->first();
-
-            $firstBuyDate = $firstBuyTrade ? \Carbon\Carbon::parse($firstBuyTrade->trade_time) : null;
+            // Durasi dihitung sejak posisi yang SEKARANG dibuka, bukan sejak
+            // pembelian pertama yang mungkin sudah lama dijual habis.
+            $firstBuyDate = $basis['opened_at'];
             $durationText = '-';
             if ($firstBuyDate) {
                 $now = now();

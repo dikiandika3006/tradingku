@@ -22,9 +22,14 @@ class MonthlyReportService
 
     protected $tokocryptoService;
 
-    public function __construct(TokocryptoService $tokocryptoService)
-    {
+    protected $costBasisService;
+
+    public function __construct(
+        TokocryptoService $tokocryptoService,
+        CostBasisService $costBasisService
+    ) {
         $this->tokocryptoService = $tokocryptoService;
+        $this->costBasisService  = $costBasisService;
     }
 
     /**
@@ -315,28 +320,12 @@ class MonthlyReportService
                 continue;
             }
 
-            $buyTrades = Trade::forBaseAsset($assetName)
-                ->where('type', 'BUY')
-                ->get();
+            // Sumber perhitungan modal yang sama dengan halaman Portofolio:
+            // rata-rata berjalan, bukan rata-rata seluruh pembelian.
+            $basis = $this->costBasisService->forAsset($assetName, $prices);
 
-            $totalBuyAmount   = 0.0;
-            $totalBuyCostUsdt = 0.0;
-
-            foreach ($buyTrades as $trade) {
-                $quote = 'USDT';
-                foreach (['USDT', 'BIDR', 'IDRT', 'BUSD', 'IDR'] as $q) {
-                    if (str_ends_with($trade->symbol, $q) && strlen($trade->symbol) > strlen($q)) {
-                        $quote = $q;
-                        break;
-                    }
-                }
-
-                $priceInUsdt = $this->toUsdt((float)$trade->price, $quote, $prices, 16400.0);
-                $tradeAmount = (float)$trade->amount;
-
-                $totalBuyAmount   += $tradeAmount;
-                $totalBuyCostUsdt += ($priceInUsdt * $tradeAmount);
-            }
+            $totalBuyAmount   = $basis['amount'];
+            $totalBuyCostUsdt = $basis['cost_usdt'];
 
             $avgBuyPriceUsdt   = $totalBuyAmount > 0 ? ($totalBuyCostUsdt / $totalBuyAmount) : $currentPrice;
             $unrealizedPnlUsdt = $valueUsdt - ($totalAmount * $avgBuyPriceUsdt);
