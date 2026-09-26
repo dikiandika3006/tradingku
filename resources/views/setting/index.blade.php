@@ -121,17 +121,10 @@
                 </small>
             </div>
             <div class="form-group">
-                <label for="coinglass_api_key" class="form-label">CoinGlass API Key (Opsional)</label>
-                <input type="password" name="coinglass_api_key" id="coinglass_api_key" class="form-control" placeholder="Masukkan CoinGlass API Key" value="{{ old('coinglass_api_key', $coinglassApiKey) }}" autocomplete="off">
+                <label for="spot_volume_alert_threshold" class="form-label">Ambang Lonjakan Volume Spot (%)</label>
+                <input type="number" step="1" min="1" max="1000" name="spot_volume_alert_threshold" id="spot_volume_alert_threshold" class="form-control" value="{{ old('spot_volume_alert_threshold', $spotVolumeThreshold) }}">
                 <small style="color: var(--text-muted); font-size: 0.75rem; display: block; margin-top: 0.25rem;">
-                    Digunakan untuk heatmap volume spot per bursa (1 jam sampai 7 hari). Dapatkan dari <a href="https://www.coinglass.com/pricing" target="_blank" style="color: var(--color-secondary); text-decoration: underline;">coinglass.com</a>.
-                </small>
-            </div>
-            <div class="form-group">
-                <label for="coinglass_volume_alert_threshold" class="form-label">Ambang Lonjakan Volume (%)</label>
-                <input type="number" step="1" min="1" max="1000" name="coinglass_volume_alert_threshold" id="coinglass_volume_alert_threshold" class="form-control" value="{{ old('coinglass_volume_alert_threshold', $coinglassVolumeThreshold) }}">
-                <small style="color: var(--text-muted); font-size: 0.75rem; display: block; margin-top: 0.25rem;">
-                    Notifikasi dikirim bila volume sebuah bursa bergerak melampaui persentase ini dibanding pengambilan sebelumnya. Bursa yang sama diberi jeda 3 jam agar tidak membanjiri.
+                    Notifikasi dikirim bila volume harian terakumulasi bergerak melampaui persentase ini dibanding hari sebelumnya.
                 </small>
             </div>
             <button type="submit" class="btn btn-primary" style="margin-top: 1rem; width: 100%; padding: 0.8rem;">

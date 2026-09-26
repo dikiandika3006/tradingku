@@ -2,87 +2,83 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\CoinglassVolumeSnapshot;
-use App\Services\CoinglassService;
+use App\Models\SpotVolumeSnapshot;
+use App\Services\SpotVolumeService;
 use Illuminate\Http\Request;
 
 /**
- * Heatmap volume spot per bursa dari CoinGlass.
+ * Heatmap volume spot terakumulasi dari beberapa bursa.
  *
- * Data diambil live saat halaman dibuka. Kalau API sedang tidak bisa dihubungi
- * atau key belum diisi, halaman jatuh ke snapshot terakhir yang tersimpan —
- * lebih berguna daripada layar kosong.
+ * Data diambil live saat halaman dibuka. Bila semua bursa gagal dihubungi,
+ * halaman jatuh ke rekaman harian terakhir — lebih berguna daripada layar kosong.
  */
 class VolumeHeatmapController extends Controller
 {
-    protected $coinglass;
+    protected $volume;
 
-    public function __construct(CoinglassService $coinglass)
+    public function __construct(SpotVolumeService $volume)
     {
-        $this->coinglass = $coinglass;
+        $this->volume = $volume;
     }
 
     public function index(Request $request)
     {
         $symbol = strtoupper(trim($request->input('symbol', 'BTC')));
 
-        $hasil = $this->coinglass->spotVolumeHeatmap($symbol);
+        $hasil = $this->volume->aggregate($symbol);
 
-        $rows       = $hasil['rows'];
-        $fetchedAt  = $hasil['fetched_at'];
-        $isLive     = $hasil['ok'];
-        $pesanError = $hasil['message'];
+        $exchanges = $hasil['exchanges'];
+        $totals    = $hasil['totals'];
+        $fetchedAt = $hasil['fetched_at'];
+        $isLive    = $hasil['ok'];
 
-        // Jatuh ke snapshot terakhir bila pengambilan live gagal
+        // Jatuh ke rekaman harian terakhir bila pengambilan live gagal
         if (!$isLive) {
-            $tersimpan = CoinglassVolumeSnapshot::latestCapture($symbol)
+            $tersimpan = SpotVolumeSnapshot::latestDay($symbol)
                 ->orderByDesc('volume_usd_24h')
                 ->get();
 
             if ($tersimpan->isNotEmpty()) {
                 $fetchedAt = $tersimpan->first()->captured_at;
-                $rows = $tersimpan->map(fn($r) => [
-                    'symbol'        => $r->symbol,
-                    'exchange_name' => $r->exchange_name,
-                    'pair'          => $r->pair,
-                    'price_usd'     => $r->price_usd,
+
+                $exchanges = $tersimpan->map(fn($r) => [
+                    'exchange_name'  => $r->exchange_name,
+                    'pair'           => $r->pair,
+                    'price_usd'      => $r->price_usd,
                     'volume_usd_1h'  => $r->volume_usd_1h,
                     'volume_usd_4h'  => $r->volume_usd_4h,
                     'volume_usd_12h' => $r->volume_usd_12h,
                     'volume_usd_24h' => $r->volume_usd_24h,
                     'volume_usd_1w'  => $r->volume_usd_1w,
-                    'price_change_percent_1h'  => $r->price_change_percent_1h,
-                    'price_change_percent_4h'  => $r->price_change_percent_4h,
-                    'price_change_percent_12h' => $r->price_change_percent_12h,
-                    'price_change_percent_24h' => $r->price_change_percent_24h,
-                    'price_change_percent_1w'  => $r->price_change_percent_1w,
-                    'volume_change_percent_24h' => $r->volume_change_percent_24h,
                 ])->all();
+
+                foreach (SpotVolumeSnapshot::TIMEFRAMES as $tf) {
+                    $totals[$tf] = array_sum(array_column($exchanges, "volume_usd_{$tf}"));
+                }
             }
         }
 
-        // Total per timeframe, untuk baris ringkasan dan pembagi intensitas warna
-        $total = [];
-        $maks  = [];
-        foreach (CoinglassVolumeSnapshot::TIMEFRAMES as $tf) {
-            $nilai = array_map(fn($r) => (float)($r["volume_usd_{$tf}"] ?? 0), $rows);
-            $total[$tf] = array_sum($nilai);
-            $maks[$tf]  = $nilai ? max($nilai) : 0.0;
+        // Pembagi intensitas warna: bursa terbesar di tiap kolom
+        $maxima = [];
+        foreach (SpotVolumeSnapshot::TIMEFRAMES as $tf) {
+            $nilai = array_map(fn($r) => (float)($r["volume_usd_{$tf}"] ?? 0), $exchanges);
+            $maxima[$tf] = $nilai ? max($nilai) : 0.0;
         }
 
         return view('derivatives.volume_heatmap', [
             'symbol'           => $symbol,
-            'rows'             => $rows,
-            'timeframes'       => CoinglassVolumeSnapshot::TIMEFRAMES,
-            'timeframe_labels' => CoinglassVolumeSnapshot::TIMEFRAME_LABELS,
-            'totals'           => $total,
-            'maxima'           => $maks,
+            'exchanges'        => $exchanges,
+            'totals'           => $totals,
+            'maxima'           => $maxima,
+            'timeframes'       => SpotVolumeSnapshot::TIMEFRAMES,
+            'timeframe_labels' => SpotVolumeSnapshot::TIMEFRAME_LABELS,
+            'price_usd'        => $hasil['price_usd'],
             'fetched_at'       => $fetchedAt,
             'is_live'          => $isLive,
-            'error_message'    => $pesanError,
-            'has_api_key'      => $this->coinglass->hasApiKey(),
-            'snapshot_count'   => CoinglassVolumeSnapshot::where('symbol', $symbol)
-                ->distinct('captured_at')->count('captured_at'),
+            'error_message'    => $hasil['message'],
+            'failures'         => $hasil['failures'],
+            'daily'            => SpotVolumeSnapshot::dailyTotals($symbol, 14),
+            'supported'        => $this->volume->supportedSymbols(),
         ]);
     }
 }

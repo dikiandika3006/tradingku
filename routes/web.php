@@ -94,7 +94,7 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/derivatives', [DerivativesController::class, 'store'])->name('derivatives.store');
         Route::delete('/derivatives/{id}', [DerivativesController::class, 'destroy'])->name('derivatives.destroy');
 
-        // Heatmap volume spot (CoinGlass)
+        // Volume spot terakumulasi lintas bursa
         Route::get('/derivatives/volume-heatmap', [VolumeHeatmapController::class, 'index'])->name('derivatives.volume-heatmap');
 
         // Database Sync Routes (Browser-Bridge)
