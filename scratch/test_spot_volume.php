@@ -44,24 +44,29 @@ function periksa(string $label, $dapat, $harus, bool &$lulus): void
  * Bangun 169 candle 1 jam dengan volume seragam, lalu bungkus sesuai bentuk
  * masing-masing bursa. Candle indeks 0 selalu jam berjalan.
  */
-function candles(float $volPerJam, float $harga, string $bursa): array
+function candles(float $volPerJam, float $harga, string $bursa, float $faktorLama = 1.0, int $batas = 168): array
 {
-    $n = 169;
+    $n = 337;
     $out = [];
 
     for ($i = 0; $i < $n; $i++) {
-        $ts   = (time() - $i * 3600);
-        $base = $volPerJam / $harga;   // volume dalam BTC
+        $ts = (time() - $i * 3600);
+
+        // Indeks 0 = jam berjalan (dibuang). Candle 1..$batas = periode
+        // SEKARANG, sisanya periode SEBELUMNYA yang dikalikan $faktorLama.
+        // $batas disetel sesuai jendela yang sedang diuji.
+        $v    = $i > $batas ? $volPerJam * $faktorLama : $volPerJam;
+        $base = $v / $harga;   // volume dalam BTC
 
         switch ($bursa) {
             case 'binance':  // [openTime,o,h,l,c,volBase,closeTime,volQuote,...] terlama dulu
-                $out[] = [$ts * 1000, $harga, $harga, $harga, $harga, $base, $ts * 1000 + 3599999, $volPerJam, 100, 0, 0, 0];
+                $out[] = [$ts * 1000, $harga, $harga, $harga, $harga, $base, $ts * 1000 + 3599999, $v, 100, 0, 0, 0];
                 break;
             case 'bybit':    // [start,o,h,l,c,volBase,turnover] terbaru dulu
-                $out[] = [(string)($ts * 1000), "$harga", "$harga", "$harga", "$harga", "$base", "$volPerJam"];
+                $out[] = [(string)($ts * 1000), "$harga", "$harga", "$harga", "$harga", "$base", "$v"];
                 break;
             case 'okx':      // [ts,o,h,l,c,vol,volCcy,volCcyQuote,confirm] terbaru dulu
-                $out[] = [(string)($ts * 1000), "$harga", "$harga", "$harga", "$harga", "$base", "$volPerJam", "$volPerJam", '1'];
+                $out[] = [(string)($ts * 1000), "$harga", "$harga", "$harga", "$harga", "$base", "$v", "$v", '1'];
                 break;
             case 'kraken':   // [time,o,h,l,c,vwap,volBase,count] terlama dulu
                 $out[] = [$ts, "$harga", "$harga", "$harga", "$harga", "$harga", "$base", 50];
@@ -85,6 +90,8 @@ $state = [
     'vol'      => ['binance' => 1000000.0, 'bybit' => 500000.0, 'okx' => 400000.0,
                    'kraken' => 100000.0, 'coinbase' => 300000.0],
     'mati'     => [],       // bursa yang disimulasikan gagal
+    'lama'     => 1.0,      // pengali volume periode SEBELUMNYA
+    'batas'    => 168,      // candle ke berapa periode sekarang berakhir
     'telegram' => 0,
 ];
 
@@ -108,7 +115,7 @@ Http::fake(function ($request) use (&$state, $harga) {
             return Http::response(['error' => 'down'], 503);
         }
 
-        $c = candles($state['vol'][$nama], $harga, $nama);
+        $c = candles($state['vol'][$nama], $harga, $nama, $state['lama'], $state['batas']);
 
         if ($nama === 'binance')  return Http::response($c, 200);
         if ($nama === 'bybit')    return Http::response(['result' => ['list' => $c]], 200);
@@ -159,8 +166,39 @@ try {
     // ---------------------------------------------------------------
     echo "\n=== UJI 3: candle jam berjalan dibuang ===\n";
     // ---------------------------------------------------------------
-    // 169 candle dikirim; yang terpakai harus 168, bukan 169
-    periksa('candle terpakai per bursa', $perBursa['Binance']['candle_count'], 168, $lulus);
+    // 337 candle dikirim; yang terpakai harus 336 (dua periode penuh)
+    periksa('candle terpakai per bursa', $perBursa['Binance']['candle_count'], 336, $lulus);
+
+    // ---------------------------------------------------------------
+    echo "\n=== UJI 3b: perubahan volume vs periode sebelumnya ===\n";
+    // ---------------------------------------------------------------
+    // Tiap jendela diuji sendiri: periode sebelumnya dibuat setengahnya,
+    // jadi perubahannya harus tepat +100%.
+    $state['lama'] = 0.5;
+
+    foreach (['1h' => 1, '4h' => 4, '12h' => 12, '24h' => 24, '1w' => 168] as $tf => $jam) {
+        $state['batas'] = $jam;
+        Cache::forget('spot_volume_aggregate_BTC');
+
+        $hx = app(SpotVolumeService::class)->aggregate('BTC', false);
+        $bx = collect($hx['exchanges'])->keyBy('exchange_name');
+
+        periksa("perubahan {$tf} Binance", $bx['Binance']["volume_change_percent_{$tf}"], 100.0, $lulus);
+        periksa("perubahan {$tf} akumulasi", $hx['changes'][$tf], 100.0, $lulus);
+        // Kraken memberi volume dalam BTC; pastikan konversinya tidak merusak persentase
+        periksa("perubahan {$tf} Kraken", $bx['Kraken']["volume_change_percent_{$tf}"], 100.0, $lulus);
+    }
+
+    // Periode sebelumnya dua kali lipat -> sekarang harus -50%
+    $state['lama']  = 2.0;
+    $state['batas'] = 24;
+    Cache::forget('spot_volume_aggregate_BTC');
+
+    $hTurun = app(SpotVolumeService::class)->aggregate('BTC', false);
+    periksa('volume menyusut terbaca negatif', $hTurun['changes']['24h'], -50.0, $lulus);
+
+    $state['lama']  = 1.0;
+    $state['batas'] = 168;
 
     // ---------------------------------------------------------------
     echo "\n=== UJI 4: bursa mati dilewati, sisanya tetap jalan ===\n";

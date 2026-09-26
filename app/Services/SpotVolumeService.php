@@ -23,8 +23,15 @@ class SpotVolumeService
     /** Jendela waktu dalam satuan candle 1 jam. */
     public const WINDOWS = ['1h' => 1, '4h' => 4, '12h' => 12, '24h' => 24, '1w' => 168];
 
-    /** Berapa candle yang perlu diambil: jendela terpanjang + 1 untuk candle berjalan. */
-    protected const CANDLES_NEEDED = 169;
+    /**
+     * Candle yang perlu diambil: dua kali jendela terpanjang (agar periode
+     * sekarang bisa dibandingkan dengan periode sebelumnya) + 1 untuk candle
+     * jam berjalan yang selalu dibuang.
+     */
+    protected const CANDLES_NEEDED = 337;
+
+    /** Berapa candle yang disimpan setelah candle berjalan dibuang. */
+    protected const CANDLES_KEPT = 336;
 
     /** Pasangan yang dipakai di tiap bursa, per aset. */
     protected const PAIRS = [
@@ -95,7 +102,11 @@ class SpotVolumeService
             ];
 
             foreach (self::WINDOWS as $tf => $jam) {
-                $baris["volume_usd_{$tf}"] = $this->jumlahkan($candles['volumes'], $jam);
+                $sekarang  = $this->jumlahkan($candles['volumes'], 0, $jam);
+                $sebelumnya = $this->jumlahkan($candles['volumes'], $jam, $jam);
+
+                $baris["volume_usd_{$tf}"] = $sekarang;
+                $baris["volume_change_percent_{$tf}"] = $this->perubahan($sekarang, $sebelumnya);
             }
 
             if ($candles['price'] !== null) {
@@ -112,9 +123,25 @@ class SpotVolumeService
         // Volume terbesar di atas
         usort($exchanges, fn($a, $b) => ($b['volume_usd_24h'] ?? 0) <=> ($a['volume_usd_24h'] ?? 0));
 
-        $totals = [];
-        foreach (array_keys(self::WINDOWS) as $tf) {
-            $totals[$tf] = array_sum(array_column($exchanges, "volume_usd_{$tf}"));
+        // Perubahan akumulasi dihitung ulang dari jumlah seluruh bursa — bukan
+        // dirata-rata dari persentase per bursa, yang akan menyesatkan karena
+        // bursa kecil punya bobot sama dengan bursa besar.
+        $totals  = [];
+        $changes = [];
+        foreach (self::WINDOWS as $tf => $jam) {
+            $sekarang = array_sum(array_column($exchanges, "volume_usd_{$tf}"));
+
+            $sebelumnya = 0.0;
+            foreach ($exchanges as $e) {
+                $pct = $e["volume_change_percent_{$tf}"];
+                // Balik dari persentase ke nilai periode sebelumnya
+                $sebelumnya += $pct === null
+                    ? 0.0
+                    : $e["volume_usd_{$tf}"] / (1 + $pct / 100);
+            }
+
+            $totals[$tf]  = $sekarang;
+            $changes[$tf] = $this->perubahan($sekarang, $sebelumnya);
         }
 
         $hasil = [
@@ -122,6 +149,7 @@ class SpotVolumeService
             'message'    => null,
             'exchanges'  => $exchanges,
             'totals'     => $totals,
+            'changes'    => $changes,
             // Harga acuan: rata-rata bursa yang berhasil, cukup untuk konteks
             'price_usd'  => $prices ? array_sum($prices) / count($prices) : null,
             'failures'   => $failures,
@@ -134,13 +162,30 @@ class SpotVolumeService
     }
 
     /**
-     * Jumlahkan N candle terbaru.
+     * Jumlahkan sebagian candle.
      *
      * @param array<int, float> $volumes Urut dari yang terbaru, candle berjalan sudah dibuang.
+     * @param int $mulai Geser berapa candle dari yang terbaru.
+     * @param int $jam   Berapa candle yang dijumlahkan.
      */
-    protected function jumlahkan(array $volumes, int $jam): float
+    protected function jumlahkan(array $volumes, int $mulai, int $jam): float
     {
-        return (float)array_sum(array_slice($volumes, 0, $jam));
+        return (float)array_sum(array_slice($volumes, $mulai, $jam));
+    }
+
+    /**
+     * Perubahan persen antara dua periode.
+     *
+     * Null bila periode pembanding tidak tersedia atau nol — lebih jujur
+     * daripada memaksakan angka 0% yang terbaca seolah tidak ada perubahan.
+     */
+    protected function perubahan(float $sekarang, float $sebelumnya): ?float
+    {
+        if ($sebelumnya <= 0) {
+            return null;
+        }
+
+        return (($sekarang - $sebelumnya) / $sebelumnya) * 100.0;
     }
 
     // ------------------------------------------------------------------
@@ -178,7 +223,13 @@ class SpotVolumeService
         return $this->rapikan($rows, fn($r) => (float)($r[6] ?? 0), fn($r) => (float)($r[4] ?? 0));
     }
 
-    /** OKX: data [ts, o, h, l, c, vol, volCcy, volCcyQuote, confirm], terbaru dulu. */
+    /**
+     * OKX: data [ts, o, h, l, c, vol, volCcy, volCcyQuote, confirm], terbaru dulu.
+     *
+     * Endpoint /candles dibatasi 300 baris, sedangkan untuk membandingkan 7 hari
+     * dengan 7 hari sebelumnya dibutuhkan 337. Sisanya diambil dari
+     * /history-candles memakai penanda waktu candle tertua sebagai batas.
+     */
     protected function fetchOkx(string $pair): array
     {
         $data = $this->json('https://www.okx.com/api/v5/market/candles', [
@@ -188,6 +239,27 @@ class SpotVolumeService
         ]);
 
         $rows = $data['data'] ?? [];
+
+        if (count($rows) > 0 && count($rows) < self::CANDLES_NEEDED) {
+            $tertua = (string)(end($rows)[0] ?? '');
+
+            if ($tertua !== '') {
+                try {
+                    $lanjutan = $this->json('https://www.okx.com/api/v5/market/history-candles', [
+                        'instId' => $pair,
+                        'bar'    => '1H',
+                        'after'  => $tertua,
+                        'limit'  => 100,
+                    ]);
+
+                    // "after" mengembalikan yang lebih lama, jadi aman disambung di belakang
+                    $rows = array_merge($rows, $lanjutan['data'] ?? []);
+                } catch (\Throwable $e) {
+                    // Halaman kedua opsional; tanpa itu perubahan 7 hari saja yang kosong
+                    Log::info('OKX history-candles dilewati: ' . $e->getMessage());
+                }
+            }
+        }
 
         return $this->rapikan($rows, fn($r) => (float)($r[7] ?? $r[6] ?? 0), fn($r) => (float)($r[4] ?? 0));
     }
@@ -252,7 +324,7 @@ class SpotVolumeService
         }
 
         // Baris pertama adalah jam berjalan yang belum lengkap
-        $lengkap = array_slice($rows, 1, self::WINDOWS['1w']);
+        $lengkap = array_slice($rows, 1, self::CANDLES_KEPT);
 
         $volumes = [];
         foreach ($lengkap as $r) {
@@ -283,6 +355,7 @@ class SpotVolumeService
         return [
             'ok' => false, 'message' => $message, 'exchanges' => [],
             'totals' => array_fill_keys(array_keys(self::WINDOWS), 0.0),
+            'changes' => array_fill_keys(array_keys(self::WINDOWS), null),
             'price_usd' => null, 'failures' => [], 'fetched_at' => null,
         ];
     }

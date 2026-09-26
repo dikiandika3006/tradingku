@@ -141,6 +141,11 @@ class CaptureSpotVolume extends Command
                     'volume_usd_12h' => $e['volume_usd_12h'],
                     'volume_usd_24h' => $e['volume_usd_24h'],
                     'volume_usd_1w'  => $e['volume_usd_1w'],
+                    'volume_change_percent_1h'  => $e['volume_change_percent_1h'],
+                    'volume_change_percent_4h'  => $e['volume_change_percent_4h'],
+                    'volume_change_percent_12h' => $e['volume_change_percent_12h'],
+                    'volume_change_percent_24h' => $e['volume_change_percent_24h'],
+                    'volume_change_percent_1w'  => $e['volume_change_percent_1w'],
                     'captured_at'    => $waktu,
                 ]
             );
@@ -227,25 +232,40 @@ class CaptureSpotVolume extends Command
 
     protected function tampilkan(array $hasil): void
     {
+        $kolom = '%-11s %11s %9s %11s %9s %11s %9s';
+
         $this->newLine();
-        $this->line(sprintf('%-12s %13s %13s %13s %13s %13s',
-            'BURSA', '1 Jam', '4 Jam', '12 Jam', '24 Jam', '7 Hari'));
-        $this->line(str_repeat('-', 84));
+        $this->line(sprintf($kolom, 'BURSA', '1 JAM', '%', '24 JAM', '%', '7 HARI', '%'));
+        $this->line(str_repeat('-', 76));
 
         foreach ($hasil['exchanges'] as $e) {
-            $this->line(sprintf('%-12s %13s %13s %13s %13s %13s',
-                mb_substr($e['exchange_name'], 0, 12),
-                $this->usd($e['volume_usd_1h']), $this->usd($e['volume_usd_4h']),
-                $this->usd($e['volume_usd_12h']), $this->usd($e['volume_usd_24h']),
-                $this->usd($e['volume_usd_1w'])));
+            $this->line(sprintf($kolom,
+                mb_substr($e['exchange_name'], 0, 11),
+                $this->usd($e['volume_usd_1h']),  $this->pct($e['volume_change_percent_1h']),
+                $this->usd($e['volume_usd_24h']), $this->pct($e['volume_change_percent_24h']),
+                $this->usd($e['volume_usd_1w']),  $this->pct($e['volume_change_percent_1w'])));
         }
 
-        $this->line(str_repeat('-', 84));
+        $this->line(str_repeat('-', 76));
         $t = $hasil['totals'];
-        $this->line(sprintf('%-12s %13s %13s %13s %13s %13s',
-            'AKUMULASI', $this->usd($t['1h']), $this->usd($t['4h']),
-            $this->usd($t['12h']), $this->usd($t['24h']), $this->usd($t['1w'])));
+        $c = $hasil['changes'];
+        $this->line(sprintf($kolom, 'AKUMULASI',
+            $this->usd($t['1h']),  $this->pct($c['1h']),
+            $this->usd($t['24h']), $this->pct($c['24h']),
+            $this->usd($t['1w']),  $this->pct($c['1w'])));
+
+        // 4 jam & 12 jam disembunyikan di konsol agar tabelnya tetap terbaca;
+        // semuanya tetap disimpan dan tampil lengkap di halaman web.
+        $this->line(sprintf('  (4 jam: %s %s   12 jam: %s %s)',
+            $this->usd($t['4h']),  trim($this->pct($c['4h'])),
+            $this->usd($t['12h']), trim($this->pct($c['12h']))));
         $this->newLine();
+    }
+
+    /** Perubahan persen; strip bila periode pembandingnya tidak tersedia. */
+    protected function pct(?float $v): string
+    {
+        return $v === null ? '-' : sprintf('%+.2f%%', $v);
     }
 
     protected function usd(?float $v): string

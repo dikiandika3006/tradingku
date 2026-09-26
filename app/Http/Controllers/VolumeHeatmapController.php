@@ -29,6 +29,7 @@ class VolumeHeatmapController extends Controller
 
         $exchanges = $hasil['exchanges'];
         $totals    = $hasil['totals'];
+        $changes   = $hasil['changes'];
         $fetchedAt = $hasil['fetched_at'];
         $isLive    = $hasil['ok'];
 
@@ -50,10 +51,26 @@ class VolumeHeatmapController extends Controller
                     'volume_usd_12h' => $r->volume_usd_12h,
                     'volume_usd_24h' => $r->volume_usd_24h,
                     'volume_usd_1w'  => $r->volume_usd_1w,
+                    'volume_change_percent_1h'  => $r->volume_change_percent_1h,
+                    'volume_change_percent_4h'  => $r->volume_change_percent_4h,
+                    'volume_change_percent_12h' => $r->volume_change_percent_12h,
+                    'volume_change_percent_24h' => $r->volume_change_percent_24h,
+                    'volume_change_percent_1w'  => $r->volume_change_percent_1w,
                 ])->all();
 
                 foreach (SpotVolumeSnapshot::TIMEFRAMES as $tf) {
-                    $totals[$tf] = array_sum(array_column($exchanges, "volume_usd_{$tf}"));
+                    $sekarang = array_sum(array_column($exchanges, "volume_usd_{$tf}"));
+
+                    $sebelumnya = 0.0;
+                    foreach ($exchanges as $e) {
+                        $pct = $e["volume_change_percent_{$tf}"];
+                        $sebelumnya += $pct === null ? 0.0 : $e["volume_usd_{$tf}"] / (1 + $pct / 100);
+                    }
+
+                    $totals[$tf]  = $sekarang;
+                    $changes[$tf] = $sebelumnya > 0
+                        ? (($sekarang - $sebelumnya) / $sebelumnya) * 100.0
+                        : null;
                 }
             }
         }
@@ -69,6 +86,7 @@ class VolumeHeatmapController extends Controller
             'symbol'           => $symbol,
             'exchanges'        => $exchanges,
             'totals'           => $totals,
+            'changes'          => $changes,
             'maxima'           => $maxima,
             'timeframes'       => SpotVolumeSnapshot::TIMEFRAMES,
             'timeframe_labels' => SpotVolumeSnapshot::TIMEFRAME_LABELS,

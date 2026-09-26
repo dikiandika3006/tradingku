@@ -28,6 +28,11 @@ class SpotVolumeSnapshot extends Model
         'volume_usd_12h',
         'volume_usd_24h',
         'volume_usd_1w',
+        'volume_change_percent_1h',
+        'volume_change_percent_4h',
+        'volume_change_percent_12h',
+        'volume_change_percent_24h',
+        'volume_change_percent_1w',
         'captured_at',
         'captured_date',
     ];
@@ -41,6 +46,11 @@ class SpotVolumeSnapshot extends Model
         'volume_usd_12h' => 'float',
         'volume_usd_24h' => 'float',
         'volume_usd_1w'  => 'float',
+        'volume_change_percent_1h'  => 'float',
+        'volume_change_percent_4h'  => 'float',
+        'volume_change_percent_12h' => 'float',
+        'volume_change_percent_24h' => 'float',
+        'volume_change_percent_1w'  => 'float',
     ];
 
     /** Baris dari rekaman harian terakhir sebuah aset. */
@@ -74,5 +84,10 @@ class SpotVolumeSnapshot extends Model
     public function volumeFor(string $timeframe): ?float
     {
         return $this->{'volume_usd_' . $timeframe};
+    }
+
+    public function changeFor(string $timeframe): ?float
+    {
+        return $this->{'volume_change_percent_' . $timeframe};
     }
 }

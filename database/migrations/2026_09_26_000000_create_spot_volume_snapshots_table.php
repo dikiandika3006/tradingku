@@ -24,6 +24,15 @@ return new class extends Migration
             $table->decimal('volume_usd_24h', 24, 2)->default(0);
             $table->decimal('volume_usd_1w', 24, 2)->default(0);
 
+            // Perubahan volume terhadap periode setara sebelumnya.
+            // Null bila pembandingnya belum tersedia — dibedakan dari 0% yang
+            // berarti benar-benar tidak berubah.
+            $table->decimal('volume_change_percent_1h', 12, 4)->nullable();
+            $table->decimal('volume_change_percent_4h', 12, 4)->nullable();
+            $table->decimal('volume_change_percent_12h', 12, 4)->nullable();
+            $table->decimal('volume_change_percent_24h', 12, 4)->nullable();
+            $table->decimal('volume_change_percent_1w', 12, 4)->nullable();
+
             $table->dateTime('captured_at');
             // Tanggal dipisah agar kunci unik bisa menjamin satu rekaman per hari
             $table->date('captured_date');

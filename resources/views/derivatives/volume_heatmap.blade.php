@@ -71,6 +71,11 @@
             <div style="margin-top: 0.5rem; font-size: 1.45rem; font-weight: 700; color: #fff;">
                 {{ $usd($totals[$tf] ?? 0) }}
             </div>
+            @php $ch = $changes[$tf] ?? null; @endphp
+            <div style="margin-top: 0.2rem; font-size: 0.82rem; font-weight: 600;
+                        color: {{ $ch === null ? 'var(--text-muted)' : ($ch >= 0 ? '#22c55e' : '#ef4444') }};">
+                {{ $ch === null ? 'belum ada pembanding' : ($ch >= 0 ? '▲ +' : '▼ ') . number_format($ch, 2) . '% vs periode sebelumnya' }}
+            </div>
         </div>
     @endforeach
 </div>
@@ -114,11 +119,19 @@
                         @foreach($timeframes as $tf)
                             @php
                                 $vol = $e["volume_usd_{$tf}"] ?? null;
+                                $ch  = $e["volume_change_percent_{$tf}"] ?? null;
                                 $alpha = $intensitas($vol, $maxima[$tf] ?? 0);
+                                // Warna = arah perubahan volume, kepekatan = besar volume
+                                $rgb = $ch === null ? '99,102,241' : ($ch >= 0 ? '34,197,94' : '239,68,68');
                             @endphp
                             <td style="padding: 0.9rem 1rem; text-align: right; font-family: monospace; color: #fff; font-weight: 600;
-                                       background: rgba(59,130,246,{{ number_format($alpha * 0.30, 3) }});">
+                                       background: rgba({{ $rgb }},{{ number_format($alpha * 0.30, 3) }});">
                                 {{ $usd($vol) }}
+                                @if($ch !== null)
+                                    <div style="font-size: 0.72rem; font-weight: 500; color: {{ $ch >= 0 ? '#22c55e' : '#ef4444' }};">
+                                        {{ $ch >= 0 ? '+' : '' }}{{ number_format($ch, 2) }}%
+                                    </div>
+                                @endif
                             </td>
                         @endforeach
 
