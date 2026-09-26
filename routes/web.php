@@ -9,6 +9,7 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\SettingController;
 use App\Http\Controllers\ScannerController;
 use App\Http\Controllers\DerivativesController;
+use App\Http\Controllers\VolumeHeatmapController;
 use Illuminate\Support\Facades\Route;
 
 // Public Auth Routes
@@ -92,6 +93,9 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/derivatives', [DerivativesController::class, 'index'])->name('derivatives.index');
         Route::post('/derivatives', [DerivativesController::class, 'store'])->name('derivatives.store');
         Route::delete('/derivatives/{id}', [DerivativesController::class, 'destroy'])->name('derivatives.destroy');
+
+        // Heatmap volume spot (CoinGlass)
+        Route::get('/derivatives/volume-heatmap', [VolumeHeatmapController::class, 'index'])->name('derivatives.volume-heatmap');
 
         // Database Sync Routes (Browser-Bridge)
         Route::post('/api/database/apply-queries', [SettingController::class, 'applyPendingQueries'])->name('api.database.apply-queries');

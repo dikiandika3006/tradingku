@@ -11,6 +11,13 @@ use Illuminate\Support\Facades\Schedule;
 
 Schedule::command('telegram:check-price-alerts')->everyMinute();
 
+// Heatmap volume spot CoinGlass.
+// API hanya memberi kondisi saat ini, jadi riwayatnya harus dibentuk sendiri
+// lewat pengambilan berkala. Alert lonjakan ikut diperiksa di sini.
+Schedule::command('coinglass:capture-volume --symbol=BTC --timeframe=1h')
+    ->hourly()
+    ->withoutOverlapping();
+
 // Monthly Portfolio Snapshot Engine
 // 1. Cut-off resmi: kunci valuasi bulan berjalan tepat sebelum tengah malam akhir bulan.
 Schedule::command('portfolio:snapshot --finalize')

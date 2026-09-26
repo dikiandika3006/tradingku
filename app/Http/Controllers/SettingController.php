@@ -23,6 +23,8 @@ class SettingController extends Controller
         $telegramAlertThreshold = Setting::where('key', 'telegram_alert_threshold')->value('value') ?? '2.0';
         $telegramAlertEnabled = Setting::where('key', 'telegram_alert_enabled')->value('value') ?? '1';
         $coinalyzeApiKey = Setting::where('key', 'coinalyze_api_key')->value('value') ?? '';
+        $coinglassApiKey = Setting::where('key', 'coinglass_api_key')->value('value') ?? '';
+        $coinglassVolumeThreshold = Setting::where('key', 'coinglass_volume_alert_threshold')->value('value') ?? '50';
         
         $telegramRecipients = collect();
         if (\Illuminate\Support\Facades\Schema::hasTable('telegram_recipients')) {
@@ -36,6 +38,8 @@ class SettingController extends Controller
             'telegramAlertThreshold',
             'telegramAlertEnabled',
             'coinalyzeApiKey',
+            'coinglassApiKey',
+            'coinglassVolumeThreshold',
             'telegramRecipients'
         ));
     }
@@ -337,6 +341,8 @@ class SettingController extends Controller
             'telegram_alert_threshold' => 'required|numeric|min:0.01|max:100',
             'telegram_alert_enabled' => 'required|in:0,1',
             'coinalyze_api_key' => 'nullable|string|max:255',
+            'coinglass_api_key' => 'nullable|string|max:255',
+            'coinglass_volume_alert_threshold' => 'required|numeric|min:1|max:1000',
         ]);
 
         Setting::updateOrCreate(
@@ -357,6 +363,16 @@ class SettingController extends Controller
         Setting::updateOrCreate(
             ['key' => 'coinalyze_api_key'],
             ['value' => trim($request->coinalyze_api_key ?? '')]
+        );
+
+        Setting::updateOrCreate(
+            ['key' => 'coinglass_api_key'],
+            ['value' => trim($request->coinglass_api_key ?? '')]
+        );
+
+        Setting::updateOrCreate(
+            ['key' => 'coinglass_volume_alert_threshold'],
+            ['value' => trim($request->coinglass_volume_alert_threshold)]
         );
 
         return redirect()->route('setting.index')->with('success', 'Konfigurasi integrasi berhasil diperbarui.');

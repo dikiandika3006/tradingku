@@ -69,6 +69,12 @@
                         Analisa Derivatives
                     </a>
                 </li>
+                <li class="menu-item {{ request()->routeIs('derivatives.volume-heatmap') ? 'active' : '' }}">
+                    <a href="{{ route('derivatives.volume-heatmap') }}">
+                        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5h6v6H4V5zm10 0h6v6h-6V5zM4 13h6v6H4v-6zm10 0h6v6h-6v-6z"/></svg>
+                        Heatmap Volume
+                    </a>
+                </li>
                 @endif
                 <li class="menu-item {{ request()->routeIs('portfolio.index') ? 'active' : '' }}">
                     <a href="{{ route('portfolio.index') }}">
