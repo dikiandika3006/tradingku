@@ -9,6 +9,7 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\SettingController;
 use App\Http\Controllers\ScannerController;
 use App\Http\Controllers\DerivativesController;
+use App\Http\Controllers\CapitalProjectionController;
 use App\Http\Controllers\VolumeHeatmapController;
 use Illuminate\Support\Facades\Route;
 
@@ -64,6 +65,10 @@ Route::middleware(['auth'])->group(function () {
 
         // Monthly Report Route
         Route::get('/portfolio/monthly-report', [PortfolioController::class, 'monthlyReport'])->name('portfolio.monthly-report');
+
+        // Proyeksi pertumbuhan modal
+        Route::get('/portfolio/capital-projection', [CapitalProjectionController::class, 'index'])->name('portfolio.capital-projection');
+        Route::post('/portfolio/capital-projection', [CapitalProjectionController::class, 'update'])->name('portfolio.capital-projection.update');
 
         // User Management Routes
         Route::get('/user', [UserController::class, 'index'])->name('user.index');
