@@ -137,12 +137,24 @@
 
 <!-- Tabel proyeksi -->
 <div class="glass-card" style="padding: 1.5rem;">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 0.5rem;">
-        <h3 style="font-size: 1.15rem; font-weight: 600; color: #fff; margin: 0;">Rincian Bulanan</h3>
-        <span style="font-size: 0.85rem; color: var(--text-muted);">
-            {{ count($rows) }} bulan &middot; {{ $summary['bulan_dibanding'] }} sudah terbanding
-        </span>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 0.75rem;">
+        <div>
+            <h3 style="font-size: 1.15rem; font-weight: 600; color: #fff; margin: 0;">Rincian Bulanan</h3>
+            <span style="font-size: 0.8rem; color: var(--text-muted);">
+                Kolom bertepi biru bisa diisi langsung. Kosongkan untuk kembali ke hitungan otomatis.
+            </span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+            <span style="font-size: 0.85rem; color: var(--text-muted);">
+                {{ count($rows) }} bulan &middot; {{ $summary['bulan_dibanding'] }} terbanding
+            </span>
+            <button type="submit" form="formBaris" class="btn btn-primary" style="padding: 0.6rem 1.5rem; font-weight: 600;">
+                Simpan Perubahan Baris
+            </button>
+        </div>
     </div>
+
+    <form id="formBaris" method="POST" action="{{ route('portfolio.capital-projection.rows') }}">@csrf</form>
 
     <div class="table-responsive" style="overflow-x: auto;">
         <table class="table" style="width: 100%; border-collapse: collapse; text-align: left;">
@@ -163,26 +175,41 @@
             <tbody>
                 @foreach($rows as $r)
                     <tr style="border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 0.87rem;
-                               {{ $r['sudah_lewat'] ? 'background: rgba(255,255,255,0.02);' : '' }}">
+                               {{ $r['alokasi_timpang'] ? 'background: rgba(234,179,8,0.07);' : ($r['sudah_lewat'] ? 'background: rgba(255,255,255,0.02);' : '') }}"
+                        @if($r['alokasi_timpang']) title="Alokasi BTC + Alt tidak sama dengan saldo akhir" @endif>
                         <td style="padding: 0.75rem 0.9rem; font-weight: 600; color: #fff; white-space: nowrap;">
                             {{ $r['month_name'] }} {{ $r['year'] }}
                         </td>
                         <td style="padding: 0.75rem 0.9rem; text-align: right; font-family: monospace;">{{ $rp($r['modal_awal']) }}</td>
-                        <td style="padding: 0.75rem 0.9rem; text-align: right; font-family: monospace; color: var(--text-muted);">
-                            {{ $r['top_up'] > 0 ? $rp($r['top_up']) : '—' }}
+<td style="padding: 0.5rem 0.6rem; text-align: right;">
+                            <input type="text" form="formBaris" name="rows[{{ $r['year_month'] }}][top_up]"
+                                   value="{{ $r['ditimpa']['top_up'] ? number_format($r['top_up'], 0, ',', '') : '' }}"
+                                   placeholder="{{ number_format($r['top_up'], 0, ',', '.') }}"
+                                   style="width: 100%; background: rgba(59,130,246,0.07); border: 1px solid rgba(59,130,246,0.3); border-radius: 5px; color: #fff; font-family: monospace; font-size: 0.83rem; padding: 0.35rem 0.5rem; text-align: right;">
                         </td>
                         <td style="padding: 0.75rem 0.9rem; text-align: center; font-family: monospace; color: #60a5fa;">
                             {{ number_format($r['return_persen'], 2) }}%
                         </td>
-                        <td style="padding: 0.75rem 0.9rem; text-align: right; font-family: monospace; color: #22c55e;">{{ $rp($r['return_idr']) }}</td>
-                        <td style="padding: 0.75rem 0.9rem; text-align: right; font-family: monospace; font-weight: 700; color: #fff;">{{ $rp($r['saldo_akhir']) }}</td>
-                        <td style="padding: 0.75rem 0.9rem; text-align: right; font-family: monospace; background: rgba(247,147,26,0.07);">
-                            {{ $rp($r['alokasi_btc']) }}
-                            <div style="font-size: 0.7rem; color: var(--text-muted);">{{ number_format($r['btc_persen'], 0) }}%</div>
+<td style="padding: 0.5rem 0.6rem; text-align: right;">
+                            <input type="text" form="formBaris" name="rows[{{ $r['year_month'] }}][return_idr]"
+                                   value="{{ $r['ditimpa']['return_idr'] ? number_format($r['return_idr'], 0, ',', '') : '' }}"
+                                   placeholder="{{ number_format($r['return_idr'], 0, ',', '.') }}"
+                                   style="width: 100%; background: rgba(59,130,246,0.07); border: 1px solid rgba(59,130,246,0.3); border-radius: 5px; color: #fff; font-family: monospace; font-size: 0.83rem; padding: 0.35rem 0.5rem; text-align: right;">
                         </td>
-                        <td style="padding: 0.75rem 0.9rem; text-align: right; font-family: monospace; background: rgba(99,102,241,0.07);">
-                            {{ $rp($r['alokasi_alt']) }}
-                            <div style="font-size: 0.7rem; color: var(--text-muted);">{{ number_format($r['alt_persen'], 0) }}%</div>
+                        <td style="padding: 0.75rem 0.9rem; text-align: right; font-family: monospace; font-weight: 700; color: #fff;">{{ $rp($r['saldo_akhir']) }}</td>
+<td style="padding: 0.5rem 0.6rem; text-align: right; background: rgba(247,147,26,0.05);">
+                            <input type="text" form="formBaris" name="rows[{{ $r['year_month'] }}][alokasi_btc]"
+                                   value="{{ $r['ditimpa']['alokasi_btc'] ? number_format($r['alokasi_btc'], 0, ',', '') : '' }}"
+                                   placeholder="{{ number_format($r['alokasi_btc'], 0, ',', '.') }}"
+                                   style="width: 100%; background: rgba(59,130,246,0.07); border: 1px solid rgba(59,130,246,0.3); border-radius: 5px; color: #fff; font-family: monospace; font-size: 0.83rem; padding: 0.35rem 0.5rem; text-align: right;">
+                            <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.2rem;">{{ number_format($r['btc_persen'], 1) }}%</div>
+                        </td>
+<td style="padding: 0.5rem 0.6rem; text-align: right; background: rgba(99,102,241,0.05);">
+                            <input type="text" form="formBaris" name="rows[{{ $r['year_month'] }}][alokasi_alt]"
+                                   value="{{ $r['ditimpa']['alokasi_alt'] ? number_format($r['alokasi_alt'], 0, ',', '') : '' }}"
+                                   placeholder="{{ number_format($r['alokasi_alt'], 0, ',', '.') }}"
+                                   style="width: 100%; background: rgba(59,130,246,0.07); border: 1px solid rgba(59,130,246,0.3); border-radius: 5px; color: #fff; font-family: monospace; font-size: 0.83rem; padding: 0.35rem 0.5rem; text-align: right;">
+                            <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.2rem;">{{ number_format($r['alt_persen'], 1) }}%</div>
                         </td>
                         <td style="padding: 0.75rem 0.9rem; text-align: right; font-family: monospace; font-weight: 600; color: #fff;">
                             {{ $r['aktual'] !== null ? $rp($r['aktual']) : '—' }}
@@ -205,6 +232,17 @@
     </div>
 
     <div style="margin-top: 1rem; font-size: 0.78rem; color: var(--text-muted); line-height: 1.6;">
+        Isian baris selalu menang atas hitungan otomatis, dan mengubah satu baris menggeser seluruh bulan sesudahnya.
+        Mengisi Alokasi BTC saja sudah cukup &mdash; porsi altcoin otomatis mengikuti sisa saldo.
+        Baris berlatar kuning berarti BTC + Alt tidak menjumlah ke saldo akhir.
+        <form method="POST" action="{{ route('portfolio.capital-projection.reset') }}" style="display: inline;"
+              onsubmit="return confirm('Hapus semua isian manual dan kembalikan ke hitungan otomatis?')">
+            @csrf
+            <button type="submit" style="background: none; border: none; color: #ef4444; text-decoration: underline; cursor: pointer; font-size: 0.78rem; padding: 0;">
+                Kembalikan semua ke otomatis
+            </button>
+        </form>
+        <br><br>
         Return dihitung dari modal awal bulan itu; top-up ditambahkan ke saldo tapi belum ikut dibungakan pada bulan yang sama.
         Kolom <strong>Aktual</strong> diambil dari snapshot portofolio bulanan, jadi hanya terisi untuk bulan yang sudah terjadi.
         Baris berlatar lebih terang berarti bulan tersebut sudah punya data nyata.

@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\CapitalProjectionOverride;
 use App\Models\MonthlyPortfolioSnapshot;
 use App\Models\Setting;
 use Carbon\Carbon;
@@ -66,7 +67,8 @@ class CapitalProjectionService
         $returnKhusus = $this->parsePerBulan($s['projection_return_overrides']);
         $fasesAlokasi = $this->parsePerBulan($s['projection_allocation_phases']);
 
-        $aktual = $this->saldoNyataPerBulan();
+        $aktual  = $this->saldoNyataPerBulan();
+        $timpaan = CapitalProjectionOverride::get()->keyBy('year_month');
 
         $rows = [];
         $kursor = Carbon::createFromFormat('Y-m-d', $mulai . '-01')->startOfMonth();
@@ -80,11 +82,35 @@ class CapitalProjectionService
                 $btcBerlaku = max(0.0, min(100.0, $fasesAlokasi[$ym]));
             }
 
-            $topUp  = ($topupDariKedua && $i === 0) ? 0.0 : $topupBulanan;
-            $persen = $returnKhusus[$ym] ?? $returnDefault;
+            $o = $timpaan->get($ym);
 
-            $returnIdr  = $modal * $persen / 100;
+            // Isian manual per baris selalu menang. null berarti "hitung otomatis",
+            // sehingga nilai nol yang disengaja tetap bisa dibedakan dari kosong.
+            $topUp = $o && $o->top_up !== null
+                ? (float)$o->top_up
+                : (($topupDariKedua && $i === 0) ? 0.0 : $topupBulanan);
+
+            $returnIdr = $o && $o->return_idr !== null
+                ? (float)$o->return_idr
+                : $modal * ($returnKhusus[$ym] ?? $returnDefault) / 100;
+
+            // Persen selalu diturunkan dari nominalnya, supaya kedua kolom tidak
+            // pernah saling bertentangan saat nominalnya ditimpa manual.
+            $persen = $modal > 0 ? ($returnIdr / $modal) * 100 : 0.0;
+
             $saldoAkhir = $modal + $topUp + $returnIdr;
+
+            $alokasiBtc = $o && $o->alokasi_btc !== null
+                ? (float)$o->alokasi_btc
+                : $saldoAkhir * $btcBerlaku / 100;
+
+            // Alt mengikuti sisa saldo, jadi menimpa BTC saja sudah cukup
+            $alokasiAlt = $o && $o->alokasi_alt !== null
+                ? (float)$o->alokasi_alt
+                : $saldoAkhir - $alokasiBtc;
+
+            $persenBtc = $saldoAkhir > 0 ? ($alokasiBtc / $saldoAkhir) * 100 : 0.0;
+            $persenAlt = $saldoAkhir > 0 ? ($alokasiAlt / $saldoAkhir) * 100 : 0.0;
 
             $nyata = $aktual[$ym] ?? null;
 
@@ -97,10 +123,19 @@ class CapitalProjectionService
                 'return_persen' => $persen,
                 'return_idr'   => $returnIdr,
                 'saldo_akhir'  => $saldoAkhir,
-                'btc_persen'   => $btcBerlaku,
-                'alt_persen'   => 100.0 - $btcBerlaku,
-                'alokasi_btc'  => $saldoAkhir * $btcBerlaku / 100,
-                'alokasi_alt'  => $saldoAkhir * (100.0 - $btcBerlaku) / 100,
+                'btc_persen'   => $persenBtc,
+                'alt_persen'   => $persenAlt,
+                'alokasi_btc'  => $alokasiBtc,
+                'alokasi_alt'  => $alokasiAlt,
+                // Penanda kolom mana yang disetel tangan, untuk ditandai di layar
+                'ditimpa'      => [
+                    'top_up'      => $o && $o->top_up !== null,
+                    'return_idr'  => $o && $o->return_idr !== null,
+                    'alokasi_btc' => $o && $o->alokasi_btc !== null,
+                    'alokasi_alt' => $o && $o->alokasi_alt !== null,
+                ],
+                // Alokasi yang tidak menjumlah ke saldo akhir perlu terlihat
+                'alokasi_timpang' => abs(($alokasiBtc + $alokasiAlt) - $saldoAkhir) > 1.0,
                 'aktual'       => $nyata,
                 'selisih'      => $nyata !== null ? $nyata - $saldoAkhir : null,
                 'selisih_persen' => ($nyata !== null && $saldoAkhir > 0)

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\CapitalProjectionOverride;
 use App\Models\Setting;
 use App\Services\CapitalProjectionService;
 use Illuminate\Http\Request;
@@ -47,5 +48,71 @@ class CapitalProjectionController extends Controller
         return redirect()
             ->route('portfolio.capital-projection')
             ->with('success', 'Asumsi proyeksi berhasil diperbarui.');
+    }
+
+    /**
+     * Simpan nilai nominal yang disetel tangan per baris.
+     *
+     * Kolom yang dikosongkan berarti "kembali ke hitungan otomatis", bukan nol —
+     * karena itu isian kosong disimpan sebagai null, dan baris yang seluruh
+     * kolomnya kosong dihapus supaya tabel timpaan tidak menumpuk baris hampa.
+     */
+    public function updateRows(Request $request)
+    {
+        $baris = $request->input('rows', []);
+
+        if (!is_array($baris)) {
+            return back()->with('error', 'Data baris tidak terbaca.');
+        }
+
+        $diubah = 0;
+
+        foreach ($baris as $ym => $kolom) {
+            if (!preg_match('/^\d{4}-\d{2}$/', (string)$ym) || !is_array($kolom)) {
+                continue;
+            }
+
+            $nilai = [];
+            foreach (CapitalProjectionOverride::FIELDS as $f) {
+                $mentah = $kolom[$f] ?? '';
+                $mentah = is_string($mentah) ? trim($mentah) : $mentah;
+
+                // Buang pemisah ribuan supaya "1.000.000" dan "1000000" sama-sama diterima
+                if (is_string($mentah) && $mentah !== '') {
+                    $mentah = str_replace(['.', ' '], '', $mentah);
+                    $mentah = str_replace(',', '.', $mentah);
+                }
+
+                $nilai[$f] = ($mentah === '' || $mentah === null || !is_numeric($mentah))
+                    ? null
+                    : (float)$mentah;
+            }
+
+            $adaIsi = count(array_filter($nilai, fn($v) => $v !== null)) > 0;
+
+            if ($adaIsi) {
+                CapitalProjectionOverride::updateOrCreate(['year_month' => $ym], $nilai);
+                $diubah++;
+            } else {
+                CapitalProjectionOverride::where('year_month', $ym)->delete();
+            }
+        }
+
+        return redirect()
+            ->route('portfolio.capital-projection')
+            ->with('success', $diubah > 0
+                ? "{$diubah} baris disetel manual. Bulan sesudahnya ikut menyesuaikan."
+                : 'Semua baris dikembalikan ke hitungan otomatis.');
+    }
+
+    /** Hapus seluruh isian manual, kembalikan ke hitungan otomatis. */
+    public function resetRows()
+    {
+        $n = CapitalProjectionOverride::count();
+        CapitalProjectionOverride::query()->delete();
+
+        return redirect()
+            ->route('portfolio.capital-projection')
+            ->with('success', "{$n} baris manual dihapus, proyeksi kembali dihitung otomatis.");
     }
 }

@@ -10,6 +10,7 @@ require __DIR__ . '/../vendor/autoload.php';
 $app = require_once __DIR__ . '/../bootstrap/app.php';
 $app->make(Illuminate\Contracts\Console\Kernel::class)->bootstrap();
 
+use App\Models\CapitalProjectionOverride;
 use App\Models\MonthlyPortfolioSnapshot;
 use App\Models\Setting;
 use App\Services\CapitalProjectionService;
@@ -28,6 +29,12 @@ if (config('database.default') !== 'uji' || config('database.connections.uji.dat
 echo "Koneksi uji: SQLite di memori — database produksi TIDAK tersentuh.\n\n";
 
 Schema::create('settings', function ($t) { $t->id(); $t->string('key')->unique(); $t->text('value')->nullable(); $t->timestamps(); });
+Schema::create('capital_projection_overrides', function ($t) {
+    $t->id(); $t->string('year_month')->unique();
+    $t->decimal('top_up', 20, 2)->nullable(); $t->decimal('return_idr', 20, 2)->nullable();
+    $t->decimal('alokasi_btc', 20, 2)->nullable(); $t->decimal('alokasi_alt', 20, 2)->nullable();
+    $t->timestamps();
+});
 Schema::create('monthly_portfolio_snapshots', function ($t) {
     $t->id(); $t->string('year_month')->unique(); $t->dateTime('cut_off_date')->nullable();
     $t->decimal('ending_valuation_usdt', 20, 4)->default(0); $t->decimal('ending_valuation_idr', 20, 2)->default(0);
@@ -126,6 +133,59 @@ periksa('tetap menghasilkan baris', count($h4['rows']) > 0, true, $lulus);
 periksa('bulan mulai jatuh ke bawaan', $h4['rows'][0]['year_month'], '2026-09', $lulus);
 periksa('fase yang sah tetap terbaca', $h4['rows'][0]['btc_persen'], 20.0, $lulus, 0.001);
 periksa('baris rusak diabaikan', $h4['rows'][2]['btc_persen'], 20.0, $lulus, 0.001);
+
+// ---------------------------------------------------------------
+echo "\n=== UJI 6: nilai nominal ditimpa per baris ===\n";
+// ---------------------------------------------------------------
+Setting::whereIn('key', array_keys(CapitalProjectionService::DEFAULTS))->delete();   // kembali ke bawaan
+CapitalProjectionOverride::create(['year_month' => '2026-10', 'top_up' => 5000000, 'return_idr' => 1000000]);
+
+$h5 = app(CapitalProjectionService::class)->build();
+$r5 = collect($h5['rows'])->keyBy('year_month');
+
+periksa('top up mengikuti isian', $r5['2026-10']['top_up'], 5000000, $lulus);
+periksa('return Rp mengikuti isian', $r5['2026-10']['return_idr'], 1000000, $lulus);
+// Persen diturunkan: 1.000.000 / 24.156.000 = 4,1397%
+periksa('persen diturunkan dari nominal', $r5['2026-10']['return_persen'], 4.1397, $lulus, 0.001);
+periksa('saldo akhir ikut berubah', $r5['2026-10']['saldo_akhir'], 30156000, $lulus);
+periksa('bulan sesudahnya ikut bergeser', $r5['2026-11']['modal_awal'], 30156000, $lulus);
+periksa('ditandai sebagai timpaan', $r5['2026-10']['ditimpa']['top_up'], true, $lulus);
+periksa('kolom lain tidak ditandai', $r5['2026-10']['ditimpa']['alokasi_btc'], false, $lulus);
+
+// ---------------------------------------------------------------
+echo "\n=== UJI 7: alokasi nominal ditimpa ===\n";
+// ---------------------------------------------------------------
+CapitalProjectionOverride::updateOrCreate(['year_month' => '2026-09'], ['alokasi_btc' => 10000000]);
+
+$h6 = app(CapitalProjectionService::class)->build();
+$r6 = collect($h6['rows'])->keyBy('year_month');
+
+periksa('alokasi BTC mengikuti isian', $r6['2026-09']['alokasi_btc'], 10000000, $lulus);
+// Alt otomatis mengisi sisa: 24.156.000 - 10.000.000
+periksa('alokasi Alt mengisi sisa saldo', $r6['2026-09']['alokasi_alt'], 14156000, $lulus);
+periksa('persen BTC diturunkan', $r6['2026-09']['btc_persen'], 41.3976, $lulus, 0.001);
+periksa('jumlahnya tetap pas', $r6['2026-09']['alokasi_timpang'], false, $lulus);
+
+// Menimpa keduanya sampai tidak menjumlah -> harus ditandai
+CapitalProjectionOverride::updateOrCreate(['year_month' => '2026-09'],
+    ['alokasi_btc' => 10000000, 'alokasi_alt' => 1000000]);
+
+periksa('alokasi timpang terdeteksi',
+    collect(app(CapitalProjectionService::class)->build()['rows'])
+        ->keyBy('year_month')['2026-09']['alokasi_timpang'], true, $lulus);
+
+// ---------------------------------------------------------------
+echo "\n=== UJI 8: nol yang disengaja beda dari kosong ===\n";
+// ---------------------------------------------------------------
+CapitalProjectionOverride::query()->delete();
+CapitalProjectionOverride::create(['year_month' => '2026-11', 'top_up' => 0]);
+
+$h8 = app(CapitalProjectionService::class)->build();
+$r8 = collect($h8['rows'])->keyBy('year_month');
+
+periksa('top up nol dihormati', $r8['2026-11']['top_up'], 0.0, $lulus);
+periksa('ditandai ditimpa meski nol', $r8['2026-11']['ditimpa']['top_up'], true, $lulus);
+periksa('bulan lain tetap otomatis', $r8['2026-12']['top_up'], 3000000, $lulus);
 
 echo "\n" . ($lulus ? '>>> SEMUA UJI LULUS' : '>>> ADA UJI YANG GAGAL') . "\n";
 echo "\n(Tidak ada query yang menyentuh database produksi.)\n";

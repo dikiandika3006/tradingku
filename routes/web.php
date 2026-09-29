@@ -69,6 +69,8 @@ Route::middleware(['auth'])->group(function () {
         // Proyeksi pertumbuhan modal
         Route::get('/portfolio/capital-projection', [CapitalProjectionController::class, 'index'])->name('portfolio.capital-projection');
         Route::post('/portfolio/capital-projection', [CapitalProjectionController::class, 'update'])->name('portfolio.capital-projection.update');
+        Route::post('/portfolio/capital-projection/rows', [CapitalProjectionController::class, 'updateRows'])->name('portfolio.capital-projection.rows');
+        Route::post('/portfolio/capital-projection/reset', [CapitalProjectionController::class, 'resetRows'])->name('portfolio.capital-projection.reset');
 
         // User Management Routes
         Route::get('/user', [UserController::class, 'index'])->name('user.index');
