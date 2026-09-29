@@ -89,8 +89,10 @@ try {
     echo "\n=== UJI 2: harga bergerak kecil, di bawah ambang ===\n";
     // ---------------------------------------------------------------
     // Patokan disetel 0.7000 -> gerak ke 0.7084 = +1.2%, di bawah ambang 1.5%
+    // last_seen_at wajib diisi: tanpa itu patokan dianggap basi lalu disegarkan,
+    // bukan dibandingkan. Itu perilaku yang benar sejak perbaikan patokan basi.
     TelegramPriceAlert::updateOrCreate(['symbol' => 'ASTERUSDT'],
-        ['last_alert_price' => 0.7000, 'last_alert_time' => now()]);
+        ['last_alert_price' => 0.7000, 'last_alert_time' => now(), 'last_seen_at' => now()]);
 
     Artisan::call('telegram:check-price-alerts', ['--explain' => true]);
     $out2 = Artisan::output();
@@ -104,7 +106,7 @@ try {
     echo "\n=== UJI 3: harga bergerak besar, melewati ambang ===\n";
     // ---------------------------------------------------------------
     TelegramPriceAlert::updateOrCreate(['symbol' => 'ASTERUSDT'],
-        ['last_alert_price' => 0.6000, 'last_alert_time' => now()]);
+        ['last_alert_price' => 0.6000, 'last_alert_time' => now(), 'last_seen_at' => now()]);
 
     Artisan::call('telegram:check-price-alerts', ['--explain' => true]);
     $out3 = Artisan::output();
@@ -123,6 +125,18 @@ try {
         abs((float)$patokanSebelum - (float)$patokanSesudah) < 0.000001, $lulus);
     periksa('diberi peringatan bahwa tidak ada yang dikirim',
         str_contains($out3, 'tidak ada notifikasi yang dikirim'), $lulus);
+
+    // ---------------------------------------------------------------
+    echo "\n=== UJI 5: patokan tanpa last_seen_at dianggap basi ===\n";
+    // ---------------------------------------------------------------
+    TelegramPriceAlert::updateOrCreate(['symbol' => 'ASTERUSDT'],
+        ['last_alert_price' => 0.5000, 'last_alert_time' => now(), 'last_seen_at' => null]);
+
+    Artisan::call('telegram:check-price-alerts', ['--explain' => true]);
+    $out5 = Artisan::output();
+
+    periksa('dilaporkan disegarkan, bukan dialerti',
+        (bool)preg_match('/ASTER.*DISEGARKAN/', $out5), $lulus);
 
     echo "\n=== Contoh keluarannya ===\n";
     foreach (explode("\n", $out3) as $baris) {

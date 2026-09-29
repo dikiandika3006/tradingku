@@ -183,32 +183,32 @@
                         <td style="padding: 0.75rem 0.9rem; text-align: right; font-family: monospace;">{{ $rp($r['modal_awal']) }}</td>
 <td style="padding: 0.5rem 0.6rem; text-align: right;">
                             <input type="text" form="formBaris" name="rows[{{ $r['year_month'] }}][top_up]"
-                                   value="{{ $r['ditimpa']['top_up'] ? number_format($r['top_up'], 0, ',', '') : '' }}"
+                                   value="{{ $r['ditimpa']['top_up'] ? number_format($r['top_up'], 0, ',', '.') : '' }}"
                                    placeholder="{{ number_format($r['top_up'], 0, ',', '.') }}"
-                                   style="width: 100%; background: rgba(59,130,246,0.07); border: 1px solid rgba(59,130,246,0.3); border-radius: 5px; color: #fff; font-family: monospace; font-size: 0.83rem; padding: 0.35rem 0.5rem; text-align: right;">
+                                   class="input-ribuan" inputmode="numeric" style="width: 100%; background: rgba(59,130,246,0.07); border: 1px solid rgba(59,130,246,0.3); border-radius: 5px; color: #fff; font-family: monospace; font-size: 0.83rem; padding: 0.35rem 0.5rem; text-align: right;">
                         </td>
                         <td style="padding: 0.75rem 0.9rem; text-align: center; font-family: monospace; color: #60a5fa;">
                             {{ number_format($r['return_persen'], 2) }}%
                         </td>
 <td style="padding: 0.5rem 0.6rem; text-align: right;">
                             <input type="text" form="formBaris" name="rows[{{ $r['year_month'] }}][return_idr]"
-                                   value="{{ $r['ditimpa']['return_idr'] ? number_format($r['return_idr'], 0, ',', '') : '' }}"
+                                   value="{{ $r['ditimpa']['return_idr'] ? number_format($r['return_idr'], 0, ',', '.') : '' }}"
                                    placeholder="{{ number_format($r['return_idr'], 0, ',', '.') }}"
-                                   style="width: 100%; background: rgba(59,130,246,0.07); border: 1px solid rgba(59,130,246,0.3); border-radius: 5px; color: #fff; font-family: monospace; font-size: 0.83rem; padding: 0.35rem 0.5rem; text-align: right;">
+                                   class="input-ribuan" inputmode="numeric" style="width: 100%; background: rgba(59,130,246,0.07); border: 1px solid rgba(59,130,246,0.3); border-radius: 5px; color: #fff; font-family: monospace; font-size: 0.83rem; padding: 0.35rem 0.5rem; text-align: right;">
                         </td>
                         <td style="padding: 0.75rem 0.9rem; text-align: right; font-family: monospace; font-weight: 700; color: #fff;">{{ $rp($r['saldo_akhir']) }}</td>
 <td style="padding: 0.5rem 0.6rem; text-align: right; background: rgba(247,147,26,0.05);">
                             <input type="text" form="formBaris" name="rows[{{ $r['year_month'] }}][alokasi_btc]"
-                                   value="{{ $r['ditimpa']['alokasi_btc'] ? number_format($r['alokasi_btc'], 0, ',', '') : '' }}"
+                                   value="{{ $r['ditimpa']['alokasi_btc'] ? number_format($r['alokasi_btc'], 0, ',', '.') : '' }}"
                                    placeholder="{{ number_format($r['alokasi_btc'], 0, ',', '.') }}"
-                                   style="width: 100%; background: rgba(59,130,246,0.07); border: 1px solid rgba(59,130,246,0.3); border-radius: 5px; color: #fff; font-family: monospace; font-size: 0.83rem; padding: 0.35rem 0.5rem; text-align: right;">
+                                   class="input-ribuan" inputmode="numeric" style="width: 100%; background: rgba(59,130,246,0.07); border: 1px solid rgba(59,130,246,0.3); border-radius: 5px; color: #fff; font-family: monospace; font-size: 0.83rem; padding: 0.35rem 0.5rem; text-align: right;">
                             <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.2rem;">{{ number_format($r['btc_persen'], 1) }}%</div>
                         </td>
 <td style="padding: 0.5rem 0.6rem; text-align: right; background: rgba(99,102,241,0.05);">
                             <input type="text" form="formBaris" name="rows[{{ $r['year_month'] }}][alokasi_alt]"
-                                   value="{{ $r['ditimpa']['alokasi_alt'] ? number_format($r['alokasi_alt'], 0, ',', '') : '' }}"
+                                   value="{{ $r['ditimpa']['alokasi_alt'] ? number_format($r['alokasi_alt'], 0, ',', '.') : '' }}"
                                    placeholder="{{ number_format($r['alokasi_alt'], 0, ',', '.') }}"
-                                   style="width: 100%; background: rgba(59,130,246,0.07); border: 1px solid rgba(59,130,246,0.3); border-radius: 5px; color: #fff; font-family: monospace; font-size: 0.83rem; padding: 0.35rem 0.5rem; text-align: right;">
+                                   class="input-ribuan" inputmode="numeric" style="width: 100%; background: rgba(59,130,246,0.07); border: 1px solid rgba(59,130,246,0.3); border-radius: 5px; color: #fff; font-family: monospace; font-size: 0.83rem; padding: 0.35rem 0.5rem; text-align: right;">
                             <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.2rem;">{{ number_format($r['alt_persen'], 1) }}%</div>
                         </td>
                         <td style="padding: 0.75rem 0.9rem; text-align: right; font-family: monospace; font-weight: 600; color: #fff;">
@@ -248,4 +248,28 @@
         Baris berlatar lebih terang berarti bulan tersebut sudah punya data nyata.
     </div>
 </div>
+@endsection
+
+@section('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    // Format ribuan sambil mengetik. Posisi kursor dijaga dari sisi KANAN,
+    // karena penyisipan titik menggeser indeks dari kiri dan membuat kursor
+    // melompat kalau dihitung dari depan.
+    function formatRibuan(el) {
+        const dariKanan = el.value.length - (el.selectionStart ?? el.value.length);
+        const angka = el.value.replace(/\D/g, '');
+
+        el.value = angka === '' ? '' : Number(angka).toLocaleString('id-ID');
+
+        const posisi = Math.max(0, el.value.length - dariKanan);
+        try { el.setSelectionRange(posisi, posisi); } catch (e) {}
+    }
+
+    document.querySelectorAll('.input-ribuan').forEach(function (el) {
+        el.addEventListener('input', function () { formatRibuan(el); });
+        el.addEventListener('blur', function () { formatRibuan(el); });
+    });
+});
+</script>
 @endsection
