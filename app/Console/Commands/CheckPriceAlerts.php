@@ -34,10 +34,15 @@ class CheckPriceAlerts extends Command
 
     protected $tokocryptoService;
 
-    public function __construct(TokocryptoService $tokocryptoService)
-    {
+    protected $costBasis;
+
+    public function __construct(
+        TokocryptoService $tokocryptoService,
+        \App\Services\CostBasisService $costBasis
+    ) {
         parent::__construct();
         $this->tokocryptoService = $tokocryptoService;
+        $this->costBasis = $costBasis;
     }
 
     /**
@@ -196,47 +201,15 @@ class CheckPriceAlerts extends Command
             }
 
             if (abs($percentChange) >= $threshold) {
-                // Calculate average buy price for this asset from trades table
-                $buyTrades = \App\Models\Trade::forBaseAsset($asset)
-                    ->where('type', 'BUY')
-                    ->get();
+                // Modal sisa posisi memakai rata-rata berjalan, sumber yang sama
+                // dengan halaman Portofolio dan Laporan Bulanan. Rata-rata seluruh
+                // pembelian keliru di sini: lot yang sudah habis terjual masih ikut
+                // menyeret rata-rata posisi yang baru dibuka kembali.
+                $basis = $this->costBasis->forAsset($asset, $prices);
+                $avgBuyPriceUsdt = $basis['avg_price_usdt'];
 
-                $totalBuyAmount = 0.0;
-                $totalBuyCostUsdt = 0.0;
-
-                foreach ($buyTrades as $trade) {
-                    $tradeSymbol = $trade->symbol;
-                    $tradePrice = (float)$trade->price;
-                    $tradeAmount = (float)$trade->amount;
-
-                    // Detect quote currency of trade (e.g. BIDR, USDT, IDRT)
-                    $tradeQuote = 'USDT';
-                    foreach (['USDT', 'BIDR', 'IDRT', 'BUSD', 'IDR'] as $q) {
-                        if (str_ends_with($tradeSymbol, $q) && strlen($tradeSymbol) > strlen($q)) {
-                            $tradeQuote = $q;
-                            break;
-                        }
-                    }
-
-                    // Standardize trade price to USDT
-                    $priceInUsdt = $tradePrice;
-                    if ($tradeQuote === 'BIDR' || $tradeQuote === 'IDRT' || $tradeQuote === 'IDR') {
-                        $rate = $prices['USDTIDR'] ?? ($prices['USDT' . $tradeQuote] ?? ($prices['USDTIDRT'] ?? 16400.0));
-                        if ($rate > 100) {
-                            $priceInUsdt = $tradePrice / $rate;
-                        } else {
-                            $priceInUsdt = $tradePrice / 16400.0;
-                        }
-                    }
-
-                    $totalBuyAmount += $tradeAmount;
-                    $totalBuyCostUsdt += ($priceInUsdt * $tradeAmount);
-                }
-
-                $avgBuyPriceUsdt = $totalBuyAmount > 0 ? ($totalBuyCostUsdt / $totalBuyAmount) : 0.0;
-
-                // Fallback to current price if no buy trades recorded
-                if ($avgBuyPriceUsdt === 0.0) {
+                // Tanpa riwayat pembelian, anggap modal = harga pasar (PNL nol)
+                if ($avgBuyPriceUsdt <= 0.0) {
                     $avgBuyPriceUsdt = $currentPriceUsdt;
                 }
 

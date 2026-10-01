@@ -127,6 +127,36 @@ try {
         str_contains($out3, 'tidak ada notifikasi yang dikirim'), $lulus);
 
     // ---------------------------------------------------------------
+    echo "\n=== UJI 4b: rata-rata beli dari posisi berjalan ===\n";
+    // ---------------------------------------------------------------
+    // Riwayat seperti STRK: dibeli, dijual HABIS, lalu dibeli lagi.
+    // Lot pertama tidak boleh ikut menyeret rata-rata posisi yang baru.
+    App\Models\Trade::create(['symbol' => 'ASTERUSDT', 'type' => 'BUY',  'amount' => 1934.79,
+        'price' => 0.0285, 'total' => 55.14, 'trade_time' => '2026-07-16 15:24:00']);
+    App\Models\Trade::create(['symbol' => 'ASTERUSDT', 'type' => 'SELL', 'amount' => 1934.79,
+        'price' => 0.0320, 'total' => 61.91, 'trade_time' => '2026-09-06 10:35:00']);
+    App\Models\Trade::create(['symbol' => 'ASTERUSDT', 'type' => 'BUY',  'amount' => 3319.0,
+        'price' => 0.0420, 'total' => 139.40, 'trade_time' => '2026-09-30 18:08:00']);
+
+    $basis = app(App\Services\CostBasisService::class)
+        ->forAsset('ASTER', ['ASTERUSDT' => 0.04383]);
+
+    printf("     posisi berjalan   : %s\n", number_format($basis['amount'], 2));
+    printf("     rata-rata beli    : %s\n", number_format($basis['avg_price_usdt'], 6));
+
+    periksa('posisi = lot terbaru saja (3.319)',
+        abs($basis['amount'] - 3319.0) < 0.01, $lulus);
+    periksa('rata-rata = 0,042000, bukan 0,037028',
+        abs($basis['avg_price_usdt'] - 0.042) < 0.000001, $lulus);
+
+    // Rata-rata seluruh pembelian memberi 0,037028 — angka keliru yang dulu dikirim
+    $semua = (1934.79 * 0.0285 + 3319 * 0.0420) / (1934.79 + 3319);
+    periksa('berbeda dari rata-rata semua BUY',
+        abs($semua - $basis['avg_price_usdt']) > 0.001, $lulus);
+
+    App\Models\Trade::query()->delete();
+
+    // ---------------------------------------------------------------
     echo "\n=== UJI 5: patokan tanpa last_seen_at dianggap basi ===\n";
     // ---------------------------------------------------------------
     TelegramPriceAlert::updateOrCreate(['symbol' => 'ASTERUSDT'],
