@@ -151,6 +151,52 @@
     </div>
 </div>
 
+@php
+    // Grafik dibaca kiri ke kanan, sedangkan tabel menampilkan yang terbaru dulu
+    $urutGrafik = $daily->reverse()->values();
+@endphp
+
+<!-- Grafik riwayat -->
+<div class="glass-card" style="padding: 1.5rem; margin-bottom: 1.5rem;">
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 0.75rem;">
+        <div>
+            <h3 style="font-size: 1.15rem; font-weight: 600; color: #fff; margin: 0;">
+                Nilai jendela <span id="labelJendela">7 hari</span>
+            </h3>
+            <p style="margin: 0.2rem 0 0; color: var(--text-muted); font-size: 0.85rem;">
+                @if($urutGrafik->count() >= 2)
+                    Nilai yang tercatat pada tabel,
+                    {{ \Carbon\Carbon::parse($urutGrafik->first()->captured_date)->translatedFormat('j M') }}&ndash;{{ \Carbon\Carbon::parse($urutGrafik->last()->captured_date)->translatedFormat('j M Y') }}.
+                @else
+                    Terbentuk setelah ada minimal dua hari rekaman.
+                @endif
+            </p>
+        </div>
+
+        <div style="display: flex; gap: 0.35rem; flex-wrap: wrap;">
+            @foreach($timeframes as $tf)
+                <button type="button" class="tombol-jendela" data-tf="{{ $tf }}" data-label="{{ $timeframe_labels[$tf] }}"
+                        style="padding: 0.35rem 0.75rem; border-radius: 6px; font-size: 0.8rem; font-weight: 600; cursor: pointer;
+                               border: 1px solid {{ $tf === '1w' ? 'rgba(59,130,246,0.5)' : 'rgba(255,255,255,0.1)' }};
+                               background: {{ $tf === '1w' ? 'rgba(59,130,246,0.15)' : 'transparent' }};
+                               color: {{ $tf === '1w' ? '#60a5fa' : 'var(--text-muted)' }};">
+                    {{ $timeframe_labels[$tf] }}
+                </button>
+            @endforeach
+        </div>
+    </div>
+
+    @if($urutGrafik->count() >= 2)
+        <div style="position: relative; height: 300px; width: 100%;">
+            <canvas id="grafikRiwayatVolume"></canvas>
+        </div>
+    @else
+        <div style="padding: 3rem 0; text-align: center; color: var(--text-muted); font-size: 0.9rem;">
+            Grafik butuh minimal dua hari rekaman. Saat ini baru {{ $urutGrafik->count() }} hari.
+        </div>
+    @endif
+</div>
+
 <!-- Riwayat harian -->
 <div class="glass-card" style="padding: 1.5rem;">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 0.5rem;">
@@ -211,4 +257,94 @@
         yang sama akan memperbarui baris itu, bukan menambah baris baru.
     </div>
 </div>
+@endsection
+
+@section('scripts')
+@php
+    $dataGrafik = [
+        'label' => $urutGrafik->map(fn($d) => \Carbon\Carbon::parse($d->captured_date)->translatedFormat('j M'))->all(),
+    ];
+    foreach ($timeframes as $tf) {
+        $dataGrafik['nilai'][$tf] = $urutGrafik->map(fn($d) => (float)$d->{"volume_usd_{$tf}"})->all();
+    }
+@endphp
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const kanvas = document.getElementById('grafikRiwayatVolume');
+    if (!kanvas) return;   // kurang dari dua hari, grafik tidak dirender
+
+    const data = @json($dataGrafik);
+    const label = document.getElementById('labelJendela');
+
+    function singkatUsd(v) {
+        const a = Math.abs(v);
+        if (a >= 1e9) return '$' + (v / 1e9).toFixed(2) + 'B';
+        if (a >= 1e6) return '$' + (v / 1e6).toFixed(2) + 'M';
+        if (a >= 1e3) return '$' + (v / 1e3).toFixed(2) + 'K';
+        return '$' + v.toFixed(2);
+    }
+
+    const grafik = new Chart(kanvas.getContext('2d'), {
+        type: 'line',
+        data: {
+            labels: data.label,
+            datasets: [{
+                data: data.nilai['1w'],
+                borderColor: '#3b82f6',
+                backgroundColor: 'rgba(59,130,246,0.12)',
+                borderWidth: 2,
+                pointRadius: 4,
+                pointBackgroundColor: '#60a5fa',
+                pointBorderColor: '#1e3a8a',
+                tension: 0,
+                fill: true,
+            }],
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: { label: (c) => ' ' + singkatUsd(c.parsed.y) },
+                },
+            },
+            scales: {
+                x: {
+                    grid: { display: false },
+                    ticks: { color: 'rgba(255,255,255,0.45)', font: { size: 11 } },
+                },
+                y: {
+                    // Sengaja tidak mulai dari nol: pergerakan antar hari cuma
+                    // beberapa persen, dan akan rata tak terbaca kalau dipaksa dari nol.
+                    beginAtZero: false,
+                    grid: { color: 'rgba(255,255,255,0.06)' },
+                    ticks: {
+                        color: 'rgba(255,255,255,0.45)',
+                        font: { size: 11 },
+                        callback: (v) => singkatUsd(v),
+                    },
+                },
+            },
+        },
+    });
+
+    document.querySelectorAll('.tombol-jendela').forEach(function (tombol) {
+        tombol.addEventListener('click', function () {
+            const tf = tombol.dataset.tf;
+
+            grafik.data.datasets[0].data = data.nilai[tf];
+            grafik.update();
+            label.textContent = tombol.dataset.label.toLowerCase();
+
+            document.querySelectorAll('.tombol-jendela').forEach(function (t) {
+                const aktif = t === tombol;
+                t.style.borderColor = aktif ? 'rgba(59,130,246,0.5)' : 'rgba(255,255,255,0.1)';
+                t.style.background  = aktif ? 'rgba(59,130,246,0.15)' : 'transparent';
+                t.style.color       = aktif ? '#60a5fa' : 'var(--text-muted)';
+            });
+        });
+    });
+});
+</script>
 @endsection
