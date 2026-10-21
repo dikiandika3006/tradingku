@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use Illuminate\Database\Events\MigrationsEnded;
+use Illuminate\Database\Events\MigrationsStarted;
 use Illuminate\Database\Events\TransactionCommitted;
 use Illuminate\Database\Events\TransactionRolledBack;
 use Illuminate\Support\Facades\DB;
@@ -16,6 +18,12 @@ class AppServiceProvider extends ServiceProvider
      * @var array<int, string>
      */
     protected static array $transactionBuffer = [];
+
+    /**
+     * Sedang menjalankan migrasi. Data yang ditanam migrasi ikut terbentuk di
+     * produksi saat migrasinya dijalankan di sana, jadi tidak perlu disinkronkan.
+     */
+    protected static bool $migrating = false;
 
     /**
      * Register any application services.
@@ -34,7 +42,14 @@ class AppServiceProvider extends ServiceProvider
             return;
         }
 
+        Event::listen(MigrationsStarted::class, fn () => static::$migrating = true);
+        Event::listen(MigrationsEnded::class, fn () => static::$migrating = false);
+
         DB::listen(function ($query) {
+            if (static::$migrating) {
+                return;
+            }
+
             $sql = $this->buildLoggableSql($query);
 
             if ($sql === null) {
@@ -83,7 +98,7 @@ class AppServiceProvider extends ServiceProvider
         }
 
         // Hanya tabel inti yang ikut disinkronkan
-        if (!preg_match('/(trades|watchlists|settings|users)/i', $sql)) {
+        if (!preg_match('/(trades|watchlists|settings|users|investors|investor_transactions)/i', $sql)) {
             return null;
         }
 

@@ -11,6 +11,7 @@ use App\Http\Controllers\ScannerController;
 use App\Http\Controllers\DerivativesController;
 use App\Http\Controllers\CapitalProjectionController;
 use App\Http\Controllers\VolumeHeatmapController;
+use App\Http\Controllers\InvestorController;
 use Illuminate\Support\Facades\Route;
 
 // Public Auth Routes
@@ -71,6 +72,15 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/portfolio/capital-projection', [CapitalProjectionController::class, 'update'])->name('portfolio.capital-projection.update');
         Route::post('/portfolio/capital-projection/rows', [CapitalProjectionController::class, 'updateRows'])->name('portfolio.capital-projection.rows');
         Route::post('/portfolio/capital-projection/reset', [CapitalProjectionController::class, 'resetRows'])->name('portfolio.capital-projection.reset');
+
+        // Master investor & riwayat setoran dana
+        Route::get('/investor', [InvestorController::class, 'index'])->name('investor.index');
+        Route::post('/investor', [InvestorController::class, 'storeInvestor'])->name('investor.store');
+        Route::put('/investor/{id}', [InvestorController::class, 'updateInvestor'])->name('investor.update');
+        Route::delete('/investor/{id}', [InvestorController::class, 'destroyInvestor'])->name('investor.destroy');
+        Route::post('/investor-transaction', [InvestorController::class, 'storeTransaction'])->name('investor.transaction.store');
+        Route::put('/investor-transaction/{id}', [InvestorController::class, 'updateTransaction'])->name('investor.transaction.update');
+        Route::delete('/investor-transaction/{id}', [InvestorController::class, 'destroyTransaction'])->name('investor.transaction.destroy');
 
         // User Management Routes
         Route::get('/user', [UserController::class, 'index'])->name('user.index');
