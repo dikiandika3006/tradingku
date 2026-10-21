@@ -62,11 +62,80 @@
     </div>
 </div>
 
+<style>
+    /*
+     * Di ponsel tiap baris aset menjadi kartu bertumpuk, sehingga tidak perlu
+     * menggeser tabel ke kanan. Desktop tetap tabel seperti biasa.
+     * Selektor sengaja diberi dua kelas supaya menang atas aturan .custom-table
+     * di dashboard.css (termasuk aturan 480px-nya).
+     */
+    @media (max-width: 768px) {
+        .custom-table.table-kartu { min-width: 0 !important; }
+        .custom-table.table-kartu thead { display: none; }
+
+        .custom-table.table-kartu,
+        .custom-table.table-kartu tbody,
+        .custom-table.table-kartu tr,
+        .custom-table.table-kartu td { display: block; width: 100%; }
+
+        .custom-table.table-kartu tr {
+            border: 1px solid var(--border-light);
+            border-radius: 12px;
+            margin-bottom: 0.9rem;
+            background: rgba(255, 255, 255, 0.02);
+            overflow: hidden;
+        }
+        .custom-table.table-kartu tr:last-child { margin-bottom: 0; }
+        .custom-table.table-kartu tr:hover td { background: none; }
+
+        /* Label di kiri, nilai rata kanan */
+        .custom-table.table-kartu td {
+            position: relative;
+            padding: 0.6rem 0.9rem 0.6rem 45%;
+            text-align: right;
+            font-size: 0.88rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            word-break: break-word;
+        }
+        .custom-table.table-kartu td::before {
+            content: attr(data-label);
+            position: absolute;
+            left: 0.9rem;
+            top: 0.65rem;
+            width: 40%;
+            text-align: left;
+            /* Label selalu huruf biasa, meski selnya berhuruf monospace */
+            font-family: var(--font-sans);
+            font-size: 0.7rem;
+            font-weight: 700;
+            font-style: normal;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            color: var(--text-muted);
+        }
+        .custom-table.table-kartu tr td:last-child { border-bottom: none; }
+
+        /* Nama aset jadi kepala kartu */
+        .custom-table.table-kartu td.kartu-judul {
+            padding: 0.75rem 0.9rem;
+            text-align: left;
+            background: rgba(255, 255, 255, 0.04);
+        }
+        .custom-table.table-kartu td.kartu-judul::before,
+        .custom-table.table-kartu td.kartu-kosong::before { display: none; }
+
+        .custom-table.table-kartu td.kartu-kosong {
+            padding: 2.5rem 1rem;
+            text-align: center;
+        }
+    }
+</style>
+
 <!-- Detailed Asset Holdings Table -->
 <div class="glass-card mb-6">
     <div class="card-title">Rincian Kepemilikan Aset</div>
     <div class="table-responsive">
-        <table class="custom-table table-wide">
+        <table class="custom-table table-kartu">
             <thead>
                 <tr>
                     <th>Aset</th>
@@ -84,16 +153,16 @@
             <tbody>
                 @forelse($assets as $asset)
                     <tr>
-                        <td style="font-weight: 800; font-size: 1.1rem; color: var(--color-secondary);">
+                        <td class="kartu-judul" style="font-weight: 800; font-size: 1.1rem; color: var(--color-secondary);">
                             {{ $asset['asset'] }}
                         </td>
-                        <td style="font-family: monospace; font-weight: 600;">
+                        <td data-label="Jumlah Saldo" style="font-family: monospace; font-weight: 600;">
                             {{ number_format($asset['total'], 6) }}
                             <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 400; margin-top: 0.15rem;">
                                 Tersedia: {{ number_format($asset['free'], 4) }} | Order: {{ number_format($asset['locked'], 4) }}
                             </div>
                         </td>
-                        <td>
+                        <td data-label="Durasi">
                             <span class="badge" style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); color: var(--text-main); font-weight: 600; padding: 0.35rem 0.65rem; border-radius: 6px; display: inline-block;">
                                 {{ $asset['duration_text'] }}
                             </span>
@@ -103,19 +172,19 @@
                                 </div>
                             @endif
                         </td>
-                        <td style="font-family: monospace;">
+                        <td data-label="Rata-rata Beli" style="font-family: monospace;">
                             ${{ number_format($asset['avg_buy_price_usdt'], 4) }}
                             <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.15rem;">
                                 Rp {{ number_format($asset['avg_buy_price_idr'], 0, ',', '.') }}
                             </div>
                         </td>
-                        <td style="font-family: monospace; font-weight: 500;">
+                        <td data-label="Harga Pasar" style="font-family: monospace; font-weight: 500;">
                             ${{ number_format($asset['current_price_usdt'], 4) }}
                             <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.15rem;">
                                 Rp {{ number_format($asset['current_price_idr'], 0, ',', '.') }}
                             </div>
                         </td>
-                        <td style="font-family: monospace;">
+                        <td data-label="Modal" style="font-family: monospace;">
                             @if($asset['can_be_valued'] ?? true)
                                 ${{ number_format($asset['cost_usdt'], 2) }}
                                 <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.15rem;">
@@ -125,13 +194,13 @@
                                 <span style="color: var(--text-muted);">&mdash;</span>
                             @endif
                         </td>
-                        <td style="font-family: monospace; font-weight: 600;">
+                        <td data-label="Nilai Saat Ini" style="font-family: monospace; font-weight: 600;">
                             ${{ number_format($asset['value_usdt'], 2) }}
                             <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.15rem;">
                                 Rp {{ number_format($asset['value_idr'], 0, ',', '.') }}
                             </div>
                         </td>
-                        <td style="font-family: monospace; font-weight: 600;" class="{{ ($asset['can_be_valued'] ?? true) ? ($asset['pnl_usdt'] >= 0 ? 'text-success' : 'text-danger') : '' }}">
+                        <td data-label="PNL Belum Terealisasi" style="font-family: monospace; font-weight: 600;" class="{{ ($asset['can_be_valued'] ?? true) ? ($asset['pnl_usdt'] >= 0 ? 'text-success' : 'text-danger') : '' }}">
                             @if(!($asset['can_be_valued'] ?? true))
                                 <span style="color: var(--text-muted);">&mdash;</span>
                             @elseif($asset['pnl_usdt'] >= 0)
@@ -146,20 +215,20 @@
                                 </div>
                             @endif
                         </td>
-                        <td style="font-family: monospace; font-weight: 700;" class="{{ ($asset['can_be_valued'] ?? true) ? ($asset['pnl_percent'] >= 0 ? 'text-success' : 'text-danger') : '' }}">
+                        <td data-label="PNL (%)" style="font-family: monospace; font-weight: 700;" class="{{ ($asset['can_be_valued'] ?? true) ? ($asset['pnl_percent'] >= 0 ? 'text-success' : 'text-danger') : '' }}">
                             @if($asset['can_be_valued'] ?? true)
                                 {{ $asset['pnl_percent'] >= 0 ? '+' : '' }}{{ number_format($asset['pnl_percent'], 2) }}%
                             @else
                                 <span style="color: var(--text-muted);" title="Tidak punya harga pasar, jadi tidak bisa dinilai">tidak dinilai</span>
                             @endif
                         </td>
-                        <td style="font-size: 0.75rem; color: var(--text-muted); font-style: italic;">
+                        <td data-label="Sumber" style="font-size: 0.75rem; color: var(--text-muted); font-style: italic;">
                             {{ $asset['source'] }}
                         </td>
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="10" style="text-align: center; color: var(--text-muted); padding: 3rem 0;">
+                        <td colspan="10" class="kartu-kosong" style="text-align: center; color: var(--text-muted); padding: 3rem 0;">
                             Tidak ada saldo aset aktif di portfolio saat ini.
                         </td>
                     </tr>
