@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\CapitalProjectionOverride;
 use App\Models\MonthlyPortfolioSnapshot;
 use App\Models\Setting;
+use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
 
 /**
@@ -33,6 +34,16 @@ class CapitalProjectionService
     ];
 
     /** Semua pengaturan proyeksi, sudah diisi nilai bawaan bila kosong. */
+    /** Mata uang kas yang tidak dihitung sebagai alokasi BTC maupun altcoin. */
+    protected const KAS = ['USDT', 'BIDR', 'IDRT', 'BUSD', 'USDC', 'IDR'];
+
+    protected $tokocrypto;
+
+    public function __construct(TokocryptoService $tokocrypto)
+    {
+        $this->tokocrypto = $tokocrypto;
+    }
+
     public function settings(): array
     {
         $tersimpan = Setting::whereIn('key', array_keys(self::DEFAULTS))
@@ -68,6 +79,8 @@ class CapitalProjectionService
         $fasesAlokasi = $this->parsePerBulan($s['projection_allocation_phases']);
 
         $aktual  = $this->saldoNyataPerBulan();
+        $bulanIni = now()->format('Y-m');
+        $live     = $this->portofolioSekarang();
         $timpaan = CapitalProjectionOverride::get()->keyBy('year_month');
 
         $rows = [];
@@ -113,6 +126,23 @@ class CapitalProjectionService
             $persenAlt = $saldoAkhir > 0 ? ($alokasiAlt / $saldoAkhir) * 100 : 0.0;
 
             $nyata = $aktual[$ym] ?? null;
+            $dariPortofolio = false;
+            $kasIdr = null;
+
+            // Bulan berjalan memakai saldo dan isi portofolio saat ini, bukan
+            // rencana. Bulan lampau tetap dari snapshot; rincian BTC/altcoin-nya
+            // memang tidak pernah direkam, jadi kolom alokasinya tetap rencana.
+            if ($ym === $bulanIni && $live !== null) {
+                $nyata          = $live['total_idr'];
+                $alokasiBtc     = $live['btc_idr'];
+                $alokasiAlt     = $live['alt_idr'];
+                $kasIdr         = $live['kas_idr'];
+                $dariPortofolio = true;
+
+                // Persen relatif terhadap saldo nyata, jadi BTC + Alt + Kas = 100%
+                $persenBtc = $nyata > 0 ? ($alokasiBtc / $nyata) * 100 : 0.0;
+                $persenAlt = $nyata > 0 ? ($alokasiAlt / $nyata) * 100 : 0.0;
+            }
 
             $rows[] = [
                 'year_month'   => $ym,
@@ -135,11 +165,16 @@ class CapitalProjectionService
                     'alokasi_alt' => $o && $o->alokasi_alt !== null,
                 ],
                 // Alokasi yang tidak menjumlah ke saldo akhir perlu terlihat
-                'alokasi_timpang' => abs(($alokasiBtc + $alokasiAlt) - $saldoAkhir) > 1.0,
+                // Tidak berlaku untuk alokasi nyata: sisanya memang kas yang belum dibelikan
+                'alokasi_timpang' => !$dariPortofolio && abs(($alokasiBtc + $alokasiAlt) - $saldoAkhir) > 1.0,
+                'alokasi_dari_portofolio' => $dariPortofolio,
+                'kas_idr'      => $kasIdr,
                 'aktual'       => $nyata,
-                'selisih'      => $nyata !== null ? $nyata - $saldoAkhir : null,
+                // Selisih = Saldo Akhir rencana - Aktual.
+                // Positif berarti saldo nyata masih KURANG dari rencana.
+                'selisih'      => $nyata !== null ? $saldoAkhir - $nyata : null,
                 'selisih_persen' => ($nyata !== null && $saldoAkhir > 0)
-                    ? (($nyata - $saldoAkhir) / $saldoAkhir) * 100
+                    ? (($saldoAkhir - $nyata) / $saldoAkhir) * 100
                     : null,
                 'sudah_lewat'  => $nyata !== null,
             ];
@@ -174,6 +209,55 @@ class CapitalProjectionService
             'bulan_terakhir' => $terakhir['year_month'] ?? null,
             'bulan_dibanding' => count($terbanding),
             'posisi_terkini' => $mutakhir,
+        ];
+    }
+
+    /**
+     * Isi portofolio saat ini dalam Rupiah: total, porsi BTC, altcoin, dan kas.
+     *
+     * Total dihitung sama persis dengan kartu "Nilai Portofolio Saat Ini" di
+     * halaman Portofolio, supaya angka Aktual di sini tidak pernah berbeda dari
+     * yang Anda lihat di sana. Null bila portofolio gagal diambil — bulan
+     * berjalan lalu jatuh ke snapshot harian.
+     */
+    protected function portofolioSekarang(): ?array
+    {
+        try {
+            $p = $this->tokocrypto->getPortfolio();
+        } catch (\Throwable $e) {
+            Log::warning('Proyeksi modal: portofolio gagal diambil: ' . $e->getMessage());
+            return null;
+        }
+
+        $aset = $p['assets'] ?? [];
+        $kurs = (float)($p['usdt_idr_rate'] ?? 0);
+
+        if (empty($aset) || $kurs <= 0) {
+            return null;
+        }
+
+        $total = 0.0; $btc = 0.0; $alt = 0.0; $kas = 0.0;
+
+        foreach ($aset as $a) {
+            $nama  = strtoupper((string)($a['asset'] ?? ''));
+            $nilai = (float)($a['value_usdt'] ?? 0);
+
+            $total += $nilai;
+
+            if ($nama === 'BTC') {
+                $btc += $nilai;
+            } elseif (in_array($nama, self::KAS, true)) {
+                $kas += $nilai;
+            } elseif ($nilai > 0) {
+                $alt += $nilai;
+            }
+        }
+
+        return [
+            'total_idr' => $total * $kurs,
+            'btc_idr'   => $btc * $kurs,
+            'alt_idr'   => $alt * $kurs,
+            'kas_idr'   => $kas * $kurs,
         ];
     }
 

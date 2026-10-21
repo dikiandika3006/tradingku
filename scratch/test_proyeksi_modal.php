@@ -51,6 +51,33 @@ function periksa(string $label, $dapat, $harus, bool &$lulus, float $toleransi =
         is_numeric($harus) ? number_format((float)$harus, 2) : (string)$harus);
 }
 
+// Portofolio palsu: dimatikan dulu supaya baris bulan berjalan memakai rencana,
+// lalu dinyalakan di UJI 9 untuk memeriksa pengambilan dari portofolio nyata.
+class FakeTokoProyeksi extends App\Services\TokocryptoService
+{
+    public static bool $aktif = false;
+    public function __construct() {}
+    public function getPortfolio(): array
+    {
+        if (!self::$aktif) {
+            return ['usdt_idr_rate' => 17000.0, 'assets' => []];
+        }
+        $a = fn($n, $v) => ['asset' => $n, 'total' => 1, 'price' => 1, 'value_usdt' => $v];
+        return ['usdt_idr_rate' => 17000.0, 'assets' => [
+            $a('BTC', 400.0),       // 6.800.000
+            $a('LUMIA', 380.0),     // 6.460.000 \
+            $a('ASTER', 120.0),     // 2.040.000  > altcoin 9.350.000
+            $a('STRK', 50.0),       //   850.000 /
+            $a('USDT', 600.0),      // 10.200.000  kas
+            $a('IDR', 0.0),         // fiat bernilai nol
+        ]];
+    }
+}
+app()->instance(App\Services\TokocryptoService::class, new FakeTokoProyeksi());
+
+// Tanggal dipatok supaya "bulan berjalan" selalu Oktober 2026
+\Carbon\Carbon::setTestNow('2026-10-21 10:00:00');
+
 $svc = app(CapitalProjectionService::class);
 
 // ---------------------------------------------------------------
@@ -101,8 +128,9 @@ $h2 = $svc->build();
 $r2 = collect($h2['rows'])->keyBy('year_month');
 
 periksa('aktual September terbaca', $r2['2026-09']['aktual'], 24821094, $lulus);
-periksa('selisih terhadap rencana', $r2['2026-09']['selisih'], 665094, $lulus);
-periksa('selisih dalam persen', $r2['2026-09']['selisih_persen'], 2.7533, $lulus, 0.01);
+// Selisih = Saldo Akhir rencana - Aktual: 24.156.000 - 24.821.094
+periksa('selisih = rencana - aktual', $r2['2026-09']['selisih'], -665094, $lulus);
+periksa('selisih dalam persen', $r2['2026-09']['selisih_persen'], -2.7533, $lulus, 0.01);
 periksa('bulan mendatang tetap kosong', $r2['2026-11']['aktual'], null, $lulus);
 periksa('ditandai sudah lewat', $r2['2026-09']['sudah_lewat'], true, $lulus);
 periksa('bulan mendatang belum lewat', $r2['2026-11']['sudah_lewat'], false, $lulus);
@@ -186,6 +214,58 @@ $r8 = collect($h8['rows'])->keyBy('year_month');
 periksa('top up nol dihormati', $r8['2026-11']['top_up'], 0.0, $lulus);
 periksa('ditandai ditimpa meski nol', $r8['2026-11']['ditimpa']['top_up'], true, $lulus);
 periksa('bulan lain tetap otomatis', $r8['2026-12']['top_up'], 3000000, $lulus);
+
+// ---------------------------------------------------------------
+echo "\n=== UJI 9: bulan berjalan dari portofolio saat ini ===\n";
+// ---------------------------------------------------------------
+CapitalProjectionOverride::query()->delete();
+MonthlyPortfolioSnapshot::query()->delete();
+MonthlyPortfolioSnapshot::create(['year_month' => '2026-09', 'ending_valuation_idr' => 24821094, 'is_finalized' => true]);
+// Snapshot harian Oktober sengaja dibuat berbeda: yang live harus menang
+MonthlyPortfolioSnapshot::create(['year_month' => '2026-10', 'ending_valuation_idr' => 11111111, 'is_finalized' => false]);
+FakeTokoProyeksi::$aktif = true;
+
+$h9 = app(CapitalProjectionService::class)->build();
+$r9 = collect($h9['rows'])->keyBy('year_month');
+$okt = $r9['2026-10'];
+
+// Total = (400 + 380 + 120 + 50 + 600 + 0) x 17.000 = 26.350.000
+periksa('aktual = saldo portofolio saat ini', $okt['aktual'], 26350000, $lulus);
+periksa('bukan snapshot harian', $okt['aktual'] !== 11111111.0, true, $lulus);
+periksa('alokasi BTC dari portofolio', $okt['alokasi_btc'], 6800000, $lulus);
+periksa('alokasi Alt = semua non-BTC non-kas', $okt['alokasi_alt'], 9350000, $lulus);
+periksa('kas USDT dipisahkan', $okt['kas_idr'], 10200000, $lulus);
+periksa('BTC + Alt + Kas = Aktual',
+    $okt['alokasi_btc'] + $okt['alokasi_alt'] + $okt['kas_idr'], 26350000, $lulus);
+periksa('persen BTC relatif ke aktual', $okt['btc_persen'], 25.806, $lulus, 0.01);
+periksa('ditandai dari portofolio', $okt['alokasi_dari_portofolio'], true, $lulus);
+periksa('tidak ditandai timpang', $okt['alokasi_timpang'], false, $lulus);
+
+// Selisih = Saldo Akhir Oktober (27.880.680) - Aktual (26.350.000)
+periksa('selisih = saldo akhir - aktual', $okt['selisih'], 1530680, $lulus);
+
+// Bulan lampau tetap dari snapshot dan alokasinya tetap rencana
+periksa('September tetap dari snapshot', $r9['2026-09']['aktual'], 24821094, $lulus);
+periksa('September alokasi tetap rencana', $r9['2026-09']['alokasi_dari_portofolio'], false, $lulus);
+periksa('November belum punya aktual', $r9['2026-11']['aktual'], null, $lulus);
+
+// Rantai rencana tidak boleh terpengaruh alokasi nyata
+periksa('modal November tetap dari rencana', $r9['2026-11']['modal_awal'], 27880680, $lulus);
+
+// Kartu ringkasan menunjuk bulan berjalan
+periksa('posisi terkini = Oktober', $h9['summary']['posisi_terkini']['year_month'], '2026-10', $lulus);
+
+// ---------------------------------------------------------------
+echo "\n=== UJI 10: portofolio gagal diambil -> jatuh ke snapshot ===\n";
+// ---------------------------------------------------------------
+FakeTokoProyeksi::$aktif = false;   // aset kosong
+$r10 = collect(app(CapitalProjectionService::class)->build()['rows'])->keyBy('year_month');
+
+periksa('aktual Oktober dari snapshot harian', $r10['2026-10']['aktual'], 11111111, $lulus);
+periksa('alokasi kembali ke rencana', $r10['2026-10']['alokasi_dari_portofolio'], false, $lulus);
+periksa('alokasi rencana Oktober', $r10['2026-10']['alokasi_btc'], 8364204, $lulus);
+
+\Carbon\Carbon::setTestNow();
 
 echo "\n" . ($lulus ? '>>> SEMUA UJI LULUS' : '>>> ADA UJI YANG GAGAL') . "\n";
 echo "\n(Tidak ada query yang menyentuh database produksi.)\n";
