@@ -69,9 +69,9 @@ class User extends Authenticatable
     /**
      * Role dari Master Role (users.role menyimpan slug role).
      */
-    public function roleModel(): BelongsTo
+    public function roleModel(): ?Role
     {
-        return $this->belongsTo(Role::class, 'role', 'slug');
+        return Role::forSlug($this->role);
     }
 
     /**
@@ -80,12 +80,12 @@ class User extends Authenticatable
     public function canAccess(string $key): bool
     {
         // Super Admin tidak bergantung pada isi tabel roles, supaya tidak pernah terkunci.
-        return $this->isSuperAdmin() || (bool)$this->roleModel?->allows($key);
+        return $this->isSuperAdmin() || (bool)$this->roleModel()?->allows($key);
     }
 
     public function roleName(): string
     {
-        return $this->roleModel?->name ?? $this->role;
+        return $this->roleModel()?->name ?? $this->role;
     }
 
     /**

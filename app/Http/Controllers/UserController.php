@@ -7,6 +7,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rule;
 
 class UserController extends Controller
 {
@@ -15,9 +16,9 @@ class UserController extends Controller
      */
     public function index()
     {
-        $users = User::with('roleModel')->orderBy('name', 'asc')->get();
+        $users = User::orderBy('name', 'asc')->get();
         // Super Admin di urutan terakhir supaya tidak jadi pilihan default.
-        $roles = Role::orderByRaw('slug = ?', [Role::SUPER_ADMIN])->orderBy('id')->get();
+        $roles = Role::allSafe();
         return view('user.index', compact('users', 'roles'));
     }
 
@@ -30,7 +31,7 @@ class UserController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:6|confirmed',
-            'role' => 'required|string|exists:roles,slug',
+            'role' => ['required', 'string', Rule::in(Role::allSafe()->pluck('slug')->all())],
         ]);
 
         if ($denied = $this->superAdminGuard($request->role)) {
@@ -58,7 +59,7 @@ class UserController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users,email,' . $user->id,
             'password' => 'nullable|string|min:6|confirmed',
-            'role' => 'required|string|exists:roles,slug',
+            'role' => ['required', 'string', Rule::in(Role::allSafe()->pluck('slug')->all())],
         ]);
 
         if ($denied = $this->superAdminGuard($request->role, $user)) {

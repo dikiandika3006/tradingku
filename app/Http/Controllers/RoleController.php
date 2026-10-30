@@ -12,6 +12,10 @@ class RoleController extends Controller
 {
     public function index()
     {
+        if (!Role::tableExists()) {
+            return redirect()->route('setting.index')->with('error', 'Tabel roles belum ada. Jalankan migrasi database terlebih dahulu.');
+        }
+
         $roles = Role::withCount('users')
             ->orderByRaw('slug = ? desc', [Role::SUPER_ADMIN])
             ->orderBy('id')
