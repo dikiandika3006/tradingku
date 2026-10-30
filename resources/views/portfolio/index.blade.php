@@ -64,26 +64,46 @@
 
 <!-- Detailed Asset Holdings Table -->
 <div class="glass-card mb-6">
-    <div class="card-title">Rincian Kepemilikan Aset</div>
+    <div class="card-title" style="flex-wrap: wrap; gap: 0.75rem;">
+        <span>Rincian Kepemilikan Aset</span>
+        <!-- Di ponsel judul kolom disembunyikan, jadi urutan dipilih dari sini -->
+        <div class="sort-mobile" style="gap: 0.5rem; align-items: center;">
+            <select id="sortKeySelect" class="form-control" style="padding: 0.45rem 0.75rem; font-size: 0.85rem; width: auto;">
+                <option value="">Urutan bawaan</option>
+            </select>
+            <button type="button" id="sortDirBtn" class="btn btn-secondary btn-sm" title="Balik arah urutan">↓</button>
+        </div>
+    </div>
     <div class="table-responsive">
-        <table class="custom-table table-kartu">
+        <table class="custom-table table-kartu" id="assetTable">
             <thead>
                 <tr>
-                    <th>Aset</th>
-                    <th>Jumlah Saldo</th>
-                    <th>Durasi</th>
-                    <th>Harga Rata-rata Beli</th>
-                    <th>Harga Pasar</th>
-                    <th>Modal (Cost Basis)</th>
-                    <th>Nilai Saat Ini</th>
-                    <th>PNL Belum Terealisasi</th>
-                    <th>PNL (%)</th>
-                    <th>Sumber</th>
+                    <th class="th-sort" data-sort-key="asset" data-sort-type="text">Aset</th>
+                    <th class="th-sort" data-sort-key="saldo">Jumlah Saldo</th>
+                    <th class="th-sort" data-sort-key="durasi">Durasi</th>
+                    <th class="th-sort" data-sort-key="avg">Harga Rata-rata Beli</th>
+                    <th class="th-sort" data-sort-key="harga">Harga Pasar</th>
+                    <th class="th-sort" data-sort-key="modal">Modal (Cost Basis)</th>
+                    <th class="th-sort" data-sort-key="nilai">Nilai Saat Ini</th>
+                    <th class="th-sort" data-sort-key="pnl">PNL Belum Terealisasi</th>
+                    <th class="th-sort" data-sort-key="pnlpct">PNL (%)</th>
+                    <th class="th-sort" data-sort-key="sumber" data-sort-type="text">Sumber</th>
                 </tr>
             </thead>
             <tbody>
                 @forelse($assets as $asset)
-                    <tr>
+                    @php $dinilai = $asset['can_be_valued'] ?? true; @endphp
+                    {{-- Nilai mentah untuk sorting; kosong = tidak bisa dinilai, selalu ditaruh paling bawah --}}
+                    <tr data-sort-asset="{{ $asset['asset'] }}"
+                        data-sort-saldo="{{ $asset['total'] }}"
+                        data-sort-durasi="{{ $asset['first_buy_date'] ? (int) floor((time() - strtotime($asset['first_buy_date'])) / 86400) : '' }}"
+                        data-sort-avg="{{ $asset['avg_buy_price_usdt'] }}"
+                        data-sort-harga="{{ $asset['current_price_usdt'] }}"
+                        data-sort-modal="{{ $dinilai ? $asset['cost_usdt'] : '' }}"
+                        data-sort-nilai="{{ $asset['value_usdt'] }}"
+                        data-sort-pnl="{{ $dinilai ? $asset['pnl_usdt'] : '' }}"
+                        data-sort-pnlpct="{{ $dinilai ? $asset['pnl_percent'] : '' }}"
+                        data-sort-sumber="{{ $asset['source'] }}">
                         <td class="kartu-judul" style="font-weight: 800; font-size: 1.1rem; color: var(--color-secondary);">
                             {{ $asset['asset'] }}
                         </td>
@@ -172,6 +192,89 @@
 
 @section('scripts')
 <script>
+    // ---- Sorting tabel aset (sisi klien) ----
+    document.addEventListener("DOMContentLoaded", function() {
+        const table = document.getElementById("assetTable");
+        const tbody = table.querySelector("tbody");
+        const headers = [...table.querySelectorAll("th.th-sort")];
+        const keySelect = document.getElementById("sortKeySelect");
+        const dirBtn = document.getElementById("sortDirBtn");
+        const STORAGE_KEY = "portfolioAssetSort";
+
+        // Hanya baris aset; baris "data kosong" tidak punya data-sort-*
+        const rows = [...tbody.querySelectorAll("tr[data-sort-asset]")];
+        rows.forEach((tr, i) => tr.dataset.urutanAsli = i);
+
+        headers.forEach(th => {
+            keySelect.add(new Option(th.textContent.trim(), th.dataset.sortKey));
+        });
+
+        let state = { key: "", dir: "desc" };
+        try {
+            const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
+            if (saved && headers.some(th => th.dataset.sortKey === saved.key)) state = saved;
+        } catch (e) {}
+
+        function apply() {
+            const th = headers.find(h => h.dataset.sortKey === state.key);
+            const isText = th && th.dataset.sortType === "text";
+            const attr = "sort" + state.key.charAt(0).toUpperCase() + state.key.slice(1);
+            const arah = state.dir === "asc" ? 1 : -1;
+
+            const sorted = [...rows].sort((a, b) => {
+                if (!th) return a.dataset.urutanAsli - b.dataset.urutanAsli;
+
+                const va = a.dataset[attr] ?? "";
+                const vb = b.dataset[attr] ?? "";
+                // Nilai kosong (aset tak bisa dinilai) selalu di bawah, apa pun arahnya
+                if (va === "" && vb === "") return 0;
+                if (va === "") return 1;
+                if (vb === "") return -1;
+
+                return (isText
+                    ? va.localeCompare(vb, "id", { sensitivity: "base" })
+                    : parseFloat(va) - parseFloat(vb)) * arah;
+            });
+            sorted.forEach(tr => tbody.appendChild(tr));
+
+            headers.forEach(h => {
+                h.classList.remove("sort-asc", "sort-desc");
+                if (h === th) h.classList.add(state.dir === "asc" ? "sort-asc" : "sort-desc");
+            });
+            keySelect.value = state.key;
+            dirBtn.textContent = state.dir === "asc" ? "↑" : "↓";
+            dirBtn.disabled = !th;
+
+            try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) {}
+        }
+
+        headers.forEach(th => {
+            th.addEventListener("click", () => {
+                const key = th.dataset.sortKey;
+                if (state.key === key) {
+                    state.dir = state.dir === "asc" ? "desc" : "asc";
+                } else {
+                    // Teks mulai A→Z, angka mulai dari yang terbesar
+                    state = { key, dir: th.dataset.sortType === "text" ? "asc" : "desc" };
+                }
+                apply();
+            });
+        });
+
+        keySelect.addEventListener("change", () => {
+            const th = headers.find(h => h.dataset.sortKey === keySelect.value);
+            state = { key: keySelect.value, dir: th && th.dataset.sortType === "text" ? "asc" : "desc" };
+            apply();
+        });
+
+        dirBtn.addEventListener("click", () => {
+            state.dir = state.dir === "asc" ? "desc" : "asc";
+            apply();
+        });
+
+        apply();
+    });
+
     document.addEventListener("DOMContentLoaded", function() {
         let timeLeft = 120; // 2 minutes (120 seconds)
         const timerSpan = document.getElementById("countdownTimer");

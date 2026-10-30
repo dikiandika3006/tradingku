@@ -955,3 +955,37 @@ body {
     .page-title p { font-size: 0.85rem; }
     .stats-grid .stat-value { font-size: 1.35rem; }
 }
+
+/* ==========================================================================
+   Judul kolom yang bisa diklik untuk sorting (.th-sort)
+   ========================================================================== */
+.custom-table th.th-sort {
+    cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
+}
+
+.custom-table th.th-sort:hover {
+    color: var(--text-main);
+}
+
+.custom-table th.th-sort::after {
+    content: "↕";
+    margin-left: 0.35rem;
+    opacity: 0.35;
+}
+
+.custom-table th.th-sort.sort-asc,
+.custom-table th.th-sort.sort-desc {
+    color: var(--color-secondary);
+}
+
+.custom-table th.th-sort.sort-asc::after { content: "↑"; opacity: 1; }
+.custom-table th.th-sort.sort-desc::after { content: "↓"; opacity: 1; }
+
+/* Pemilih urutan pengganti judul kolom, hanya saat tabel tampil sebagai kartu */
+.sort-mobile { display: none; }
+
+@media (max-width: 768px) {
+    .sort-mobile { display: flex; }
+}
