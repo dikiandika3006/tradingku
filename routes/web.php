@@ -12,6 +12,7 @@ use App\Http\Controllers\DerivativesController;
 use App\Http\Controllers\CapitalProjectionController;
 use App\Http\Controllers\VolumeHeatmapController;
 use App\Http\Controllers\InvestorController;
+use App\Http\Controllers\InvestorReportController;
 use Illuminate\Support\Facades\Route;
 
 // Public Auth Routes
@@ -37,13 +38,22 @@ Route::options('/api/database/clear-pending-queries', function() {
 
 // Authenticated Routes
 Route::middleware(['auth'])->group(function () {
-    // Redirect root to dashboard
+    // Redirect root ke halaman awal sesuai role
     Route::get('/', function () {
-        return redirect()->route('dashboard');
+        return redirect(auth()->user()->homeUrl());
     });
-    
-    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
-    Route::get('/portfolio', [PortfolioController::class, 'index'])->name('portfolio.index');
+
+    Route::middleware(['role:super_admin,investor'])->group(function () {
+        Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+        Route::get('/portfolio', [PortfolioController::class, 'index'])->name('portfolio.index');
+    });
+
+    // Investor report: lihat & unduh PDF, juga untuk role report_viewer
+    Route::middleware(['role:super_admin,report_viewer'])->group(function () {
+        Route::get('/investor-report', [InvestorReportController::class, 'index'])->name('investor-report.index');
+        Route::get('/investor-report/{id}', [InvestorReportController::class, 'show'])->name('investor-report.show')->whereNumber('id');
+        Route::get('/investor-report/{id}/pdf', [InvestorReportController::class, 'pdf'])->name('investor-report.pdf')->whereNumber('id');
+    });
 
     // Super Admin Only Routes
     Route::middleware(['role:super_admin'])->group(function () {
@@ -81,6 +91,14 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/investor-transaction', [InvestorController::class, 'storeTransaction'])->name('investor.transaction.store');
         Route::put('/investor-transaction/{id}', [InvestorController::class, 'updateTransaction'])->name('investor.transaction.update');
         Route::delete('/investor-transaction/{id}', [InvestorController::class, 'destroyTransaction'])->name('investor.transaction.destroy');
+
+        // Investor report: buat, ubah, hapus
+        Route::get('/investor-report/create', [InvestorReportController::class, 'create'])->name('investor-report.create');
+        Route::post('/investor-report', [InvestorReportController::class, 'store'])->name('investor-report.store');
+        Route::get('/investor-report/suggest', [InvestorReportController::class, 'suggest'])->name('investor-report.suggest');
+        Route::get('/investor-report/{id}/edit', [InvestorReportController::class, 'edit'])->name('investor-report.edit');
+        Route::put('/investor-report/{id}', [InvestorReportController::class, 'update'])->name('investor-report.update');
+        Route::delete('/investor-report/{id}', [InvestorReportController::class, 'destroy'])->name('investor-report.destroy');
 
         // User Management Routes
         Route::get('/user', [UserController::class, 'index'])->name('user.index');

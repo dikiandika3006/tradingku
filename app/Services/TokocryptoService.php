@@ -6,6 +6,7 @@ use App\Models\Setting;
 use App\Models\Trade;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Cache;
+use Carbon\Carbon;
 
 class TokocryptoService
 {
@@ -144,46 +145,7 @@ class TokocryptoService
 
         // Fallback: If not fetched from API, construct balance from trade logs in database
         if (!$fetchedFromApi) {
-            $trades = Trade::orderBy('trade_time', 'asc')->get();
-            $holdings = [];
-
-            foreach ($trades as $trade) {
-                $symbol = strtoupper(trim($trade->symbol));
-                $type = strtoupper(trim($trade->type));
-                $amount = (float)$trade->amount;
-                $price = (float)$trade->price;
-                $total = (float)$trade->total;
-                if ($total <= 0) {
-                    $total = $price * $amount;
-                }
-
-                // Simbol dipecah dengan cara yang sama untuk SEMUA tipe transaksi,
-                // supaya setoran bersimbol pasangan (mis. "USDTIDR") menambah saldo
-                // aset dasarnya (USDT) dan bukan menciptakan aset fiktif "USDTIDR".
-                [$asset, $quote] = Trade::splitSymbol($symbol);
-
-                if ($type === 'DEPOSIT' || $type === 'WITHDRAW') {
-                    // Beda dengan BUY/SELL: sisi quote TIDAK disentuh. Dana setoran
-                    // berasal dari luar portofolio, jadi mendebit IDR di sini akan
-                    // memunculkan saldo fiat negatif yang tidak pernah ada.
-                    $sign = ($type === 'DEPOSIT') ? 1 : -1;
-                    $holdings[$asset] = ($holdings[$asset] ?? 0.0) + ($sign * $amount);
-                } else {
-                    if ($type === 'BUY') {
-                        $holdings[$asset] = ($holdings[$asset] ?? 0.0) + $amount;
-                        if ($quote) {
-                            $holdings[$quote] = ($holdings[$quote] ?? 0.0) - $total;
-                        }
-                    } elseif ($type === 'SELL') {
-                        $holdings[$asset] = ($holdings[$asset] ?? 0.0) - $amount;
-                        if ($quote) {
-                            $holdings[$quote] = ($holdings[$quote] ?? 0.0) + $total;
-                        }
-                    }
-                }
-            }
-
-            foreach ($holdings as $asset => $amount) {
+            foreach ($this->holdingsFromJournal() as $asset => $amount) {
                 if (abs($amount) > 0.00001) {
                     $balances[$asset] = [
                         'asset' => $asset,
@@ -203,14 +165,14 @@ class TokocryptoService
 
         foreach ($balances as $asset => $data) {
             $symbol = $asset . 'USDT';
-            
+
             // If asset is USDT itself
             if ($asset === 'USDT') {
                 $price = 1.0;
             } else {
                 // Check if price is in prices list
                 $price = $prices[$symbol] ?? 0.0;
-                
+
                 // Fallback: if we only have BIDR or IDRT pairs (common on Tokocrypto)
                 if ($price === 0.0) {
                     $bidrPrice = $prices[$asset . 'BIDR'] ?? 0.0;
@@ -248,6 +210,56 @@ class TokocryptoService
             'usdt_idr_rate' => $usdtIdr,
             'is_live' => $fetchedFromApi
         ];
+    }
+
+    /**
+     * Saldo per aset hasil rekonstruksi jurnal trade (DEPOSIT/WITHDRAW/BUY/SELL).
+     *
+     * @param Carbon|null $until Hanya transaksi sampai waktu ini; null = seluruh jurnal.
+     * @return array<string, float>
+     */
+    public function holdingsFromJournal(?Carbon $until = null): array
+    {
+        $trades = Trade::orderBy('trade_time', 'asc')
+            ->when($until, fn ($q) => $q->where('trade_time', '<=', $until))
+            ->get();
+        $holdings = [];
+
+        foreach ($trades as $trade) {
+            $symbol = strtoupper(trim($trade->symbol));
+            $type = strtoupper(trim($trade->type));
+            $amount = (float)$trade->amount;
+            $price = (float)$trade->price;
+            $total = (float)$trade->total;
+            if ($total <= 0) {
+                $total = $price * $amount;
+            }
+
+            // Simbol dipecah dengan cara yang sama untuk SEMUA tipe transaksi,
+            // supaya setoran bersimbol pasangan (mis. "USDTIDR") menambah saldo
+            // aset dasarnya (USDT) dan bukan menciptakan aset fiktif "USDTIDR".
+            [$asset, $quote] = Trade::splitSymbol($symbol);
+
+            if ($type === 'DEPOSIT' || $type === 'WITHDRAW') {
+                // Beda dengan BUY/SELL: sisi quote TIDAK disentuh. Dana setoran
+                // berasal dari luar portofolio, jadi mendebit IDR di sini akan
+                // memunculkan saldo fiat negatif yang tidak pernah ada.
+                $sign = ($type === 'DEPOSIT') ? 1 : -1;
+                $holdings[$asset] = ($holdings[$asset] ?? 0.0) + ($sign * $amount);
+            } elseif ($type === 'BUY') {
+                $holdings[$asset] = ($holdings[$asset] ?? 0.0) + $amount;
+                if ($quote) {
+                    $holdings[$quote] = ($holdings[$quote] ?? 0.0) - $total;
+                }
+            } elseif ($type === 'SELL') {
+                $holdings[$asset] = ($holdings[$asset] ?? 0.0) - $amount;
+                if ($quote) {
+                    $holdings[$quote] = ($holdings[$quote] ?? 0.0) + $total;
+                }
+            }
+        }
+
+        return $holdings;
     }
 
     /**

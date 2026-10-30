@@ -51,6 +51,7 @@
                 <label for="user_role" class="form-label">Hak Akses / Role</label>
                 <select name="role" id="user_role" class="form-control" required>
                     <option value="investor">Investor (Hanya Dashboard & Portofolio)</option>
+                    <option value="report_viewer">Viewer Laporan (Hanya Investor Report)</option>
                     <option value="super_admin">Super Admin (Akses Penuh)</option>
                 </select>
             </div>
@@ -105,7 +106,7 @@
                             <td>{{ $user->email }}</td>
                             <td>
                                 <span class="badge {{ $user->role === 'super_admin' ? 'badge-success' : 'badge-neutral' }}">
-                                    {{ $user->role === 'super_admin' ? 'Super Admin' : 'Investor' }}
+                                    {{ ['super_admin' => 'Super Admin', 'report_viewer' => 'Viewer Laporan'][$user->role] ?? 'Investor' }}
                                 </span>
                             </td>
                             <td>{{ $user->created_at->format('d M Y, H:i') }}</td>

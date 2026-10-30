@@ -346,6 +346,21 @@ class MonthlyReportService
     }
 
     /**
+     * Realized PNL per transaksi SELL dalam rentang tanggal (inklusif, per hari).
+     *
+     * @return array<int, array{asset: string, pnl_usdt: float, date: Carbon}>
+     */
+    public function realizedTradesBetween(Carbon $from, Carbon $to): array
+    {
+        $from = $from->copy()->startOfDay();
+        $to   = $to->copy()->endOfDay();
+
+        $trades = $this->calculateRealizedTrades($this->tokocryptoService->getAllPrices())['trades'];
+
+        return array_values(array_filter($trades, fn ($t) => $t['date']->between($from, $to)));
+    }
+
+    /**
      * Realized PNL per transaksi SELL memakai average cost berjalan.
      */
     protected function calculateRealizedTrades(array $prices): array
@@ -406,6 +421,7 @@ class MonthlyReportService
                     $realizedTrades[] = [
                         'asset'      => $asset,
                         'pnl_usdt'   => $pnlUsdt,
+                        'date'       => $tradeDate,
                         'year_month' => $tradeDate->format('Y-m'),
                         'year'       => $year,
                         'month_name' => $tradeDate->translatedFormat('F Y'),

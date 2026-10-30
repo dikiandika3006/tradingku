@@ -63,4 +63,20 @@ class User extends Authenticatable
     {
         return $this->role === 'investor';
     }
+
+    /**
+     * Role yang hanya bisa melihat Investor Report.
+     */
+    public function isReportViewer(): bool
+    {
+        return $this->role === 'report_viewer';
+    }
+
+    /**
+     * Halaman pertama setelah login, sesuai hak akses.
+     */
+    public function homeUrl(): string
+    {
+        return $this->isReportViewer() ? route('investor-report.index') : route('dashboard');
+    }
 }
