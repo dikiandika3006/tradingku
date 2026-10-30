@@ -50,10 +50,13 @@
             <div class="form-group">
                 <label for="user_role" class="form-label">Hak Akses / Role</label>
                 <select name="role" id="user_role" class="form-control" required>
-                    <option value="investor">Investor (Hanya Dashboard & Portofolio)</option>
-                    <option value="report_viewer">Viewer Laporan (Hanya Investor Report)</option>
-                    <option value="super_admin">Super Admin (Akses Penuh)</option>
+                    @foreach($roles as $role)
+                        <option value="{{ $role->slug }}">{{ $role->name }} ({{ implode(', ', $role->permissionLabels()) ?: 'belum ada menu' }})</option>
+                    @endforeach
                 </select>
+                <small style="color: var(--text-muted); font-size: 0.75rem; display: block; margin-top: 0.25rem;">
+                    Menu tiap role diatur di <a href="{{ route('role.index') }}">Master Role</a>.
+                </small>
             </div>
 
             <div class="form-group">
@@ -106,7 +109,7 @@
                             <td>{{ $user->email }}</td>
                             <td>
                                 <span class="badge {{ $user->role === 'super_admin' ? 'badge-success' : 'badge-neutral' }}">
-                                    {{ ['super_admin' => 'Super Admin', 'report_viewer' => 'Viewer Laporan'][$user->role] ?? 'Investor' }}
+                                    {{ $user->roleName() }}
                                 </span>
                             </td>
                             <td>{{ $user->created_at->format('d M Y, H:i') }}</td>
@@ -199,7 +202,7 @@
             // Clear fields
             nameInput.value = "";
             emailInput.value = "";
-            document.getElementById("user_role").value = "investor";
+            document.getElementById("user_role").selectedIndex = 0;
             passwordInput.value = "";
             passwordConfirmInput.value = "";
             

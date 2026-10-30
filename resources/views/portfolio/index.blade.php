@@ -51,13 +51,13 @@
             @endif
         </div>
         <div class="stat-value {{ $total_pnl_usdt >= 0 ? 'text-success' : 'text-danger' }}">
-            {{ $total_pnl_usdt >= 0 ? '+' : '' }}${{ number_format($total_pnl_usdt, 2) }}
+            {{ $total_pnl_usdt >= 0 ? '+' : '-' }}${{ number_format(abs($total_pnl_usdt), 2) }}
             <span style="font-size: 1.1rem; font-weight: 600; margin-left: 0.25rem;">
                 ({{ $total_pnl_usdt >= 0 ? '+' : '' }}{{ number_format($total_pnl_percent, 2) }}%)
             </span>
         </div>
         <div class="stat-desc {{ $total_pnl_usdt >= 0 ? 'text-success' : 'text-danger' }}">
-            {{ $total_pnl_usdt >= 0 ? '+' : '' }}≈ Rp {{ number_format($total_pnl_idr, 0, ',', '.') }}
+            ≈ {{ $total_pnl_usdt >= 0 ? '+' : '-' }}Rp {{ number_format(abs($total_pnl_idr), 0, ',', '.') }}
         </div>
     </div>
 </div>

@@ -9,7 +9,7 @@
         <p><a href="{{ route('investor-report.index') }}" style="color: var(--text-muted);">&larr; Kembali ke daftar report</a></p>
     </div>
     <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-        @if(Auth::user()->isSuperAdmin())
+        @if(Auth::user()->canAccess('investor_report_manage'))
             <a href="{{ route('investor-report.edit', $report->id) }}" class="btn btn-secondary">Edit</a>
         @endif
         <a href="{{ route('investor-report.pdf', $report->id) }}" target="_blank" class="btn btn-secondary">Lihat PDF</a>

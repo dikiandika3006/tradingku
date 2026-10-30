@@ -3,7 +3,9 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Support\Menu;
 use Database\Factories\UserFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -65,18 +67,38 @@ class User extends Authenticatable
     }
 
     /**
-     * Role yang hanya bisa melihat Investor Report.
+     * Role dari Master Role (users.role menyimpan slug role).
      */
-    public function isReportViewer(): bool
+    public function roleModel(): BelongsTo
     {
-        return $this->role === 'report_viewer';
+        return $this->belongsTo(Role::class, 'role', 'slug');
     }
 
     /**
-     * Halaman pertama setelah login, sesuai hak akses.
+     * Boleh mengakses menu/hak akses dengan kunci $key (lihat App\Support\Menu).
      */
-    public function homeUrl(): string
+    public function canAccess(string $key): bool
     {
-        return $this->isReportViewer() ? route('investor-report.index') : route('dashboard');
+        // Super Admin tidak bergantung pada isi tabel roles, supaya tidak pernah terkunci.
+        return $this->isSuperAdmin() || (bool)$this->roleModel?->allows($key);
+    }
+
+    public function roleName(): string
+    {
+        return $this->roleModel?->name ?? $this->role;
+    }
+
+    /**
+     * Halaman pertama setelah login: menu pertama yang boleh diakses.
+     */
+    public function homeUrl(): ?string
+    {
+        foreach (Menu::keys() as $key) {
+            if (Menu::route($key) && $this->canAccess($key)) {
+                return route(Menu::route($key));
+            }
+        }
+
+        return null;
     }
 }

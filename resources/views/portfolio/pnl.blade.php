@@ -40,12 +40,16 @@
         </div>
     </div>
     <div class="glass-card">
-        <div class="card-title" style="color: var(--text-muted);">Floating Loss (Aset Minus)</div>
-        <div class="stat-value text-danger" style="margin-top: 0.5rem; font-size: 1.8rem;">
-            -${{ number_format($unrealized_loss_usdt, 2) }}
+        <div class="card-title" style="color: var(--text-muted);">Floating PNL (Belum Terealisasi)</div>
+        <div class="stat-value {{ $floating_pnl_usdt >= 0 ? 'text-success' : 'text-danger' }}" style="margin-top: 0.5rem; font-size: 1.8rem;">
+            {{ $floating_pnl_usdt >= 0 ? '+' : '-' }}${{ number_format(abs($floating_pnl_usdt), 2) }}
         </div>
-        <div class="stat-desc text-danger">
-            ≈ -Rp {{ number_format($unrealized_loss_idr, 0, ',', '.') }}
+        <div class="stat-desc {{ $floating_pnl_usdt >= 0 ? 'text-success' : 'text-danger' }}">
+            ≈ {{ $floating_pnl_usdt >= 0 ? '+' : '-' }}Rp {{ number_format(abs($floating_pnl_idr), 0, ',', '.') }}
+        </div>
+        <div class="stat-desc" style="margin-top: 0.4rem; font-size: 0.75rem;">
+            Aset untung <span class="text-success">+${{ number_format($floating_profit_usdt, 2) }}</span>
+            · rugi <span class="text-danger">-${{ number_format($floating_loss_usdt, 2) }}</span>
         </div>
     </div>
 </div>

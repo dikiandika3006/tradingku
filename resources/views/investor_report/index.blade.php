@@ -13,7 +13,7 @@
         <h1>Investor Report</h1>
         <p>Laporan berkala untuk investor: perkembangan dana, posisi investor, dan kondisi portfolio</p>
     </div>
-    @if(Auth::user()->isSuperAdmin())
+    @if(Auth::user()->canAccess('investor_report_manage'))
         <a href="{{ route('investor-report.create') }}" class="btn btn-primary">+ Buat Report</a>
     @endif
 </div>
@@ -50,7 +50,7 @@
                             <div style="display: inline-flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; justify-content: flex-end;">
                                 <a href="{{ route('investor-report.show', $report->id) }}" class="btn btn-secondary btn-sm">Lihat</a>
                                 <a href="{{ route('investor-report.pdf', ['id' => $report->id, 'download' => 1]) }}" class="btn btn-secondary btn-sm">PDF</a>
-                                @if(Auth::user()->isSuperAdmin())
+                                @if(Auth::user()->canAccess('investor_report_manage'))
                                 <a href="{{ route('investor-report.edit', $report->id) }}" class="btn btn-secondary btn-sm">Edit</a>
                                 <form action="{{ route('investor-report.destroy', $report->id) }}" method="POST" onsubmit="return confirm('Hapus report periode ini?')">
                                     @csrf

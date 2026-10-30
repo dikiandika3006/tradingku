@@ -12,7 +12,7 @@ class AuthController extends Controller
      */
     public function showLogin()
     {
-        if (Auth::check()) {
+        if (Auth::check() && Auth::user()->homeUrl()) {
             return redirect(Auth::user()->homeUrl());
         }
         return view('auth.login');
@@ -31,8 +31,19 @@ class AuthController extends Controller
         $remember = true;
 
         if (Auth::attempt($credentials, $remember)) {
+            $home = Auth::user()->homeUrl();
+
+            // Role tanpa satu pun menu tidak punya halaman untuk dituju.
+            if (!$home) {
+                Auth::logout();
+
+                return back()->withErrors([
+                    'email' => 'Role akun Anda belum diberi akses ke menu apa pun. Hubungi admin.',
+                ])->onlyInput('email');
+            }
+
             $request->session()->regenerate();
-            return redirect()->intended(Auth::user()->homeUrl());
+            return redirect()->intended($home);
         }
 
         return back()->withErrors([

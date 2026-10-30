@@ -29,11 +29,45 @@ class PortfolioController extends Controller
         $prices = $this->tokocryptoService->getAllPrices();
         $usdtIdr = $portfolio['usdt_idr_rate'];
 
+        $holdings = $this->holdings($costBasisService, $portfolio, $prices);
+        $totalCostUsdt = $holdings['total_cost_usdt'];
+        $totalCurrentValuationUsdt = $holdings['total_value_usdt'];
+
+        // Calculate overall portfolio PNL
+        $totalPnlUsdt = $totalCurrentValuationUsdt - $totalCostUsdt;
+        $totalPnlPercent = $totalCostUsdt > 0 ? ($totalPnlUsdt / $totalCostUsdt) * 100 : 0.0;
+
+        return view('portfolio.index', [
+            'assets' => $holdings['assets'],
+            'total_valuation_usdt' => $totalCurrentValuationUsdt,
+            'total_valuation_idr' => $totalCurrentValuationUsdt * $usdtIdr,
+            'total_cost_usdt' => $totalCostUsdt,
+            'total_cost_idr' => $totalCostUsdt * $usdtIdr,
+            'total_pnl_usdt' => $totalPnlUsdt,
+            'total_pnl_idr' => $totalPnlUsdt * $usdtIdr,
+            'total_pnl_percent' => $totalPnlPercent,
+            'usdt_idr_rate' => $usdtIdr,
+            'is_live' => $portfolio['is_live']
+        ]);
+    }
+
+    /**
+     * Modal, nilai, dan PNL belum terealisasi tiap aset yang sedang dipegang.
+     *
+     * Dipakai halaman Portofolio maupun kartu Floating PNL di halaman Realisasi
+     * PNL, supaya keduanya selalu menunjukkan angka yang sama.
+     *
+     * @return array{assets: array, total_cost_usdt: float, total_value_usdt: float}
+     */
+    protected function holdings(CostBasisService $costBasisService, array $portfolio, array $prices): array
+    {
+        $usdtIdr = $portfolio['usdt_idr_rate'] ?? 16000.0;
+
         $detailedAssets = [];
         $totalCostUsdt = 0.0;
         $totalCurrentValuationUsdt = 0.0;
 
-        foreach ($portfolio['assets'] as $assetData) {
+        foreach ($portfolio['assets'] ?? [] as $assetData) {
             $assetName = $assetData['asset'];
             $totalAmount = $assetData['total'];
             $currentPrice = $assetData['price'];
@@ -116,28 +150,17 @@ class PortfolioController extends Controller
             ];
         }
 
-        // Calculate overall portfolio PNL
-        $totalPnlUsdt = $totalCurrentValuationUsdt - $totalCostUsdt;
-        $totalPnlPercent = $totalCostUsdt > 0 ? ($totalPnlUsdt / $totalCostUsdt) * 100 : 0.0;
-
-        return view('portfolio.index', [
+        return [
             'assets' => $detailedAssets,
-            'total_valuation_usdt' => $totalCurrentValuationUsdt,
-            'total_valuation_idr' => $totalCurrentValuationUsdt * $usdtIdr,
             'total_cost_usdt' => $totalCostUsdt,
-            'total_cost_idr' => $totalCostUsdt * $usdtIdr,
-            'total_pnl_usdt' => $totalPnlUsdt,
-            'total_pnl_idr' => $totalPnlUsdt * $usdtIdr,
-            'total_pnl_percent' => $totalPnlPercent,
-            'usdt_idr_rate' => $usdtIdr,
-            'is_live' => $portfolio['is_live']
-        ]);
+            'total_value_usdt' => $totalCurrentValuationUsdt,
+        ];
     }
 
     /**
      * Display realized Profit & Loss page.
      */
-    public function pnl(Request $request)
+    public function pnl(Request $request, CostBasisService $costBasisService)
     {
         $startDate = $request->input('start_date');
         $endDate = $request->input('end_date');
@@ -282,69 +305,18 @@ class PortfolioController extends Controller
         }
         $netPnlUsdt = $totalProfitUsdt - $totalLossUsdt;
 
-        // Fetch current balances and prices to calculate unrealized loss (floating loss)
-        $portfolio = $this->tokocryptoService->getPortfolio();
-        $prices = $this->tokocryptoService->getAllPrices();
-        $totalUnrealizedLossUsdt = 0.0;
+        // Floating PNL posisi yang masih dipegang — hitungan yang sama persis
+        // dengan halaman Portofolio, jadi bisa untung maupun rugi.
+        $holdings = $this->holdings($costBasisService, $portfolio, $prices);
+        $floatingPnlUsdt = $holdings['total_value_usdt'] - $holdings['total_cost_usdt'];
 
-        foreach ($portfolio['assets'] ?? [] as $assetData) {
-            $assetName = $assetData['asset'];
-            $totalAmount = $assetData['total'];
-            $currentPrice = $assetData['price'];
-            $valueUsdt = $assetData['value_usdt'];
-
-            // Find all BUY trades in database for this asset to calculate average buy price
-            $buyTrades = Trade::forBaseAsset($assetName)
-                ->where('type', 'BUY')
-                ->get();
-
-            $totalBuyAmount = 0.0;
-            $totalBuyCostUsdt = 0.0;
-
-            foreach ($buyTrades as $trade) {
-                $tradeSymbol = $trade->symbol;
-                $tradePrice = (float)$trade->price;
-                $tradeAmount = (float)$trade->amount;
-
-                // Detect quote currency of trade (e.g. BIDR, USDT, IDRT)
-                $quote = 'USDT';
-                foreach (['USDT', 'BIDR', 'IDRT', 'BUSD', 'IDR'] as $q) {
-                    if (str_ends_with($tradeSymbol, $q) && strlen($tradeSymbol) > strlen($q)) {
-                        $quote = $q;
-                        break;
-                    }
-                }
-
-                // Standardize trade price to USDT
-                $priceInUsdt = $tradePrice;
-                if ($quote === 'BIDR' || $quote === 'IDRT' || $quote === 'IDR') {
-                    $rate = $prices['USDTIDR'] ?? ($prices['USDT' . $quote] ?? ($prices['USDTIDRT'] ?? 16400.0));
-                    if ($rate > 100) {
-                        $priceInUsdt = $tradePrice / $rate;
-                    } else {
-                        $priceInUsdt = $tradePrice / 16400.0;
-                    }
-                }
-
-                $totalBuyAmount += $tradeAmount;
-                $totalBuyCostUsdt += ($priceInUsdt * $tradeAmount);
-            }
-
-            // Weighted average buy price in USDT
-            $avgBuyPriceUsdt = $totalBuyAmount > 0 ? ($totalBuyCostUsdt / $totalBuyAmount) : 0.0;
-
-            // If we have no BUY trades logged, fallback average price to current price
-            if ($avgBuyPriceUsdt === 0.0) {
-                $avgBuyPriceUsdt = $currentPrice;
-            }
-
-            // Calculate cost and PNL for current holdings
-            $assetCostUsdt = $totalAmount * $avgBuyPriceUsdt;
-            $unrealizedPnlUsdt = $valueUsdt - $assetCostUsdt;
-
-            // Only add negative PNL (assets that are minus)
-            if ($unrealizedPnlUsdt < 0) {
-                $totalUnrealizedLossUsdt += abs($unrealizedPnlUsdt);
+        $floatingProfitUsdt = 0.0;
+        $floatingLossUsdt = 0.0;
+        foreach ($holdings['assets'] as $asset) {
+            if ($asset['pnl_usdt'] > 0) {
+                $floatingProfitUsdt += $asset['pnl_usdt'];
+            } else {
+                $floatingLossUsdt += abs($asset['pnl_usdt']);
             }
         }
 
@@ -357,8 +329,10 @@ class PortfolioController extends Controller
             'total_loss_idr' => $totalLossUsdt * $usdtIdr,
             'net_pnl_usdt' => $netPnlUsdt,
             'net_pnl_idr' => $netPnlUsdt * $usdtIdr,
-            'unrealized_loss_usdt' => $totalUnrealizedLossUsdt,
-            'unrealized_loss_idr' => $totalUnrealizedLossUsdt * $usdtIdr,
+            'floating_pnl_usdt' => $floatingPnlUsdt,
+            'floating_pnl_idr' => $floatingPnlUsdt * $usdtIdr,
+            'floating_profit_usdt' => $floatingProfitUsdt,
+            'floating_loss_usdt' => $floatingLossUsdt,
             'usdt_idr_rate' => $usdtIdr,
             'start_date' => $startDate,
             'end_date' => $endDate
