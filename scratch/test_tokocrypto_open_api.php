@@ -54,6 +54,14 @@ $mode = 'sukses';
 $dipanggil = [];
 Http::fake(function ($request) use (&$mode, &$dipanggil) {
     $url = $request->url();
+    if ($mode === 'harga_putus' && str_contains($url, 'tokocrypto.site')) {
+        $dipanggil[] = 'harga:tokocrypto';
+        throw new \Illuminate\Http\Client\ConnectionException('timeout');
+    }
+    if ($mode === 'harga_putus' && str_contains($url, 'binance.com')) {
+        $dipanggil[] = 'harga:binance';
+        return Http::response([['symbol' => 'BTCUSDT', 'price' => '99000']]);
+    }
     if (str_contains($url, '/api/v3/ticker/price') || str_contains($url, 'ticker')) {
         return Http::response([
             ['symbol' => 'BTCUSDT', 'price' => '100000'], ['symbol' => 'STRKUSDT', 'price' => '0.05'],
@@ -96,7 +104,20 @@ Trade::create(['symbol' => 'IDR', 'type' => 'DEPOSIT', 'price' => 1, 'amount' =>
 $svc = app(TokocryptoService::class);
 $cari = fn(array $p, string $a) => collect($p['assets'])->firstWhere('asset', $a);
 
-echo "=== UJI 1: saldo dari Open API ===\n";
+echo "=== UJI 0: bawaan = saldo jurnal walau API sehat ===\n";
+Config::set('services.tokocrypto.portfolio_from_api', false);
+$p = $svc->getPortfolio();
+periksa('is_live = false', $p['is_live'], false, $lulus);
+periksa('STRK dari jurnal (500)', (float)($cari($p, 'STRK')['total'] ?? 0), 500.0, $lulus);
+periksa('saldo akun tidak diminta ke bursa', in_array('/open/v1/account/spot', $dipanggil, true), false, $lulus);
+periksa('IDR jurnal tidak dinilai (seperti dulu)', (float)$cari($p, 'IDR')['value_usdt'], 0.0, $lulus);
+periksa('open order tetap dari API', count($svc->getOpenOrders()), 2, $lulus);
+
+// Uji berikutnya menguji mode API
+Config::set('services.tokocrypto.portfolio_from_api', true);
+Cache::flush();
+
+echo "\n=== UJI 1: saldo dari Open API (sakelar dinyalakan) ===\n";
 $p = $svc->getPortfolio();
 periksa('is_live', $p['is_live'], true, $lulus);
 periksa('endpoint resmi /open/v1/account/spot', in_array('/open/v1/account/spot', $dipanggil, true), true, $lulus);
@@ -192,5 +213,13 @@ periksa('API ditolak -> api_gagal = true', $d['api_gagal'], true, $lulus);
 periksa('badge "Gagal" tampil', str_contains($html, 'Gagal Terhubung Ke API'), true, $lulus);
 periksa('badge "Tersambung" tidak tampil', str_contains($html, 'Tersambung Ke API Live'), false, $lulus);
 periksa('tidak mengaku "tidak ada order"', str_contains($html, 'Tidak ada antrean pesanan'), false, $lulus);
+
+echo "\n=== UJI 9: harga Tokocrypto timeout -> cadangan Binance ===\n";
+Cache::flush(); $mode = 'harga_putus'; $dipanggil = [];
+$h = $svc->getAllPrices();
+periksa('Tokocrypto dicoba dulu', in_array('harga:tokocrypto', $dipanggil, true), true, $lulus);
+periksa('lalu Binance dipakai', in_array('harga:binance', $dipanggil, true), true, $lulus);
+periksa('harga BTC dari Binance', (float)($h['BTCUSDT'] ?? 0), 99000.0, $lulus);
+periksa('hasil disimpan di cache', Cache::get('tokocrypto_market_prices')['BTCUSDT'] ?? null, 99000.0, $lulus);
 
 echo "\n" . ($lulus ? '>>> SEMUA UJI LULUS' : '>>> ADA UJI YANG GAGAL') . "\n";

@@ -10,6 +10,9 @@ use Illuminate\Http\Request;
 
 class PortfolioController extends Controller
 {
+    /** Aset bernilai di bawah ini (USDT) disembunyikan dari tabel Portofolio. */
+    protected const BATAS_ASET_KECIL_USDT = 2.0;
+
     protected $tokocryptoService;
 
     public function __construct(TokocryptoService $tokocryptoService)
@@ -37,8 +40,18 @@ class PortfolioController extends Controller
         $totalPnlUsdt = $totalCurrentValuationUsdt - $totalCostUsdt;
         $totalPnlPercent = $totalCostUsdt > 0 ? ($totalPnlUsdt / $totalCostUsdt) * 100 : 0.0;
 
+        // Aset bernilai di bawah batas hanya disembunyikan dari tabel; total di
+        // atas tetap menghitungnya. Aset yang tidak bisa dinilai (harga tidak
+        // ketemu) tetap tampil karena nilainya belum tentu kecil.
+        [$asetKecil, $asetTampil] = collect($holdings['assets'])->partition(
+            fn($a) => ($a['can_be_valued'] ?? true) && $a['value_usdt'] < self::BATAS_ASET_KECIL_USDT
+        );
+
         return view('portfolio.index', [
-            'assets' => $holdings['assets'],
+            'assets' => $asetTampil->values()->all(),
+            'aset_kecil_jumlah' => $asetKecil->count(),
+            'aset_kecil_nilai_usdt' => $asetKecil->sum('value_usdt'),
+            'batas_aset_kecil_usdt' => self::BATAS_ASET_KECIL_USDT,
             'total_valuation_usdt' => $totalCurrentValuationUsdt,
             'total_valuation_idr' => $totalCurrentValuationUsdt * $usdtIdr,
             'total_cost_usdt' => $totalCostUsdt,

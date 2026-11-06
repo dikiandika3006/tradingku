@@ -35,4 +35,10 @@ return [
         ],
     ],
 
+    'tokocrypto' => [
+        // false = saldo Portofolio/Dashboard/Proyeksi/alert dihitung dari jurnal.
+        // Antrean Pesanan tetap memakai API selama key terpasang.
+        'portfolio_from_api' => (bool) env('TOKOCRYPTO_PORTFOLIO_FROM_API', false),
+    ],
+
 ];

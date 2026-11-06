@@ -180,13 +180,23 @@
                 @empty
                     <tr>
                         <td colspan="10" class="kartu-kosong" style="text-align: center; color: var(--text-muted); padding: 3rem 0;">
-                            Tidak ada saldo aset aktif di portfolio saat ini.
+                            @if(($aset_kecil_jumlah ?? 0) > 0)
+                                Semua aset bernilai di bawah ${{ number_format($batas_aset_kecil_usdt, 0) }}, jadi disembunyikan.
+                            @else
+                                Tidak ada saldo aset aktif di portfolio saat ini.
+                            @endif
                         </td>
                     </tr>
                 @endforelse
             </tbody>
         </table>
     </div>
+    @if(($aset_kecil_jumlah ?? 0) > 0)
+        <div style="margin-top: 0.85rem; font-size: 0.8rem; color: var(--text-muted);">
+            {{ $aset_kecil_jumlah }} aset bernilai di bawah ${{ number_format($batas_aset_kecil_usdt, 0) }} disembunyikan
+            (total ${{ number_format($aset_kecil_nilai_usdt, 2) }}). Nilainya tetap dihitung di total portofolio.
+        </div>
+    @endif
 </div>
 @endsection
 

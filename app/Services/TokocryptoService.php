@@ -68,29 +68,47 @@ class TokocryptoService
      */
     public function getAllPrices(): array
     {
-        return Cache::remember('tokocrypto_market_prices', 10, function () {
-            try {
-                // Try Tokocrypto (site) public API first as it works in Indonesia
-                $response = Http::timeout(3)->get($this->baseUrl . '/api/v3/ticker/price');
-                if (!$response->successful()) {
-                    // Fallback to Binance
-                    $response = Http::timeout(3)->get('https://api.binance.com/api/v3/ticker/price');
-                }
+        $cached = Cache::get('tokocrypto_market_prices');
+        if (is_array($cached) && $cached !== []) {
+            return $cached;
+        }
 
-                if ($response->successful()) {
-                    $data = $response->json();
+        // Tokocrypto dulu (punya pasangan IDR), lalu Binance. Tiap sumber dicoba
+        // sendiri-sendiri: timeout di sumber pertama tidak boleh membatalkan
+        // cadangannya.
+        $sources = [
+            $this->baseUrl . '/api/v3/ticker/price',
+            'https://api.binance.com/api/v3/ticker/price',
+        ];
+
+        foreach ($sources as $url) {
+            try {
+                $response = Http::timeout(3)->get($url);
+                $data = $response->successful() ? $response->json() : null;
+
+                if (is_array($data) && $data !== []) {
                     $prices = [];
                     foreach ($data as $item) {
-                        $prices[$item['symbol']] = (float)$item['price'];
+                        if (isset($item['symbol'], $item['price'])) {
+                            $prices[$item['symbol']] = (float)$item['price'];
+                        }
                     }
-                    return $prices;
-                }
-            } catch (\Exception $e) {
-                \Log::warning("Failed to fetch market prices: " . $e->getMessage());
-            }
 
-            return [];
-        });
+                    if ($prices !== []) {
+                        Cache::put('tokocrypto_market_prices', $prices, 10);
+                        return $prices;
+                    }
+                }
+
+                \Log::warning("Harga pasar gagal dari {$url}: HTTP " . $response->status());
+            } catch (\Exception $e) {
+                \Log::warning("Harga pasar gagal dari {$url}: " . $e->getMessage());
+            }
+        }
+
+        // Hasil kosong sengaja tidak di-cache supaya permintaan berikutnya
+        // langsung mencoba lagi.
+        return [];
     }
 
     /**
@@ -112,9 +130,11 @@ class TokocryptoService
         $balances = [];
         $fetchedFromApi = false;
 
-        // Saldo asli dari bursa. Disimpan sebentar karena satu halaman bisa
+        // Saldo asli dari bursa hanya bila diaktifkan (TOKOCRYPTO_PORTFOLIO_FROM_API).
+        // Bawaannya mati: saldo dihitung dari jurnal, dan API cukup dipakai
+        // halaman Antrean Pesanan. Disimpan sebentar karena satu halaman bisa
         // memanggil getPortfolio() beberapa kali.
-        $accountAssets = $this->hasCredentials()
+        $accountAssets = $this->hasCredentials() && config('services.tokocrypto.portfolio_from_api', false)
             ? Cache::remember('tokocrypto_account_assets_' . md5($this->getApiKey()), 15, function () {
                 return $this->openApiGet('/account/spot')['accountAssets'] ?? null;
             })
@@ -172,10 +192,10 @@ class TokocryptoService
             // If asset is USDT itself
             if ($asset === 'USDT') {
                 $price = 1.0;
-            } elseif (in_array($asset, ['IDR', 'BIDR', 'IDRT'], true)) {
-                // Kas rupiah: tidak punya pasangan XXXUSDT, jadi dinilai pakai kurs.
-                // Saldo negatif (jurnal yang setorannya belum dicatat) tetap 0
-                // agar tidak memotong total portofolio.
+            } elseif ($fetchedFromApi && in_array($asset, ['IDR', 'BIDR', 'IDRT'], true)) {
+                // Kas rupiah dari saldo bursa: tidak punya pasangan XXXUSDT, jadi
+                // dinilai pakai kurs. Mode jurnal tetap seperti dulu (tidak
+                // dinilai), karena saldo IDR jurnal belum tentu mencerminkan kas.
                 $price = $data['total'] > 0 ? 1 / $usdtIdr : 0.0;
             } else {
                 // Check if price is in prices list
