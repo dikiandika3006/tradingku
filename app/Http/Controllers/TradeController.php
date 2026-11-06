@@ -104,6 +104,41 @@ class TradeController extends Controller
     }
 
     /**
+     * Saldo aset dasar dari sebuah simbol, untuk tombol "All" di form SELL.
+     *
+     * Dihitung dari jurnal dengan rumus yang sama seperti halaman portofolio.
+     * Saat mengedit transaksi, kirim ?kecuali={id} supaya transaksi itu sendiri
+     * tidak ikut mengurangi saldo yang hendak dijual.
+     */
+    public function getHolding(Request $request, $symbol)
+    {
+        $symbol = strtoupper(trim($symbol));
+        [$asset] = Trade::splitSymbol($symbol);
+
+        $kecuali = $request->filled('kecuali') ? [(int) $request->query('kecuali')] : [];
+        $saldo = $this->tokocryptoService->holdingsFromJournal(null, $kecuali)[$asset] ?? 0.0;
+
+        // Sisa pembulatan float (mis. 1e-12) dianggap nol, sama seperti portofolio
+        if (abs($saldo) <= 0.00001) {
+            $saldo = 0.0;
+        }
+
+        // Teks desimal biasa (bukan notasi 1.0E-5) dan DIPOTONG ke 8 desimal,
+        // bukan dibulatkan, supaya jumlah jual tidak pernah melebihi saldo.
+        [$bulat, $pecahan] = explode('.', sprintf('%.12F', max($saldo, 0)));
+        $teks = rtrim($bulat . '.' . substr($pecahan, 0, 8), '0');
+        $teks = rtrim($teks, '.');
+
+        return response()->json([
+            'success' => true,
+            'symbol' => $symbol,
+            'asset' => $asset,
+            'amount' => $saldo,
+            'amount_text' => $teks === '' ? '0' : $teks,
+        ]);
+    }
+
+    /**
      * API to fetch current stats for a symbol to pre-fill the form.
      */
     public function getLiveStats($symbol)

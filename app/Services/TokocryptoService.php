@@ -216,12 +216,14 @@ class TokocryptoService
      * Saldo per aset hasil rekonstruksi jurnal trade (DEPOSIT/WITHDRAW/BUY/SELL).
      *
      * @param Carbon|null $until Hanya transaksi sampai waktu ini; null = seluruh jurnal.
+     * @param int[] $excludeIds Transaksi yang diabaikan (mis. yang sedang diedit di form SELL).
      * @return array<string, float>
      */
-    public function holdingsFromJournal(?Carbon $until = null): array
+    public function holdingsFromJournal(?Carbon $until = null, array $excludeIds = []): array
     {
         $trades = Trade::orderBy('trade_time', 'asc')
             ->when($until, fn ($q) => $q->where('trade_time', '<=', $until))
+            ->when($excludeIds, fn ($q) => $q->whereNotIn('id', $excludeIds))
             ->get();
         $holdings = [];
 

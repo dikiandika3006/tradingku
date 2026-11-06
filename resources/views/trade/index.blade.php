@@ -52,7 +52,13 @@
                 </div>
                 <div class="form-group" id="group_trade_amount" style="margin-bottom: 0;">
                     <label for="trade_amount" class="form-label" id="label_trade_amount">Jumlah Aset</label>
-                    <input type="number" name="amount" id="trade_amount" step="any" class="form-control" placeholder="0.00" required>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <input type="number" name="amount" id="trade_amount" step="any" class="form-control" placeholder="0.00" required>
+                        <button type="button" id="btnAllToken" class="btn btn-secondary" style="display: none; padding: 0.6rem; font-size: 0.75rem; white-space: nowrap;" title="Isi dengan seluruh saldo aset ini">
+                            All
+                        </button>
+                    </div>
+                    <small id="info_all_token" style="display: none; margin-top: 0.3rem; font-size: 0.72rem; color: var(--text-muted);"></small>
                 </div>
             </div>
 
@@ -322,6 +328,70 @@
                 if (amountLabel) amountLabel.textContent = "Jumlah Aset";
                 if (technicalIndicators) technicalIndicators.style.display = "block";
             }
+
+            // Tombol "All" hanya relevan untuk penjualan
+            if (btnAllToken) btnAllToken.style.display = (type === 'SELL') ? "inline-block" : "none";
+            if (type !== 'SELL' && infoAllToken) infoAllToken.style.display = "none";
+        }
+
+        // Tombol "All": isi jumlah jual dengan seluruh saldo aset di jurnal.
+        // Saat mengedit, transaksi yang diedit dikecualikan dari perhitungan
+        // saldo supaya jumlah lamanya tidak ikut mengurangi.
+        const btnAllToken = document.getElementById("btnAllToken");
+        const infoAllToken = document.getElementById("info_all_token");
+        const amountInput = document.getElementById("trade_amount");
+        let editingTradeId = null;
+
+        function tampilkanInfoAll(teks, warna) {
+            if (!infoAllToken) return;
+            infoAllToken.textContent = teks;
+            infoAllToken.style.color = warna || "var(--text-muted)";
+            infoAllToken.style.display = "block";
+        }
+
+        if (btnAllToken) {
+            btnAllToken.addEventListener("click", function() {
+                const symbol = symbolInput.value.trim().toUpperCase();
+                if (!symbol) {
+                    tampilkanInfoAll("Isi simbol aset dulu (misal: BTCUSDT).", "#ef4444");
+                    symbolInput.focus();
+                    return;
+                }
+
+                btnAllToken.disabled = true;
+                btnAllToken.textContent = "...";
+
+                const url = `/api/trade-holding/${encodeURIComponent(symbol)}` + (editingTradeId ? `?kecuali=${editingTradeId}` : "");
+                fetch(url, { headers: { "Accept": "application/json" } })
+                    .then(response => {
+                        if (!response.ok) throw new Error("HTTP " + response.status);
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (!data.success) throw new Error(data.message || "gagal");
+                        if (data.amount > 0) {
+                            amountInput.value = data.amount_text;
+                            tampilkanInfoAll(`Seluruh saldo ${data.asset}: ${data.amount_text}`);
+                        } else {
+                            tampilkanInfoAll(`Saldo ${data.asset} di jurnal kosong, tidak ada yang bisa dijual.`, "#ef4444");
+                        }
+                    })
+                    .catch(err => {
+                        tampilkanInfoAll("Gagal mengambil saldo aset.", "#ef4444");
+                        console.error(err);
+                    })
+                    .finally(() => {
+                        btnAllToken.disabled = false;
+                        btnAllToken.textContent = "All";
+                    });
+            });
+        }
+
+        if (symbolInput) {
+            // Saldo yang tampil milik simbol lama, jadi sembunyikan saat simbol diganti
+            symbolInput.addEventListener("input", function() {
+                if (infoAllToken) infoAllToken.style.display = "none";
+            });
         }
 
         if (typeSelect) {
@@ -404,6 +474,8 @@
                 formTitle.textContent = "Edit Transaksi #" + id;
                 form.action = `/trade/${id}`;
                 methodContainer.innerHTML = '<input type="hidden" name="_method" value="PUT">';
+                editingTradeId = id;
+                if (infoAllToken) infoAllToken.style.display = "none";
 
                 // Pre-fill inputs
                 symbolInput.value = symbol;
@@ -431,6 +503,8 @@
             formTitle.textContent = "Catat Transaksi Baru";
             form.action = defaultAction;
             methodContainer.innerHTML = '';
+            editingTradeId = null;
+            if (infoAllToken) infoAllToken.style.display = "none";
             form.reset();
             adjustFormForType(); // Reset form field states and labels
  

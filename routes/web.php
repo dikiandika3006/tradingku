@@ -64,6 +64,7 @@ Route::middleware(['auth'])->group(function () {
         Route::put('/trade/{id}', [TradeController::class, 'update'])->name('trade.update');
         Route::delete('/trade/{id}', [TradeController::class, 'destroy'])->name('trade.destroy');
         Route::get('/api/trade-live-stats/{symbol}', [TradeController::class, 'getLiveStats'])->name('api.trade-live-stats');
+        Route::get('/api/trade-holding/{symbol}', [TradeController::class, 'getHolding'])->name('api.trade-holding');
     });
 
     // Scanner
