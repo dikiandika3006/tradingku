@@ -13,6 +13,24 @@ class TokocryptoService
     protected $baseUrl = 'https://www.tokocrypto.site';
 
     /**
+     * API privat resmi Tokocrypto. Endpoint gaya Binance (/api/v3/account di
+     * tokocrypto.site) menolak API key Tokocrypto dengan kode -2015, jadi data
+     * akun dan order harus lewat sini.
+     */
+    protected const OPEN_API_URL = 'https://www.tokocrypto.com/open/v1';
+
+    /** Kode numerik Open API -> label yang dipakai tampilan. */
+    protected const ORDER_SIDE = [0 => 'BUY', 1 => 'SELL'];
+    protected const ORDER_TYPE = [
+        1 => 'LIMIT', 2 => 'MARKET', 3 => 'STOP_LOSS', 4 => 'STOP_LOSS_LIMIT',
+        5 => 'TAKE_PROFIT', 6 => 'TAKE_PROFIT_LIMIT', 7 => 'LIMIT_MAKER',
+    ];
+    protected const ORDER_STATUS = [
+        0 => 'NEW', 1 => 'PARTIALLY_FILLED', 2 => 'FILLED', 3 => 'CANCELED',
+        4 => 'PENDING_CANCEL', 5 => 'REJECTED', 6 => 'EXPIRED',
+    ];
+
+    /**
      * Retrieve the API Key from database or .env fallback.
      */
     public function getApiKey(): string
@@ -91,56 +109,34 @@ class TokocryptoService
      */
     public function getPortfolio(): array
     {
-        $apiKey = $this->getApiKey();
-        $secretKey = $this->getApiSecret();
-
         $balances = [];
         $fetchedFromApi = false;
 
-        // If credentials exist, try to call Tokocrypto API
-        if ($this->hasCredentials()) {
-            try {
-                $params = [
-                    'timestamp' => round(microtime(true) * 1000),
-                    'recvWindow' => 60000,
-                ];
+        // Saldo asli dari bursa. Disimpan sebentar karena satu halaman bisa
+        // memanggil getPortfolio() beberapa kali.
+        $accountAssets = $this->hasCredentials()
+            ? Cache::remember('tokocrypto_account_assets_' . md5($this->getApiKey()), 15, function () {
+                return $this->openApiGet('/account/spot')['accountAssets'] ?? null;
+            })
+            : null;
 
-                $queryString = http_build_query($params);
-                $signature = hash_hmac('sha256', $queryString, $secretKey);
-                
-                $response = Http::timeout(4)
-                    ->withHeaders([
-                        'X-MBX-APIKEY' => $apiKey,
-                        'X-TCDX-APIKEY' => $apiKey, // Support older endpoints as backup
-                    ])
-                    ->get($this->baseUrl . '/api/v3/account?' . $queryString . '&signature=' . $signature);
+        if (is_array($accountAssets)) {
+            foreach ($accountAssets as $b) {
+                $free = (float)($b['free'] ?? 0);
+                $locked = (float)($b['locked'] ?? 0);
+                $total = $free + $locked;
 
-                if ($response->successful()) {
-                    $accountData = $response->json();
-                    if (isset($accountData['balances'])) {
-                        foreach ($accountData['balances'] as $b) {
-                            $free = (float)$b['free'];
-                            $locked = (float)$b['locked'];
-                            $total = $free + $locked;
-
-                            if ($total > 0.00001) {
-                                $balances[$b['asset']] = [
-                                    'asset' => $b['asset'],
-                                    'free' => $free,
-                                    'locked' => $locked,
-                                    'total' => $total,
-                                    'source' => 'API'
-                                ];
-                            }
-                        }
-                        $fetchedFromApi = true;
-                    }
-                } else {
-                    \Log::warning("Tokocrypto API Account returned error: " . $response->body());
+                if ($total > 0.00001) {
+                    $balances[$b['asset']] = [
+                        'asset' => $b['asset'],
+                        'free' => $free,
+                        'locked' => $locked,
+                        'total' => $total,
+                        'source' => 'API'
+                    ];
                 }
-            } catch (\Exception $e) {
-                \Log::error("Failed to fetch Tokocrypto API Portfolio: " . $e->getMessage());
             }
+            $fetchedFromApi = true;
         }
 
         // Fallback: If not fetched from API, construct balance from trade logs in database
@@ -161,6 +157,13 @@ class TokocryptoService
         // Add valuations (convert to USDT, etc.)
         $prices = $this->getAllPrices();
         $portfolioData = [];
+
+        // Add IDR estimation (assume 1 USDT = 16,400 IDR or live rate if available)
+        $usdtIdr = $prices['USDTIDR'] ?? ($prices['USDTBIDR'] ?? ($prices['USDTIDRT'] ?? 16400.0));
+        if ($usdtIdr < 1000) {
+            $usdtIdr = 16400.0; // fallback safety
+        }
+
         $totalValuationUsdt = 0.0;
 
         foreach ($balances as $asset => $data) {
@@ -169,6 +172,11 @@ class TokocryptoService
             // If asset is USDT itself
             if ($asset === 'USDT') {
                 $price = 1.0;
+            } elseif (in_array($asset, ['IDR', 'BIDR', 'IDRT'], true)) {
+                // Kas rupiah: tidak punya pasangan XXXUSDT, jadi dinilai pakai kurs.
+                // Saldo negatif (jurnal yang setorannya belum dicatat) tetap 0
+                // agar tidak memotong total portofolio.
+                $price = $data['total'] > 0 ? 1 / $usdtIdr : 0.0;
             } else {
                 // Check if price is in prices list
                 $price = $prices[$symbol] ?? 0.0;
@@ -196,12 +204,6 @@ class TokocryptoService
         usort($portfolioData, function ($a, $b) {
             return $b['value_usdt'] <=> $a['value_usdt'];
         });
-
-        // Add IDR estimation (assume 1 USDT = 16,400 IDR or live rate if available)
-        $usdtIdr = $prices['USDTIDR'] ?? ($prices['USDTBIDR'] ?? ($prices['USDTIDRT'] ?? 16400.0));
-        if ($usdtIdr < 1000) {
-            $usdtIdr = 16400.0; // fallback safety
-        }
 
         return [
             'assets' => $portfolioData,
@@ -269,37 +271,74 @@ class TokocryptoService
      */
     public function getOpenOrders(): array
     {
-        $apiKey = $this->getApiKey();
-        $secretKey = $this->getApiSecret();
+        return $this->fetchOpenOrders() ?? [];
+    }
 
+    /**
+     * Sama dengan getOpenOrders(), tetapi null bila API gagal, supaya halaman
+     * bisa membedakan "tidak ada order" dari "gagal mengambil order".
+     */
+    public function fetchOpenOrders(): ?array
+    {
         if (!$this->hasCredentials()) {
-            return [];
+            return null;
         }
 
+        // type=1 = order yang masih terbuka (type=2 riwayat)
+        $data = $this->openApiGet('/orders', ['type' => 1, 'limit' => 1000]);
+        if ($data === null) {
+            return null;
+        }
+        $list = $data['list'] ?? [];
+
+        // Samakan dengan format gaya Binance yang dipakai halaman Open Orders
+        return array_map(fn(array $o) => [
+            'orderId' => $o['orderId'] ?? null,
+            'symbol' => str_replace('_', '', (string)($o['symbol'] ?? '')),
+            'side' => self::ORDER_SIDE[$o['side'] ?? -1] ?? (string)($o['side'] ?? ''),
+            'type' => self::ORDER_TYPE[$o['type'] ?? -1] ?? (string)($o['type'] ?? ''),
+            'status' => self::ORDER_STATUS[$o['status'] ?? -1] ?? (string)($o['status'] ?? ''),
+            'price' => (string)($o['price'] ?? '0'),
+            'origQty' => (string)($o['origQty'] ?? '0'),
+            'executedQty' => (string)($o['executedQty'] ?? '0'),
+            'stopPrice' => (string)($o['stopPrice'] ?? '0'),
+            'time' => (int)($o['createTime'] ?? $o['time'] ?? 0),
+        ], array_values(array_filter($list, 'is_array')));
+    }
+
+    /**
+     * GET bertanda tangan ke Open API Tokocrypto.
+     *
+     * Mengembalikan isi "data" bila code = 0, selain itu null (dan dicatat ke
+     * log tanpa menyertakan key/secret).
+     */
+    protected function openApiGet(string $path, array $params = [], int $timeout = 6): ?array
+    {
         try {
-            $params = [
+            $query = http_build_query($params + [
                 'timestamp' => round(microtime(true) * 1000),
-                'recvWindow' => 60000,
-            ];
+                'recvWindow' => 5000,
+            ]);
+            $signature = hash_hmac('sha256', $query, $this->getApiSecret());
 
-            $queryString = http_build_query($params);
-            $signature = hash_hmac('sha256', $queryString, $secretKey);
+            $response = Http::timeout($timeout)
+                ->withHeaders(['X-MBX-APIKEY' => $this->getApiKey()])
+                ->get(self::OPEN_API_URL . $path . '?' . $query . '&signature=' . $signature);
 
-            $response = Http::timeout(5)
-                ->withHeaders([
-                    'X-MBX-APIKEY' => $apiKey,
-                ])
-                ->get($this->baseUrl . '/api/v3/openOrders?' . $queryString . '&signature=' . $signature);
-
-            if ($response->successful()) {
-                return $response->json();
-            } else {
-                \Log::warning("Failed to fetch open orders: " . $response->body());
+            $json = $response->json();
+            if ($response->successful() && is_array($json) && ($json['code'] ?? null) === 0) {
+                return is_array($json['data'] ?? null) ? $json['data'] : [];
             }
+
+            \Log::warning("Tokocrypto Open API {$path} gagal", [
+                'http' => $response->status(),
+                'code' => $json['code'] ?? null,
+                'msg' => $json['msg'] ?? null,
+            ]);
         } catch (\Exception $e) {
-            \Log::error("Tokocrypto API error in getOpenOrders: " . $e->getMessage());
+            \Log::error("Tokocrypto Open API {$path} error: " . $e->getMessage());
         }
 
-        return [];
+        return null;
     }
 }

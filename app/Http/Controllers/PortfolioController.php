@@ -80,6 +80,12 @@ class PortfolioController extends Controller
 
             $avgBuyPriceUsdt = $basis['avg_price_usdt'];
 
+            // Kas rupiah tidak punya untung/rugi. Setoran IDR dijurnal dengan
+            // harga 1, yang bila dibaca sebagai USDT membuat PNL-nya -100%.
+            if (in_array($assetName, ['IDR', 'BIDR', 'IDRT'], true)) {
+                $avgBuyPriceUsdt = $currentPrice;
+            }
+
             // Tanpa riwayat transaksi, anggap modal = harga pasar (PNL nol)
             if ($avgBuyPriceUsdt <= 0.0) {
                 $avgBuyPriceUsdt = $currentPrice;
@@ -348,9 +354,12 @@ class PortfolioController extends Controller
         $openOrders = [];
         $prices = [];
         $usdtIdr = 16000.0;
+        $apiGagal = false;
 
         if ($hasCredentials) {
-            $openOrders = $this->tokocryptoService->getOpenOrders();
+            $hasil = $this->tokocryptoService->fetchOpenOrders();
+            $apiGagal = $hasil === null;
+            $openOrders = $hasil ?? [];
             $prices = $this->tokocryptoService->getAllPrices();
             $portfolio = $this->tokocryptoService->getPortfolio();
             $usdtIdr = $portfolio['usdt_idr_rate'] ?? 16000.0;
@@ -370,7 +379,12 @@ class PortfolioController extends Controller
                 $order['price'] = $orderPrice;
                 $order['origQty'] = (float)$order['origQty'];
                 $order['executedQty'] = (float)$order['executedQty'];
-                $order['total_usdt'] = $orderPrice * $order['origQty'];
+                // Harga pasangan rupiah dalam IDR; total harus dikonversi ke USDT
+                [, $quote] = Trade::splitSymbol($symbol);
+                $nilaiQuote = $orderPrice * $order['origQty'];
+                $order['total_usdt'] = in_array($quote, ['IDR', 'BIDR', 'IDRT'], true) && $usdtIdr > 0
+                    ? $nilaiQuote / $usdtIdr
+                    : $nilaiQuote;
                 
                 // Calculate distance percentage to fill
                 if ($currentPrice > 0) {
@@ -383,6 +397,7 @@ class PortfolioController extends Controller
 
         return view('portfolio.open_orders', [
             'has_credentials' => $hasCredentials,
+            'api_gagal' => $apiGagal,
             'open_orders' => $openOrders,
             'usdt_idr_rate' => $usdtIdr
         ]);

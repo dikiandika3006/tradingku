@@ -25,10 +25,24 @@
     <div class="glass-card">
         <div class="card-header" style="margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
             <div class="card-title">Daftar Order Aktif di Tokocrypto</div>
-            <span class="badge" style="background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.3); color: #10b981; font-weight: 600; padding: 0.3rem 0.6rem; border-radius: 6px;">
-                Tersambung Ke API Live
-            </span>
+            @if(!empty($api_gagal))
+                <span class="badge" style="background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.3); color: #ef4444; font-weight: 600; padding: 0.3rem 0.6rem; border-radius: 6px;">
+                    Gagal Terhubung Ke API
+                </span>
+            @else
+                <span class="badge" style="background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.3); color: #10b981; font-weight: 600; padding: 0.3rem 0.6rem; border-radius: 6px;">
+                    Tersambung Ke API Live
+                </span>
+            @endif
         </div>
+
+        @if(!empty($api_gagal))
+            <div style="margin-bottom: 1.25rem; padding: 0.85rem 1rem; border-radius: 8px; background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.25); color: #fca5a5; font-size: 0.85rem; line-height: 1.5;">
+                Daftar order tidak bisa diambil dari Tokocrypto, jadi tabel di bawah belum tentu lengkap.
+                Periksa API key &amp; secret di <a href="{{ route('setting.index') }}" style="color: #fca5a5; text-decoration: underline;">Pengaturan</a>,
+                lalu muat ulang halaman ini. Rincian error tercatat di log aplikasi.
+            </div>
+        @endif
 
         <div class="table-responsive">
             <table class="custom-table table-wide" style="font-size: 0.88rem;">
@@ -88,7 +102,8 @@
                                 {{ $orderPriceFormatted }}
                             </td>
                             <td style="text-align: right; font-family: monospace;">
-                                {{ number_format($order['origQty'], 4) }}
+                                {{-- Sampai 8 desimal tanpa nol berlebih: 0.00149 tidak dibulatkan jadi 0.0015 --}}
+                                {{ rtrim(rtrim(number_format($order['origQty'], 8, '.', ','), '0'), '.') }}
                             </td>
                             <td style="text-align: right; font-family: monospace; font-weight: 600;">
                                 <div>${{ number_format($order['total_usdt'], 2) }}</div>
@@ -122,7 +137,11 @@
                     @empty
                         <tr>
                             <td colspan="10" style="text-align: center; color: var(--text-muted); padding: 4rem 0;">
-                                Tidak ada antrean pesanan (Open Orders) aktif di akun Tokocrypto Anda saat ini.
+                                @if(!empty($api_gagal))
+                                    Order belum bisa ditampilkan karena koneksi ke API Tokocrypto gagal.
+                                @else
+                                    Tidak ada antrean pesanan (Open Orders) aktif di akun Tokocrypto Anda saat ini.
+                                @endif
                             </td>
                         </tr>
                     @endforelse
