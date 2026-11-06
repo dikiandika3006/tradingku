@@ -11,6 +11,14 @@ use Illuminate\Support\Facades\Schedule;
 
 Schedule::command('telegram:check-price-alerts')->everyMinute();
 
+// Auto-post pembelian di Tokocrypto ke jurnal (sejak 6 Nov 2026).
+// Tidak dijalankan di lokal: tulisan lokal ikut antrean sinkronisasi ke
+// produksi, sementara produksi sudah mencatatnya sendiri lewat cron ini.
+Schedule::command('tokocrypto:sync-buys')
+    ->everyFiveMinutes()
+    ->withoutOverlapping()
+    ->skip(fn () => app()->environment('local'));
+
 // Volume spot terakumulasi dari beberapa bursa.
 // Bursa hanya menyimpan candle beberapa ratus jam ke belakang, jadi riwayat
 // jangka panjang dibentuk sendiri lewat rekaman harian ini.

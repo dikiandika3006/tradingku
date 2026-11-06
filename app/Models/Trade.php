@@ -63,7 +63,8 @@ class Trade extends Model
         'stoch_rsi_k',
         'stoch_rsi_d',
         'divergence',
-        'notes'
+        'notes',
+        'exchange_order_id'
     ];
 
     /**

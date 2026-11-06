@@ -327,6 +327,53 @@ class TokocryptoService
     }
 
     /**
+     * Riwayat transaksi terisi (fill) akun, semua simbol, dari $startMs sampai
+     * $endMs. Diambil per jendela 24 jam. Null bila salah satu permintaan gagal,
+     * supaya pemanggil tidak menganggap riwayat yang bolong sebagai lengkap.
+     *
+     * @return array<int, array>|null
+     */
+    public function fetchMyTrades(int $startMs, ?int $endMs = null): ?array
+    {
+        if (!$this->hasCredentials()) {
+            return null;
+        }
+
+        $endMs ??= (int) round(microtime(true) * 1000);
+        $jendela = 24 * 3600 * 1000 - 1;
+        $hasil = [];
+
+        for ($dari = $startMs; $dari <= $endMs; $dari += $jendela + 1) {
+            $sampai = min($dari + $jendela, $endMs);
+            $data = $this->openApiGet('/orders/trades', [
+                'startTime' => $dari,
+                'endTime' => $sampai,
+                'limit' => 1000,
+            ], 10);
+
+            if ($data === null) {
+                return null;
+            }
+
+            $list = $data['list'] ?? (array_is_list($data) ? $data : []);
+            if (count($list) >= 1000) {
+                // Batas satu halaman tercapai: lebih aman berhenti daripada
+                // memposting riwayat yang mungkin terpotong.
+                \Log::warning('Tokocrypto /orders/trades: 1000 fill dalam satu jendela, riwayat mungkin terpotong');
+                return null;
+            }
+
+            foreach ($list as $fill) {
+                if (is_array($fill)) {
+                    $hasil[] = $fill;
+                }
+            }
+        }
+
+        return $hasil;
+    }
+
+    /**
      * GET bertanda tangan ke Open API Tokocrypto.
      *
      * Mengembalikan isi "data" bila code = 0, selain itu null (dan dicatat ke

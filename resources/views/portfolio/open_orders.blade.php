@@ -83,7 +83,8 @@
                         @endphp
                         <tr>
                             <td style="font-size: 0.82rem; white-space: nowrap; color: var(--text-muted);">
-                                {{ date('d/m/Y H:i:s', $order['time'] / 1000) }}
+                                {{-- Zona aplikasi UTC; tampilkan WIB seperti jam di jurnal --}}
+                                {{ \Carbon\Carbon::createFromTimestampMs($order['time'], 'Asia/Jakarta')->format('d/m/Y H:i:s') }} WIB
                             </td>
                             <td style="font-weight: 700; color: white;">
                                 {{ $symbol }}
