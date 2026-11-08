@@ -67,11 +67,11 @@
                 <input type="date" name="end_date" id="end_date" class="form-control" value="{{ $end_date }}" style="padding: 0.55rem;">
             </div>
             <div style="display: flex; gap: 0.5rem;">
-                <button type="submit" class="btn btn-primary" style="padding: 0.6rem 1.5rem; font-size: 0.88rem; font-weight: 600; cursor: pointer; border-radius: 6px; border: none; background: var(--color-primary); color: white;">
+                <button type="submit" class="btn btn-primary" style="padding: 0.6rem 1.5rem; font-size: 0.88rem; font-weight: 600; cursor: pointer; border-radius: 6px; border: none; background: var(--color-primary); color: #ffffff;">
                     Filter
                 </button>
                 @if($start_date || $end_date)
-                    <a href="{{ route('portfolio.pnl') }}" class="btn btn-secondary" style="padding: 0.6rem 1.5rem; font-size: 0.88rem; font-weight: 600; text-decoration: none; display: inline-block; border-radius: 6px; background: rgba(255, 255, 255, 0.05); color: var(--text-main); border: 1px solid var(--border-light);">
+                    <a href="{{ route('portfolio.pnl') }}" class="btn btn-secondary" style="padding: 0.6rem 1.5rem; font-size: 0.88rem; font-weight: 600; text-decoration: none; display: inline-block; border-radius: 6px; background: rgba(var(--tint-rgb), 0.05); color: var(--text-main); border: 1px solid var(--border-light);">
                         Reset
                     </a>
                 @endif
@@ -99,7 +99,7 @@
             <tbody>
                 @forelse($asset_summaries as $summary)
                     <tr>
-                        <td style="font-weight: 700; color: white;">{{ $summary['asset'] }}</td>
+                        <td style="font-weight: 700; color: var(--text-strong);">{{ $summary['asset'] }}</td>
                         <td style="text-align: right; font-family: monospace;">{{ number_format($summary['total_sold'], 4) }}</td>
                         <td style="text-align: right; font-family: monospace; font-weight: 700;" class="{{ $summary['pnl_usdt'] >= 0 ? 'text-success' : 'text-danger' }}">
                             {{ $summary['pnl_usdt'] >= 0 ? '+' : '' }}${{ number_format($summary['pnl_usdt'], 2) }}
@@ -150,12 +150,12 @@
                         <td style="font-size: 0.82rem; white-space: nowrap;">
                             {{ date('d/m/Y H:i', strtotime($record['trade_time'])) }}
                         </td>
-                        <td style="font-weight: 700; color: white;">{{ $record['asset'] }}</td>
+                        <td style="font-weight: 700; color: var(--text-strong);">{{ $record['asset'] }}</td>
                         <td style="text-align: right; font-family: monospace;">{{ number_format($record['amount'], 4) }}</td>
                         <td style="text-align: right; font-family: monospace; color: var(--text-muted);">
                             ${{ number_format($record['avg_buy_price_usdt'], 4) }}
                         </td>
-                        <td style="text-align: right; font-family: monospace; color: white;">
+                        <td style="text-align: right; font-family: monospace; color: var(--text-strong);">
                             ${{ number_format($record['sell_price_usdt'], 4) }}
                         </td>
                         <td style="text-align: right; font-family: monospace; font-weight: 700;" class="{{ $record['pnl_usdt'] >= 0 ? 'text-success' : 'text-danger' }}">

@@ -40,7 +40,7 @@
             </div>
 
             <div class="form-group">
-                <label for="ls_ratio_volume" class="form-label">L/S Ratio (24h) <span style="color: var(--color-danger);">*</span> <span style="font-size: 0.6rem; color: #f59e0b;">📋 COINGLASS</span></label>
+                <label for="ls_ratio_volume" class="form-label">L/S Ratio (24h) <span style="color: var(--color-danger);">*</span> <span style="font-size: 0.6rem; color: var(--tc-f59e0b);">📋 COINGLASS</span></label>
                 <input type="number" name="ls_ratio_volume" id="ls_ratio_volume" step="any" class="form-control" placeholder="0.0775" required>
                 <small style="color: var(--text-muted); font-size: 0.7rem;">Angka dari Coinglass "Long/Short (24h)" — data multi-exchange</small>
             </div>
@@ -67,11 +67,11 @@
 
             <div class="form-grid-2col" style="margin-bottom: 1rem;">
                 <div class="form-group" style="margin-bottom: 0;">
-                    <label for="open_interest_change" class="form-label">OI Change (%) <span style="color: var(--color-danger);">*</span> <span style="font-size: 0.6rem; color: #f59e0b;">📋 CG</span></label>
+                    <label for="open_interest_change" class="form-label">OI Change (%) <span style="color: var(--color-danger);">*</span> <span style="font-size: 0.6rem; color: var(--tc-f59e0b);">📋 CG</span></label>
                     <input type="number" name="open_interest_change" id="open_interest_change" step="any" class="form-control" placeholder="+17.08" required>
                 </div>
                 <div class="form-group" style="margin-bottom: 0;">
-                    <label for="volume_change" class="form-label">Volume Change (%) <span style="color: var(--color-danger);">*</span> <span style="font-size: 0.6rem; color: #f59e0b;">📋 CG</span></label>
+                    <label for="volume_change" class="form-label">Volume Change (%) <span style="color: var(--color-danger);">*</span> <span style="font-size: 0.6rem; color: var(--tc-f59e0b);">📋 CG</span></label>
                     <input type="number" name="volume_change" id="volume_change" step="any" class="form-control" placeholder="+770.89" required>
                 </div>
             </div>
@@ -125,7 +125,7 @@
                             ? 'background: var(--color-danger-bg); color: var(--color-danger);'
                             : (in_array($a->signal, ['BULLISH', 'STRONG_BULLISH'])
                                 ? 'background: var(--color-success-bg); color: var(--color-success);'
-                                : 'background: rgba(255,255,255,0.05); color: var(--text-muted);') }}
+                                : 'background: rgba(var(--tint-rgb), 0.05); color: var(--text-muted);') }}
                     ">{{ $a->signal_label }}</span>
                 </div>
                 <div style="display: flex; align-items: center; gap: 0.75rem;">
@@ -173,7 +173,7 @@
                     <span style="font-size: 0.65rem; color: var(--text-muted);">L/S Ratio Volume: {{ number_format($a->ls_ratio_volume, 4) }}</span>
                     <span style="color: var(--color-danger); font-weight: 700;">Short {{ $a->short_percent_volume }}%</span>
                 </div>
-                <div style="display: flex; height: 10px; border-radius: 5px; overflow: hidden; background: rgba(255,255,255,0.05);">
+                <div style="display: flex; height: 10px; border-radius: 5px; overflow: hidden; background: rgba(var(--tint-rgb), 0.05);">
                     <div style="width: {{ $a->long_percent_volume }}%; background: linear-gradient(90deg, #00e676, #00c853); transition: width 0.5s;"></div>
                     <div style="width: {{ $a->short_percent_volume }}%; background: linear-gradient(90deg, #ff5252, #ff1744); transition: width 0.5s;"></div>
                 </div>
@@ -190,13 +190,13 @@
 
             <!-- Liquidation -->
             @if($a->total_liquidation > 0)
-            <div style="margin-bottom: 1.25rem; padding: 0.75rem; background: rgba(255,255,255,0.02); border-radius: 10px; border: 1px solid var(--border-light);">
+            <div style="margin-bottom: 1.25rem; padding: 0.75rem; background: rgba(var(--tint-rgb), 0.02); border-radius: 10px; border: 1px solid var(--border-light);">
                 <div style="font-size: 0.7rem; font-weight: 600; color: var(--text-muted); margin-bottom: 0.4rem;">Liquidation 24h</div>
                 <div style="display: flex; justify-content: space-between; font-size: 0.8rem;">
                     <span style="color: var(--color-success);">Long: ${{ number_format($a->liq_long_24h, 0) }} <span style="font-size: 0.65rem;">({{ $a->liq_long_percent }}%)</span></span>
                     <span style="color: var(--color-danger);">Short: ${{ number_format($a->liq_short_24h, 0) }}</span>
                 </div>
-                <div style="display: flex; height: 6px; border-radius: 3px; overflow: hidden; background: rgba(255,255,255,0.05); margin-top: 0.4rem;">
+                <div style="display: flex; height: 6px; border-radius: 3px; overflow: hidden; background: rgba(var(--tint-rgb), 0.05); margin-top: 0.4rem;">
                     <div style="width: {{ $a->liq_long_percent }}%; background: var(--color-success);"></div>
                     <div style="width: {{ 100 - $a->liq_long_percent }}%; background: var(--color-danger);"></div>
                 </div>
@@ -204,7 +204,7 @@
             @endif
 
             <!-- Bottom Checklist -->
-            <div style="padding: 0.75rem; background: rgba(255,255,255,0.02); border-radius: 10px; border: 1px solid var(--border-light);">
+            <div style="padding: 0.75rem; background: rgba(var(--tint-rgb), 0.02); border-radius: 10px; border: 1px solid var(--border-light);">
                 <div style="font-size: 0.7rem; font-weight: 600; color: var(--color-primary); margin-bottom: 0.6rem;">
                     ✅ CHECKLIST TANDA BOTTOM ({{ $a->bottom_score }}/5)
                 </div>
@@ -216,7 +216,7 @@
                         @else ❌
                         @endif
                     </span>
-                    <span style="flex: 1; {{ $item['status'] === 'yes' ? 'color: var(--color-success);' : ($item['status'] === 'pending' ? 'color: #f59e0b;' : 'color: var(--text-muted);') }}">
+                    <span style="flex: 1; {{ $item['status'] === 'yes' ? 'color: var(--color-success);' : ($item['status'] === 'pending' ? 'color: var(--tc-f59e0b);' : 'color: var(--text-muted);') }}">
                         {{ $item['label'] }}
                     </span>
                     <span style="font-size: 0.65rem; color: var(--text-muted);">{{ $item['value'] }}</span>

@@ -12,10 +12,10 @@
     <!-- Year Filter Form -->
     <form method="GET" action="{{ route('portfolio.monthly-report') }}" class="year-filter-form" style="display: flex; align-items: center; gap: 0.5rem;">
         <label for="year" style="color: var(--text-muted); font-size: 0.9rem; font-weight: 500;">Filter Tahun:</label>
-        <select name="year" id="year" onchange="this.form.submit()" style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.15); color: #fff; padding: 0.5rem 1rem; border-radius: 8px; font-size: 0.9rem; outline: none; cursor: pointer;">
-            <option value="all" {{ $selected_year === 'all' ? 'selected' : '' }} style="background: #1e1e2d;">Semua Tahun (All-Time)</option>
+        <select name="year" id="year" onchange="this.form.submit()" style="background: rgba(var(--tint-rgb), 0.05); border: 1px solid rgba(var(--tint-rgb), 0.15); color: var(--text-strong); padding: 0.5rem 1rem; border-radius: 8px; font-size: 0.9rem; outline: none; cursor: pointer;">
+            <option value="all" {{ $selected_year === 'all' ? 'selected' : '' }} style="background: var(--bg-surface-solid);">Semua Tahun (All-Time)</option>
             @foreach($available_years as $yr)
-                <option value="{{ $yr }}" {{ $selected_year === $yr ? 'selected' : '' }} style="background: #1e1e2d;">Tahun {{ $yr }}</option>
+                <option value="{{ $yr }}" {{ $selected_year === $yr ? 'selected' : '' }} style="background: var(--bg-surface-solid);">Tahun {{ $yr }}</option>
             @endforeach
         </select>
     </form>
@@ -44,7 +44,7 @@
     </div>
 
     <div class="glass-card" style="padding: 1.25rem; border: 1px solid rgba(59, 130, 246, 0.4); background: rgba(59, 130, 246, 0.05);">
-        <div class="card-title" style="color: #60a5fa; font-size: 0.85rem; font-weight: 600;">True Net Portfolio Equity</div>
+        <div class="card-title" style="color: var(--tc-60a5fa); font-size: 0.85rem; font-weight: 600;">True Net Portfolio Equity</div>
         <div class="stat-value {{ $true_net_portfolio_pnl_usdt >= 0 ? 'text-success' : 'text-danger' }}" style="margin-top: 0.5rem; font-size: 1.7rem; font-weight: 700;">
             {{ $true_net_portfolio_pnl_usdt >= 0 ? '+' : '' }}${{ number_format($true_net_portfolio_pnl_usdt, 2) }}
         </div>
@@ -72,7 +72,7 @@
 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
     <!-- Bar Chart: Monthly Realized vs Floating PNL -->
     <div class="glass-card" style="padding: 1.5rem;">
-        <h3 style="font-size: 1.1rem; font-weight: 600; margin-bottom: 1rem; color: #fff;">Realized PNL vs True Net PNL Bulanan (USDT)</h3>
+        <h3 style="font-size: 1.1rem; font-weight: 600; margin-bottom: 1rem; color: var(--text-strong);">Realized PNL vs True Net PNL Bulanan (USDT)</h3>
         <div style="position: relative; height: 260px; width: 100%;">
             <canvas id="monthlyPnlChart"></canvas>
         </div>
@@ -80,7 +80,7 @@
 
     <!-- Line Chart: True Cumulative Portfolio Equity Curve -->
     <div class="glass-card" style="padding: 1.5rem;">
-        <h3 style="font-size: 1.1rem; font-weight: 600; margin-bottom: 1rem; color: #fff;">Kurva Ekuitas Bersih Portofolio (True Portfolio Equity Curve)</h3>
+        <h3 style="font-size: 1.1rem; font-weight: 600; margin-bottom: 1rem; color: var(--text-strong);">Kurva Ekuitas Bersih Portofolio (True Portfolio Equity Curve)</h3>
         <div style="position: relative; height: 260px; width: 100%;">
             <canvas id="cumulativePnlChart"></canvas>
         </div>
@@ -90,14 +90,14 @@
 <!-- Detailed Monthly Breakdown Table -->
 <div class="glass-card" style="padding: 1.5rem;">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 0.5rem;">
-        <h3 style="font-size: 1.15rem; font-weight: 600; color: #fff; margin: 0;">Rincian Ekuitas Bulanan (Transparan: Realized + Floating)</h3>
+        <h3 style="font-size: 1.15rem; font-weight: 600; color: var(--text-strong); margin: 0;">Rincian Ekuitas Bulanan (Transparan: Realized + Floating)</h3>
         <span style="font-size: 0.85rem; color: var(--text-muted);">Urutan: Bulan Terbaru Pertama</span>
     </div>
 
     <div class="table-responsive" style="overflow-x: auto;">
         <table class="table" style="width: 100%; border-collapse: collapse; text-align: left;">
             <thead>
-                <tr style="border-bottom: 1px solid rgba(255, 255, 255, 0.1); color: var(--text-muted); font-size: 0.85rem;">
+                <tr style="border-bottom: 1px solid rgba(var(--tint-rgb), 0.1); color: var(--text-muted); font-size: 0.85rem;">
                     <th style="padding: 0.75rem 1rem;">Bulan & Tahun</th>
                     <th style="padding: 0.75rem 1rem; text-align: center;">Total Trade</th>
                     <th style="padding: 0.75rem 1rem; text-align: right;" title="Laba/rugi yang sudah terkunci dari penjualan bulan ini.">Realized PNL</th>
@@ -112,23 +112,23 @@
             </thead>
             <tbody>
                 @forelse($monthly_reports as $report)
-                <tr style="border-bottom: 1px solid rgba(255, 255, 255, 0.05); font-size: 0.9rem;">
-                    <td style="padding: 1rem; font-weight: 600; color: #fff;">
+                <tr style="border-bottom: 1px solid rgba(var(--tint-rgb), 0.05); font-size: 0.9rem;">
+                    <td style="padding: 1rem; font-weight: 600; color: var(--text-strong);">
                         {{ $report['month_name'] }}
                         @if(!empty($report['is_finalized']))
                             <span title="Dikunci pada {{ $report['cut_off_date'] }} — nilai tidak akan berubah lagi"
-                                  style="display: inline-block; margin-left: 0.4rem; background: rgba(148, 163, 184, 0.15); color: #94a3b8; padding: 0.1rem 0.45rem; border-radius: 5px; font-size: 0.7rem; font-weight: 600; vertical-align: middle;">
+                                  style="display: inline-block; margin-left: 0.4rem; background: rgba(148, 163, 184, 0.15); color: var(--tc-94a3b8); padding: 0.1rem 0.45rem; border-radius: 5px; font-size: 0.7rem; font-weight: 600; vertical-align: middle;">
                                 🔒 FINAL
                             </span>
                         @else
                             <span title="Bulan berjalan — nilai masih bergerak mengikuti harga pasar"
-                                  style="display: inline-block; margin-left: 0.4rem; background: rgba(34, 197, 94, 0.15); color: #22c55e; padding: 0.1rem 0.45rem; border-radius: 5px; font-size: 0.7rem; font-weight: 600; vertical-align: middle;">
+                                  style="display: inline-block; margin-left: 0.4rem; background: rgba(34, 197, 94, 0.15); color: var(--tc-22c55e); padding: 0.1rem 0.45rem; border-radius: 5px; font-size: 0.7rem; font-weight: 600; vertical-align: middle;">
                                 ● LIVE
                             </span>
                         @endif
                     </td>
                     <td style="padding: 1rem; text-align: center;">
-                        <span class="badge" style="background: rgba(255,255,255,0.08); padding: 0.25rem 0.6rem; border-radius: 6px; font-weight: 600;">
+                        <span class="badge" style="background: rgba(var(--tint-rgb), 0.08); padding: 0.25rem 0.6rem; border-radius: 6px; font-weight: 600;">
                             {{ $report['trades_count'] }} trade
                         </span>
                     </td>
@@ -172,7 +172,7 @@
                     </td>
                     <td style="padding: 1rem; text-align: right; font-weight: 600;">
                         @if(abs($netDepositUsdt) >= 0.01)
-                            <span style="color: #60a5fa;">{{ $netDepositUsdt >= 0 ? '+' : '−' }}${{ number_format(abs($netDepositUsdt), 2) }}</span>
+                            <span style="color: var(--tc-60a5fa);">{{ $netDepositUsdt >= 0 ? '+' : '−' }}${{ number_format(abs($netDepositUsdt), 2) }}</span>
                             <div style="font-size: 0.75rem; font-weight: 400; opacity: 0.8; color: var(--text-muted);">
                                 {{ $netDepositUsdt >= 0 ? 'setoran dana' : 'penarikan dana' }}
                             </div>
@@ -180,7 +180,7 @@
                             <span style="color: var(--text-muted); font-weight: 400;">—</span>
                         @endif
                     </td>
-                    <td style="padding: 1rem; text-align: right; font-weight: 700; color: #fff;">
+                    <td style="padding: 1rem; text-align: right; font-weight: 700; color: var(--text-strong);">
                         ${{ number_format($portValUsdt, 2) }}
                         <div style="font-size: 0.75rem; font-weight: 400; opacity: 0.8; color: var(--text-muted);">
                             ≈ Rp {{ number_format($portValIdr, 0, ',', '.') }}
@@ -188,15 +188,15 @@
                     </td>
                     <td style="padding: 1rem; text-align: center;">
                         @if($report['mom_growth_percent'] > 0)
-                            <span style="color: #22c55e; font-weight: 600; font-size: 0.85rem;">▲ +{{ number_format($report['mom_growth_percent'], 1) }}%</span>
+                            <span style="color: var(--tc-22c55e); font-weight: 600; font-size: 0.85rem;">▲ +{{ number_format($report['mom_growth_percent'], 1) }}%</span>
                         @elseif($report['mom_growth_percent'] < 0)
-                            <span style="color: #ef4444; font-weight: 600; font-size: 0.85rem;">▼ {{ number_format($report['mom_growth_percent'], 1) }}%</span>
+                            <span style="color: var(--tc-ef4444); font-weight: 600; font-size: 0.85rem;">▼ {{ number_format($report['mom_growth_percent'], 1) }}%</span>
                         @else
                             <span style="color: var(--text-muted); font-size: 0.85rem;">0.0%</span>
                         @endif
                     </td>
                     <td style="padding: 1rem; text-align: center;">
-                        <span class="badge" style="background: rgba(255, 255, 255, 0.08); padding: 0.3rem 0.7rem; border-radius: 6px; font-weight: 600; font-size: 0.8rem;">
+                        <span class="badge" style="background: rgba(var(--tint-rgb), 0.08); padding: 0.3rem 0.7rem; border-radius: 6px; font-weight: 600; font-size: 0.8rem;">
                             {{ $report['health_badge'] }}
                         </span>
                     </td>
@@ -253,7 +253,7 @@
                 responsive: true,
                 maintainAspectRatio: false,
                 plugins: {
-                    legend: { labels: { color: 'rgba(255, 255, 255, 0.8)', font: { size: 11 } } },
+                    legend: { labels: { color: warnaTema(0.8), font: { size: 11 } } },
                     tooltip: {
                         callbacks: {
                             label: function(context) {
@@ -265,18 +265,18 @@
                 },
                 scales: {
                     x: {
-                        ticks: { color: 'rgba(255, 255, 255, 0.7)', font: { size: 11 } },
-                        grid: { color: 'rgba(255, 255, 255, 0.05)' }
+                        ticks: { color: warnaTema(0.7), font: { size: 11 } },
+                        grid: { color: warnaTema(0.05) }
                     },
                     y: {
                         ticks: {
-                            color: 'rgba(255, 255, 255, 0.7)',
+                            color: warnaTema(0.7),
                             font: { size: 11 },
                             callback: function(value) {
                                 return (value >= 0 ? '+' : '') + '$' + value;
                             }
                         },
-                        grid: { color: 'rgba(255, 255, 255, 0.05)' }
+                        grid: { color: warnaTema(0.05) }
                     }
                 }
             }
@@ -317,18 +317,18 @@
                 },
                 scales: {
                     x: {
-                        ticks: { color: 'rgba(255, 255, 255, 0.7)', font: { size: 11 } },
-                        grid: { color: 'rgba(255, 255, 255, 0.05)' }
+                        ticks: { color: warnaTema(0.7), font: { size: 11 } },
+                        grid: { color: warnaTema(0.05) }
                     },
                     y: {
                         ticks: {
-                            color: 'rgba(255, 255, 255, 0.7)',
+                            color: warnaTema(0.7),
                             font: { size: 11 },
                             callback: function(value) {
                                 return (value >= 0 ? '+' : '') + '$' + value;
                             }
                         },
-                        grid: { color: 'rgba(255, 255, 255, 0.05)' }
+                        grid: { color: warnaTema(0.05) }
                     }
                 }
             }

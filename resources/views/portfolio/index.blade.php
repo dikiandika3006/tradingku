@@ -9,7 +9,7 @@
         <p>Pantau saldo kepemilikan aset, harga rata-rata beli (average price), serta keuntungan/kerugian belum terealisasi</p>
     </div>
     <div class="header-actions" style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
-        <span id="countdownBadge" class="badge badge-neutral" style="font-family: monospace; font-size: 0.75rem; background: rgba(255, 255, 255, 0.08); border: 1px solid var(--border-light); display: none;">
+        <span id="countdownBadge" class="badge badge-neutral" style="font-family: monospace; font-size: 0.75rem; background: rgba(var(--tint-rgb), 0.08); border: 1px solid var(--border-light); display: none;">
             Refresh: <span id="countdownTimer">120</span>s
         </span>
         <span class="badge {{ $is_live ? 'badge-success' : 'badge-danger' }}">
@@ -114,7 +114,7 @@
                             </div>
                         </td>
                         <td data-label="Durasi">
-                            <span class="badge" style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); color: var(--text-main); font-weight: 600; padding: 0.35rem 0.65rem; border-radius: 6px; display: inline-block;">
+                            <span class="badge" style="background: rgba(var(--tint-rgb), 0.06); border: 1px solid rgba(var(--tint-rgb), 0.1); color: var(--text-main); font-weight: 600; padding: 0.35rem 0.65rem; border-radius: 6px; display: inline-block;">
                                 {{ $asset['duration_text'] }}
                             </span>
                             @if($asset['first_buy_date'])

@@ -32,13 +32,13 @@
 
     <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
         @if($is_live)
-            <span class="badge" style="background: rgba(34,197,94,0.15); color: #22c55e; padding: 0.35rem 0.7rem; border-radius: 6px; font-weight: 600; font-size: 0.8rem;">&#9679; LIVE</span>
+            <span class="badge" style="background: rgba(34,197,94,0.15); color: var(--tc-22c55e); padding: 0.35rem 0.7rem; border-radius: 6px; font-weight: 600; font-size: 0.8rem;">&#9679; LIVE</span>
         @else
-            <span class="badge" style="background: rgba(234,179,8,0.15); color: #eab308; padding: 0.35rem 0.7rem; border-radius: 6px; font-weight: 600; font-size: 0.8rem;">&#9888; REKAMAN TERAKHIR</span>
+            <span class="badge" style="background: rgba(234,179,8,0.15); color: var(--tc-eab308); padding: 0.35rem 0.7rem; border-radius: 6px; font-weight: 600; font-size: 0.8rem;">&#9888; REKAMAN TERAKHIR</span>
         @endif
 
         @if($price_usd)
-            <span style="color: #fff; font-weight: 600; font-family: monospace;">${{ number_format($price_usd, 2) }}</span>
+            <span style="color: var(--text-strong); font-weight: 600; font-family: monospace;">${{ number_format($price_usd, 2) }}</span>
         @endif
 
         @if($fetched_at)
@@ -51,12 +51,12 @@
 
 @if(!$is_live && $error_message)
     <div class="glass-card" style="padding: 1.25rem; margin-bottom: 1.5rem; border: 1px solid rgba(239,68,68,0.35); background: rgba(239,68,68,0.06);">
-        <strong style="color: #ef4444;">Pengambilan live gagal.</strong>
+        <strong style="color: var(--tc-ef4444);">Pengambilan live gagal.</strong>
         <div style="color: var(--text-muted); font-size: 0.9rem; margin-top: 0.35rem;">{{ $error_message }}</div>
     </div>
 @elseif(!empty($failures))
     <div class="glass-card" style="padding: 1rem 1.25rem; margin-bottom: 1.5rem; border: 1px solid rgba(234,179,8,0.3); background: rgba(234,179,8,0.05);">
-        <strong style="color: #eab308; font-size: 0.9rem;">Sebagian bursa dilewati:</strong>
+        <strong style="color: var(--tc-eab308); font-size: 0.9rem;">Sebagian bursa dilewati:</strong>
         <span style="color: var(--text-muted); font-size: 0.85rem;">{{ implode(' · ', $failures) }}</span>
     </div>
 @endif
@@ -68,7 +68,7 @@
             <div style="color: {{ $tf === '24h' ? '#60a5fa' : 'var(--text-muted)' }}; font-size: 0.85rem; font-weight: {{ $tf === '24h' ? '600' : '500' }};">
                 Akumulasi {{ $timeframe_labels[$tf] }}
             </div>
-            <div style="margin-top: 0.5rem; font-size: 1.45rem; font-weight: 700; color: #fff;">
+            <div style="margin-top: 0.5rem; font-size: 1.45rem; font-weight: 700; color: var(--text-strong);">
                 {{ $usd($totals[$tf] ?? 0) }}
             </div>
             @php $ch = $changes[$tf] ?? null; @endphp
@@ -83,14 +83,14 @@
 <!-- Rincian per bursa -->
 <div class="glass-card" style="padding: 1.5rem; margin-bottom: 1.5rem;">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 0.5rem;">
-        <h3 style="font-size: 1.15rem; font-weight: 600; color: #fff; margin: 0;">Rincian per Bursa</h3>
+        <h3 style="font-size: 1.15rem; font-weight: 600; color: var(--text-strong); margin: 0;">Rincian per Bursa</h3>
         <span style="font-size: 0.85rem; color: var(--text-muted);">Kontribusi terhadap akumulasi di atas</span>
     </div>
 
     <div class="table-responsive" style="overflow-x: auto;">
         <table class="table" style="width: 100%; border-collapse: collapse; text-align: left;">
             <thead>
-                <tr style="border-bottom: 1px solid rgba(255,255,255,0.1); color: var(--text-muted); font-size: 0.85rem;">
+                <tr style="border-bottom: 1px solid rgba(var(--tint-rgb), 0.1); color: var(--text-muted); font-size: 0.85rem;">
                     <th style="padding: 0.75rem 1rem;">Bursa</th>
                     <th style="padding: 0.75rem 1rem; text-align: right;">Harga</th>
                     @foreach($timeframes as $tf)
@@ -105,14 +105,14 @@
                         $pangsa = ($totals['24h'] ?? 0) > 0
                             ? ($e['volume_usd_24h'] / $totals['24h']) * 100 : 0;
                     @endphp
-                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 0.9rem;">
-                        <td style="padding: 0.9rem 1rem; font-weight: 600; color: #fff;">
+                    <tr style="border-bottom: 1px solid rgba(var(--tint-rgb), 0.05); font-size: 0.9rem;">
+                        <td style="padding: 0.9rem 1rem; font-weight: 600; color: var(--text-strong);">
                             {{ $e['exchange_name'] }}
                             @if(!empty($e['pair']))
                                 <div style="font-size: 0.72rem; color: var(--text-muted); font-weight: 400; font-family: monospace;">{{ $e['pair'] }}</div>
                             @endif
                         </td>
-                        <td style="padding: 0.9rem 1rem; text-align: right; font-family: monospace; color: #fff;">
+                        <td style="padding: 0.9rem 1rem; text-align: right; font-family: monospace; color: var(--text-strong);">
                             {{ $e['price_usd'] !== null ? '$' . number_format($e['price_usd'], 2) : '-' }}
                         </td>
 
@@ -124,7 +124,7 @@
                                 // Warna = arah perubahan volume, kepekatan = besar volume
                                 $rgb = $ch === null ? '99,102,241' : ($ch >= 0 ? '34,197,94' : '239,68,68');
                             @endphp
-                            <td style="padding: 0.9rem 1rem; text-align: right; font-family: monospace; color: #fff; font-weight: 600;
+                            <td style="padding: 0.9rem 1rem; text-align: right; font-family: monospace; color: var(--text-strong); font-weight: 600;
                                        background: rgba({{ $rgb }},{{ number_format($alpha * 0.30, 3) }});">
                                 {{ $usd($vol) }}
                                 @if($ch !== null)
@@ -160,7 +160,7 @@
 <div class="glass-card" style="padding: 1.5rem; margin-bottom: 1.5rem;">
     <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 0.75rem;">
         <div>
-            <h3 style="font-size: 1.15rem; font-weight: 600; color: #fff; margin: 0;">
+            <h3 style="font-size: 1.15rem; font-weight: 600; color: var(--text-strong); margin: 0;">
                 Nilai jendela <span id="labelJendela">7 hari</span>
             </h3>
             <p style="margin: 0.2rem 0 0; color: var(--text-muted); font-size: 0.85rem;">
@@ -177,7 +177,7 @@
             @foreach($timeframes as $tf)
                 <button type="button" class="tombol-jendela" data-tf="{{ $tf }}" data-label="{{ $timeframe_labels[$tf] }}"
                         style="padding: 0.35rem 0.75rem; border-radius: 6px; font-size: 0.8rem; font-weight: 600; cursor: pointer;
-                               border: 1px solid {{ $tf === '1w' ? 'rgba(59,130,246,0.5)' : 'rgba(255,255,255,0.1)' }};
+                               border: 1px solid {{ $tf === '1w' ? 'rgba(59,130,246,0.5)' : 'rgba(var(--tint-rgb), 0.1)' }};
                                background: {{ $tf === '1w' ? 'rgba(59,130,246,0.15)' : 'transparent' }};
                                color: {{ $tf === '1w' ? '#60a5fa' : 'var(--text-muted)' }};">
                     {{ $timeframe_labels[$tf] }}
@@ -200,14 +200,14 @@
 <!-- Riwayat harian -->
 <div class="glass-card" style="padding: 1.5rem;">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 0.5rem;">
-        <h3 style="font-size: 1.15rem; font-weight: 600; color: #fff; margin: 0;">Riwayat Harian (Akumulasi)</h3>
+        <h3 style="font-size: 1.15rem; font-weight: 600; color: var(--text-strong); margin: 0;">Riwayat Harian (Akumulasi)</h3>
         <span style="font-size: 0.85rem; color: var(--text-muted);">{{ $daily->count() }} hari terekam</span>
     </div>
 
     <div class="table-responsive" style="overflow-x: auto;">
         <table class="table" style="width: 100%; border-collapse: collapse; text-align: left;">
             <thead>
-                <tr style="border-bottom: 1px solid rgba(255,255,255,0.1); color: var(--text-muted); font-size: 0.85rem;">
+                <tr style="border-bottom: 1px solid rgba(var(--tint-rgb), 0.1); color: var(--text-muted); font-size: 0.85rem;">
                     <th style="padding: 0.75rem 1rem;">Tanggal</th>
                     <th style="padding: 0.75rem 1rem; text-align: center;">Bursa</th>
                     @foreach($timeframes as $tf)
@@ -225,13 +225,13 @@
                             $delta = (($d->volume_usd_24h - $sebelumnya->volume_usd_24h) / $sebelumnya->volume_usd_24h) * 100;
                         }
                     @endphp
-                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 0.9rem;">
-                        <td style="padding: 0.8rem 1rem; font-weight: 600; color: #fff;">
+                    <tr style="border-bottom: 1px solid rgba(var(--tint-rgb), 0.05); font-size: 0.9rem;">
+                        <td style="padding: 0.8rem 1rem; font-weight: 600; color: var(--text-strong);">
                             {{ \Carbon\Carbon::parse($d->captured_date)->translatedFormat('d M Y') }}
                         </td>
                         <td style="padding: 0.8rem 1rem; text-align: center; color: var(--text-muted);">{{ $d->exchange_count }}</td>
                         @foreach($timeframes as $tf)
-                            <td style="padding: 0.8rem 1rem; text-align: right; font-family: monospace; color: #fff;">
+                            <td style="padding: 0.8rem 1rem; text-align: right; font-family: monospace; color: var(--text-strong);">
                                 {{ $usd($d->{"volume_usd_{$tf}"}) }}
                             </td>
                         @endforeach
@@ -312,15 +312,15 @@ document.addEventListener('DOMContentLoaded', function () {
             scales: {
                 x: {
                     grid: { display: false },
-                    ticks: { color: 'rgba(255,255,255,0.45)', font: { size: 11 } },
+                    ticks: { color: warnaTema(0.45), font: { size: 11 } },
                 },
                 y: {
                     // Sengaja tidak mulai dari nol: pergerakan antar hari cuma
                     // beberapa persen, dan akan rata tak terbaca kalau dipaksa dari nol.
                     beginAtZero: false,
-                    grid: { color: 'rgba(255,255,255,0.06)' },
+                    grid: { color: warnaTema(0.06) },
                     ticks: {
-                        color: 'rgba(255,255,255,0.45)',
+                        color: warnaTema(0.45),
                         font: { size: 11 },
                         callback: (v) => singkatUsd(v),
                     },
@@ -339,7 +339,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
             document.querySelectorAll('.tombol-jendela').forEach(function (t) {
                 const aktif = t === tombol;
-                t.style.borderColor = aktif ? 'rgba(59,130,246,0.5)' : 'rgba(255,255,255,0.1)';
+                t.style.borderColor = aktif ? 'rgba(59,130,246,0.5)' : warnaTema(0.1);
                 t.style.background  = aktif ? 'rgba(59,130,246,0.15)' : 'transparent';
                 t.style.color       = aktif ? '#60a5fa' : 'var(--text-muted)';
             });

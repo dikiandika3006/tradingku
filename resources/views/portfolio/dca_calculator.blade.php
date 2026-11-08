@@ -281,15 +281,15 @@
     .dca-level { margin-bottom: 0.35rem; }
     .dca-level .form-control { padding: 0.5rem 0.6rem; min-width: 0; }
     .dca-level-info { grid-column: 1 / -1; font-size: 0.72rem; color: var(--text-muted); margin-top: -0.15rem; }
-    .dca-level-info.peringatan { color: #f59e0b; }
+    .dca-level-info.peringatan { color: var(--tc-f59e0b); }
     [data-tambah-level] { align-self: flex-start; }
     .dca-tp { display: grid; grid-template-columns: 1fr 120px; gap: 0.5rem; align-items: center; font-size: 0.85rem; }
-    .dca-hasil { background: rgba(255,255,255,0.03); border: 1px solid var(--border-light); border-radius: 10px; padding: 0.85rem; }
+    .dca-hasil { background: rgba(var(--tint-rgb), 0.03); border: 1px solid var(--border-light); border-radius: 10px; padding: 0.85rem; }
     .dca-hasil-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem 1rem; }
     .dca-hasil-grid b { font-size: 1rem; overflow-wrap: anywhere; }
     .dca-hasil-grid small { font-size: 0.7rem; color: var(--text-muted); }
-    .dca-hasil-grid small.text-success { color: #10b981; }
-    .dca-hasil-grid small.text-danger { color: #ef4444; }
+    .dca-hasil-grid small.text-success { color: var(--tc-10b981); }
+    .dca-hasil-grid small.text-danger { color: var(--tc-ef4444); }
     .dca-banding { margin-top: 0.75rem; padding-top: 0.65rem; border-top: 1px dashed var(--border-light); font-size: 0.75rem; color: var(--text-muted); line-height: 1.5; }
     @media (max-width: 768px) {
         .dca-grid { grid-template-columns: 1fr; }

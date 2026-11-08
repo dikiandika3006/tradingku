@@ -12,7 +12,7 @@
     --bg-card: rgba(22, 25, 54, 0.45);
     --bg-input: rgba(10, 11, 28, 0.8);
     
-    --border-light: rgba(255, 255, 255, 0.06);
+    --border-light: rgba(var(--tint-rgb), 0.06);
     --border-glow: rgba(147, 51, 234, 0.3);
     
     --color-primary: #9d4edd;
@@ -32,6 +32,27 @@
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     --shadow-neon: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
     --shadow-glow: 0 0 15px var(--color-primary-glow);
+
+    /* Warna yang dulu ditulis langsung. Dark = nilai lama. */
+    --tint-rgb: 255, 255, 255;          /* lapisan tipis: rgba(var(--tint-rgb), a) */
+    --text-strong: #ffffff;             /* teks paling tegas (dulu "white") */
+    --sidebar-bg: rgba(10, 12, 33, 0.85);
+    --sidebar-bg-mobile: rgba(10, 12, 33, 0.9);
+    --overlay-bg: rgba(4, 5, 15, 0.7);
+    --glow-1: rgba(30, 20, 70, 0.2);
+    --glow-2: rgba(10, 40, 70, 0.25);
+    --shadow-card: 0 10px 40px 0 rgba(0, 0, 0, 0.45);
+    --shadow-soft: 0 4px 20px rgba(0, 0, 0, 0.3);
+    --shadow-drawer: 0 0 30px rgba(0, 0, 0, 0.7);
+
+    /* Teks berwarna di halaman. Dark = warna asli; light = versi lebih pekat. */
+    --tc-ef4444: #ef4444; --tc-60a5fa: #60a5fa; --tc-22c55e: #22c55e; --tc-f59e0b: #f59e0b;
+    --tc-fca5a5: #fca5a5; --tc-10b981: #10b981; --tc-c084fc: #c084fc; --tc-eab308: #eab308;
+    --tc-cbd5e1: #cbd5e1; --tc-a7f3d0: #a7f3d0; --tc-93c5fd: #93c5fd; --tc-e2e8f0: #e2e8f0;
+    --tc-f87171: #f87171; --tc-86efac: #86efac; --tc-818cf8: #818cf8; --tc-94a3b8: #94a3b8;
+    --tc-f7931a: #f7931a;
+
+    color-scheme: dark;
 }
 
 * {
@@ -43,8 +64,8 @@
 body {
     background-color: var(--bg-base);
     background-image: 
-        radial-gradient(circle at 10% 20%, rgba(30, 20, 70, 0.2) 0%, transparent 40%),
-        radial-gradient(circle at 90% 80%, rgba(10, 40, 70, 0.25) 0%, transparent 45%);
+        radial-gradient(circle at 10% 20%, var(--glow-1) 0%, transparent 40%),
+        radial-gradient(circle at 90% 80%, var(--glow-2) 0%, transparent 45%);
     color: var(--text-main);
     font-family: var(--font-sans);
     min-height: 100vh;
@@ -64,7 +85,7 @@ body {
 /* Sidebar */
 .sidebar {
     width: 280px;
-    background: rgba(10, 12, 33, 0.85);
+    background: var(--sidebar-bg);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
     border-right: 1px solid var(--border-light);
@@ -122,7 +143,7 @@ body {
 
 .menu-item a:hover {
     color: var(--text-main);
-    background: rgba(255, 255, 255, 0.03);
+    background: rgba(var(--tint-rgb), 0.03);
 }
 
 .menu-item.active a {
@@ -156,7 +177,7 @@ body {
     align-items: center;
     justify-content: center;
     font-weight: 700;
-    color: var(--text-main);
+    color: #ffffff; /* teks di atas latar berwarna: putih di kedua tema */
     border: 1px solid var(--border-light);
 }
 
@@ -249,7 +270,7 @@ body {
 
 .glass-card:hover {
     border-color: rgba(157, 78, 221, 0.25);
-    box-shadow: 0 10px 40px 0 rgba(0, 0, 0, 0.45);
+    box-shadow: var(--shadow-card);
 }
 
 .card-title {
@@ -331,7 +352,7 @@ body {
 
 .btn-primary {
     background: linear-gradient(135deg, var(--color-primary), #7b2cbf);
-    color: var(--text-main);
+    color: #ffffff; /* teks di atas latar berwarna: putih di kedua tema */
     box-shadow: 0 4px 15px rgba(157, 78, 221, 0.4);
 }
 
@@ -341,18 +362,18 @@ body {
 }
 
 .btn-secondary {
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(var(--tint-rgb), 0.05);
     color: var(--text-main);
     border: 1px solid var(--border-light);
 }
 
 .btn-secondary:hover {
-    background: rgba(255, 255, 255, 0.08);
+    background: rgba(var(--tint-rgb), 0.08);
 }
 
 .btn-danger {
     background: var(--color-danger);
-    color: var(--text-main);
+    color: #ffffff; /* teks di atas latar berwarna: putih di kedua tema */
 }
 
 .btn-danger:hover {
@@ -437,7 +458,7 @@ body {
 }
 
 .custom-table tr:hover td {
-    background: rgba(255, 255, 255, 0.015);
+    background: rgba(var(--tint-rgb), 0.015);
 }
 
 /* Indicators and Statuses */
@@ -464,7 +485,7 @@ body {
 }
 
 .badge-neutral {
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(var(--tint-rgb), 0.05);
     color: var(--text-muted);
     border: 1px solid var(--border-light);
 }
@@ -538,9 +559,9 @@ body {
 .skeleton {
     background: linear-gradient(
         90deg,
-        rgba(255, 255, 255, 0.03) 25%,
-        rgba(255, 255, 255, 0.08) 50%,
-        rgba(255, 255, 255, 0.03) 75%
+        rgba(var(--tint-rgb), 0.03) 25%,
+        rgba(var(--tint-rgb), 0.08) 50%,
+        rgba(var(--tint-rgb), 0.03) 75%
     );
     background-size: 200% 100%;
     animation: loading 1.5s infinite;
@@ -682,7 +703,7 @@ body {
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(4, 5, 15, 0.7);
+    background: var(--overlay-bg);
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
     z-index: 98;
@@ -707,7 +728,7 @@ body {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        background: rgba(10, 12, 33, 0.9);
+        background: var(--sidebar-bg-mobile);
         backdrop-filter: blur(16px);
         -webkit-backdrop-filter: blur(16px);
         border-bottom: 1px solid var(--border-light);
@@ -718,7 +739,7 @@ body {
         right: 0;
         height: 60px;
         z-index: 99;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        box-shadow: var(--shadow-soft);
     }
 
     .mobile-toggle-btn {
@@ -746,7 +767,7 @@ body {
         height: 100vh;
         transform: translateX(-100%) !important; /* Force slide out on mobile */
         z-index: 100;
-        box-shadow: 0 0 30px rgba(0, 0, 0, 0.7);
+        box-shadow: var(--shadow-drawer);
     }
 
     .sidebar.sidebar-open {
@@ -894,7 +915,7 @@ body {
         border: 1px solid var(--border-light);
         border-radius: 12px;
         margin-bottom: 0.9rem;
-        background: rgba(255, 255, 255, 0.02);
+        background: rgba(var(--tint-rgb), 0.02);
         overflow: hidden;
     }
     .custom-table.table-kartu tr:last-child { margin-bottom: 0; }
@@ -910,7 +931,7 @@ body {
         padding: 0.6rem 0.9rem;
         text-align: right;
         font-size: 0.88rem;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        border-bottom: 1px solid rgba(var(--tint-rgb), 0.05);
         word-break: break-word;
     }
     .custom-table.table-kartu td::before {
@@ -934,7 +955,7 @@ body {
     .custom-table.table-kartu td.kartu-judul {
         padding: 0.75rem 0.9rem;
         text-align: left;
-        background: rgba(255, 255, 255, 0.04);
+        background: rgba(var(--tint-rgb), 0.04);
     }
     .custom-table.table-kartu td.kartu-judul::before,
     .custom-table.table-kartu td.kartu-kosong::before { display: none; }
@@ -989,3 +1010,70 @@ body {
 @media (max-width: 768px) {
     .sort-mobile { display: flex; }
 }
+
+/* ==========================================================================
+   Light mode — aktif saat <html data-theme="light"> (bawaan).
+   Tombol ganti tema di sidebar; pilihan disimpan di localStorage.
+   ========================================================================== */
+:root[data-theme="light"] {
+    --bg-base: #f3f5fa;
+    --bg-surface: rgba(255, 255, 255, 0.9);
+    --bg-surface-solid: #ffffff;
+    --bg-card: #ffffff;
+    --bg-input: #ffffff;
+
+    --border-light: rgba(15, 23, 42, 0.1);
+    --border-glow: rgba(124, 58, 237, 0.25);
+
+    --color-primary: #7c3aed;
+    --color-primary-glow: rgba(124, 58, 237, 0.2);
+    --color-secondary: #0e7490;
+
+    --color-success: #059669;
+    --color-success-bg: rgba(5, 150, 105, 0.1);
+    --color-danger: #dc2626;
+    --color-danger-bg: rgba(220, 38, 38, 0.08);
+
+    --text-main: #0f172a;
+    --text-muted: #64748b;
+    --text-inverse: #ffffff;
+
+    --shadow-neon: 0 2px 10px rgba(15, 23, 42, 0.06);
+    --shadow-glow: 0 0 0 3px var(--color-primary-glow);
+
+    --tint-rgb: 15, 23, 42;
+    --text-strong: #0f172a;
+    --sidebar-bg: #ffffff;
+    --sidebar-bg-mobile: #ffffff;
+    --overlay-bg: rgba(15, 23, 42, 0.35);
+    --glow-1: rgba(124, 58, 237, 0.05);
+    --glow-2: rgba(14, 116, 144, 0.05);
+    --shadow-card: 0 6px 24px rgba(15, 23, 42, 0.08);
+    --shadow-soft: 0 2px 12px rgba(15, 23, 42, 0.08);
+    --shadow-drawer: 0 0 24px rgba(15, 23, 42, 0.15);
+
+    --tc-ef4444: #dc2626; --tc-60a5fa: #2563eb; --tc-22c55e: #16a34a; --tc-f59e0b: #b45309;
+    --tc-fca5a5: #b91c1c; --tc-10b981: #047857; --tc-c084fc: #7e22ce; --tc-eab308: #a16207;
+    --tc-cbd5e1: #334155; --tc-a7f3d0: #047857; --tc-93c5fd: #1d4ed8; --tc-e2e8f0: #1e293b;
+    --tc-f87171: #dc2626; --tc-86efac: #15803d; --tc-818cf8: #4f46e5; --tc-94a3b8: #64748b;
+    --tc-f7931a: #c2410c;
+
+    color-scheme: light;
+}
+
+/* Kartu putih butuh garis tepi yang terlihat */
+:root[data-theme="light"] .glass-card,
+:root[data-theme="light"] .sidebar { border-color: var(--border-light); }
+:root[data-theme="light"] .glass-card { box-shadow: var(--shadow-neon); }
+
+/* Tombol ganti tema */
+.theme-toggle {
+    display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+    width: 100%; margin-bottom: 0.75rem; padding: 0.55rem 0.75rem;
+    border-radius: 10px; border: 1px solid var(--border-light);
+    background: rgba(var(--tint-rgb), 0.04); color: var(--text-main);
+    font: inherit; font-size: 0.85rem; cursor: pointer; transition: var(--transition-smooth);
+}
+.theme-toggle:hover { background: rgba(var(--tint-rgb), 0.08); }
+.theme-toggle .ikon-terang, :root[data-theme="light"] .theme-toggle .ikon-gelap { display: inline; }
+.theme-toggle .ikon-gelap, :root[data-theme="light"] .theme-toggle .ikon-terang { display: none; }

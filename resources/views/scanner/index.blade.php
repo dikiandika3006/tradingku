@@ -8,12 +8,12 @@
         transition: all 0.2s ease;
     }
     .btn-tab:hover {
-        background: rgba(255, 255, 255, 0.1) !important;
-        color: white !important;
+        background: rgba(var(--tint-rgb), 0.1) !important;
+        color: var(--text-strong) !important;
     }
     .btn-tab.active {
         background: var(--color-primary) !important;
-        color: white !important;
+        color: var(--text-strong) !important;
     }
 </style>
 
@@ -26,13 +26,13 @@
         <span id="scan-last-updated" style="font-size: 0.85rem; color: var(--text-muted); font-family: monospace;">Terakhir diupdate: -</span>
         <div style="display: flex; align-items: center; gap: 0.5rem;">
             <label for="timeframe-select" style="font-size: 0.85rem; color: var(--text-muted); font-weight: 600;">Timeframe:</label>
-            <select id="timeframe-select" style="padding: 0.5rem 1.75rem 0.5rem 0.75rem; font-size: 0.85rem; border-radius: 6px; border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.25); color: white; outline: none; cursor: pointer; font-weight: 600; -webkit-appearance: none; -moz-appearance: none; appearance: none; background-image: url('data:image/svg+xml;utf8,<svg fill=&quot;white&quot; height=&quot;24&quot; viewBox=&quot;0 0 24 24&quot; width=&quot;24&quot; xmlns=&quot;http://www.w3.org/2000/svg&quot;><path d=&quot;M7 10l5 5 5-5z&quot;/></svg>'); background-repeat: no-repeat; background-position: right 6px center; background-size: 18px;">
-                <option value="1day" style="background: #0f1026;">1 Hari (1D)</option>
-                <option value="4hour" style="background: #0f1026;">4 Jam (4H)</option>
+            <select id="timeframe-select" style="padding: 0.5rem 1.75rem 0.5rem 0.75rem; font-size: 0.85rem; border-radius: 6px; border: 1px solid rgba(var(--tint-rgb), 0.1); background: rgba(0,0,0,0.25); color: var(--text-strong); outline: none; cursor: pointer; font-weight: 600; -webkit-appearance: none; -moz-appearance: none; appearance: none; background-image: url('data:image/svg+xml;utf8,<svg fill=&quot;white&quot; height=&quot;24&quot; viewBox=&quot;0 0 24 24&quot; width=&quot;24&quot; xmlns=&quot;http://www.w3.org/2000/svg&quot;><path d=&quot;M7 10l5 5 5-5z&quot;/></svg>'); background-repeat: no-repeat; background-position: right 6px center; background-size: 18px;">
+                <option value="1day" style="background: var(--bg-surface-solid);">1 Hari (1D)</option>
+                <option value="4hour" style="background: var(--bg-surface-solid);">4 Jam (4H)</option>
             </select>
         </div>
-        <button id="btn-trigger-scan" class="btn btn-primary" style="padding: 0.5rem 1rem; font-size: 0.85rem; display: flex; align-items: center; gap: 0.5rem; cursor: pointer; border-radius: 6px; background-color: var(--color-primary); color: white; border: none; font-weight: 600;">
-            <svg id="scan-spinner" class="animate-spin" style="display: none; width: 14px; height: 14px; color: white;" fill="none" viewBox="0 0 24 24">
+        <button id="btn-trigger-scan" class="btn btn-primary" style="padding: 0.5rem 1rem; font-size: 0.85rem; display: flex; align-items: center; gap: 0.5rem; cursor: pointer; border-radius: 6px; background-color: var(--color-primary); color: #ffffff; border: none; font-weight: 600;">
+            <svg id="scan-spinner" class="animate-spin" style="display: none; width: 14px; height: 14px; color: var(--text-strong);" fill="none" viewBox="0 0 24 24">
                 <circle style="opacity: 0.25; stroke: currentColor; stroke-width: 4;" cx="12" cy="12" r="10"></circle>
                 <path style="opacity: 0.75; fill: currentColor;" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
             </svg>
@@ -45,7 +45,7 @@
 <div class="stats-grid mb-6">
     <div class="glass-card">
         <div class="card-title" style="font-size: 0.9rem; color: var(--text-muted);">Total Dipindai</div>
-        <div class="stat-value" id="stat-total-scanned" style="color: white; font-size: 2rem; font-weight: 700; margin-top: 0.5rem;">0</div>
+        <div class="stat-value" id="stat-total-scanned" style="color: var(--text-strong); font-size: 2rem; font-weight: 700; margin-top: 0.5rem;">0</div>
         <div class="stat-desc">Koin berpasangan USDT teratas</div>
     </div>
     <div class="glass-card">
@@ -55,7 +55,7 @@
     </div>
     <div class="glass-card">
         <div class="card-title" style="font-size: 0.9rem; color: var(--text-muted);">Aset Jurnal</div>
-        <div class="stat-value" id="stat-total-journal" style="color: #c084fc; font-size: 2rem; font-weight: 700; margin-top: 0.5rem;">0</div>
+        <div class="stat-value" id="stat-total-journal" style="color: var(--tc-c084fc); font-size: 2rem; font-weight: 700; margin-top: 0.5rem;">0</div>
         <div class="stat-desc">Aset terdaftar di Jurnal Transaksi</div>
     </div>
 </div>
@@ -65,23 +65,23 @@
     <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
         <!-- Filter Tabs -->
         <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-            <button class="btn btn-tab active" data-filter="all" style="padding: 0.5rem 1.25rem; font-size: 0.85rem; border-radius: 6px; border: none; font-weight: 600; cursor: pointer; background: var(--color-primary); color: white;">
+            <button class="btn btn-tab active" data-filter="all" style="padding: 0.5rem 1.25rem; font-size: 0.85rem; border-radius: 6px; border: none; font-weight: 600; cursor: pointer; background: var(--color-primary); color: #ffffff;">
                 Semua (0)
             </button>
-            <button class="btn btn-tab" data-filter="oversold" style="padding: 0.5rem 1.25rem; font-size: 0.85rem; border-radius: 6px; border: none; font-weight: 600; cursor: pointer; background: rgba(255,255,255,0.05); color: var(--text-muted);">
+            <button class="btn btn-tab" data-filter="oversold" style="padding: 0.5rem 1.25rem; font-size: 0.85rem; border-radius: 6px; border: none; font-weight: 600; cursor: pointer; background: rgba(var(--tint-rgb), 0.05); color: var(--text-muted);">
                 Jenuh Jual (0)
             </button>
-            <button class="btn btn-tab" data-filter="double_bottom" style="padding: 0.5rem 1.25rem; font-size: 0.85rem; border-radius: 6px; border: none; font-weight: 600; cursor: pointer; background: rgba(255,255,255,0.05); color: var(--text-muted);">
+            <button class="btn btn-tab" data-filter="double_bottom" style="padding: 0.5rem 1.25rem; font-size: 0.85rem; border-radius: 6px; border: none; font-weight: 600; cursor: pointer; background: rgba(var(--tint-rgb), 0.05); color: var(--text-muted);">
                 Double Bottom (0)
             </button>
-            <button class="btn btn-tab" data-filter="journal" style="padding: 0.5rem 1.25rem; font-size: 0.85rem; border-radius: 6px; border: none; font-weight: 600; cursor: pointer; background: rgba(255,255,255,0.05); color: var(--text-muted);">
+            <button class="btn btn-tab" data-filter="journal" style="padding: 0.5rem 1.25rem; font-size: 0.85rem; border-radius: 6px; border: none; font-weight: 600; cursor: pointer; background: rgba(var(--tint-rgb), 0.05); color: var(--text-muted);">
                 Aset Jurnal (0)
             </button>
         </div>
         
         <!-- Search box -->
         <div style="position: relative; width: 100%; max-width: 320px;">
-            <input type="text" id="search-input" placeholder="Cari nama koin... (contoh: HBAR, SOL)" style="width: 100%; padding: 0.6rem 1rem; border-radius: 6px; border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.25); color: white; outline: none; font-size: 0.88rem;">
+            <input type="text" id="search-input" placeholder="Cari nama koin... (contoh: HBAR, SOL)" style="width: 100%; padding: 0.6rem 1rem; border-radius: 6px; border: 1px solid rgba(var(--tint-rgb), 0.1); background: rgba(0,0,0,0.25); color: var(--text-strong); outline: none; font-size: 0.88rem;">
         </div>
     </div>
 </div>
@@ -112,7 +112,7 @@
 
 <!-- Modal Analisis Swing -->
 <div id="modal-analisa" style="display: none; position: fixed; inset: 0; z-index: 9999; backdrop-filter: blur(12px); background: rgba(0,0,0,0.6); align-items: flex-start; justify-content: center; padding: 2rem 1rem; overflow-y: auto; transition: all 0.3s ease;">
-    <div class="glass-card" style="width: 100%; max-width: 520px; border: 1px solid rgba(255,255,255,0.1); background: rgba(13, 14, 38, 0.85); box-shadow: 0 24px 64px rgba(0,0,0,0.8); position: relative; animation: modalSlideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1); padding: 1.5rem;">
+    <div class="glass-card" style="width: 100%; max-width: 520px; border: 1px solid rgba(var(--tint-rgb), 0.1); background: var(--bg-surface-solid); box-shadow: 0 24px 64px rgba(0,0,0,0.8); position: relative; animation: modalSlideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1); padding: 1.5rem;">
         <!-- Close Button -->
         <button onclick="closeAnalysisModal()" style="position: absolute; top: 1.25rem; right: 1.25rem; background: none; border: none; color: var(--text-muted); cursor: pointer; transition: color 0.2s;" onmouseover="this.style.color='white'" onmouseout="this.style.color='var(--text-muted)'">
             <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
@@ -120,7 +120,7 @@
 
         <!-- Modal Header -->
         <div style="margin-bottom: 1.5rem;">
-            <h2 id="analisa-symbol" style="font-size: 1.5rem; font-weight: 800; color: white; margin-bottom: 0.25rem; display: inline-flex; align-items: center; gap: 0.5rem; margin-top: 0;">
+            <h2 id="analisa-symbol" style="font-size: 1.5rem; font-weight: 800; color: var(--text-strong); margin-bottom: 0.25rem; display: inline-flex; align-items: center; gap: 0.5rem; margin-top: 0;">
                 --
             </h2>
             <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0;">Hasil Analisis Kalkulasi Swing Trade (Struktur Harian)</p>
@@ -138,10 +138,10 @@
         <!-- Content State -->
         <div id="analisa-content" style="display: none;">
             <!-- Price and Score Row -->
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem; background: rgba(255,255,255,0.02); padding: 1rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem; background: rgba(var(--tint-rgb), 0.02); padding: 1rem; border-radius: 8px; border: 1px solid rgba(var(--tint-rgb), 0.05);">
                 <div>
                     <span style="font-size: 0.75rem; color: var(--text-muted); display: block; text-transform: uppercase; font-weight: 600;">Harga Aktual</span>
-                    <span id="analisa-price" style="font-size: 1.35rem; font-weight: 800; font-family: monospace; color: white;">$0.0000</span>
+                    <span id="analisa-price" style="font-size: 1.35rem; font-weight: 800; font-family: monospace; color: var(--text-strong);">$0.0000</span>
                 </div>
                 <div>
                     <span style="font-size: 0.75rem; color: var(--text-muted); display: block; text-transform: uppercase; font-weight: 600;">Kualitas Setup</span>
@@ -151,71 +151,71 @@
 
             <!-- Risk Reward Card -->
             <div style="background: rgba(59, 130, 246, 0.05); border: 1px solid rgba(59, 130, 246, 0.15); padding: 1.25rem; border-radius: 8px; margin-bottom: 1.5rem; text-align: center;">
-                <span style="font-size: 0.75rem; color: #93c5fd; display: block; font-weight: 600; text-transform: uppercase; margin-bottom: 0.25rem;">Rasio Risk-to-Reward (R2 Target)</span>
-                <div style="font-size: 2.25rem; font-weight: 900; color: white; font-family: monospace; display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
+                <span style="font-size: 0.75rem; color: var(--tc-93c5fd); display: block; font-weight: 600; text-transform: uppercase; margin-bottom: 0.25rem;">Rasio Risk-to-Reward (R2 Target)</span>
+                <div style="font-size: 2.25rem; font-weight: 900; color: var(--text-strong); font-family: monospace; display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
                     <span>1 :</span>
-                    <span id="analisa-ratio" style="color: #60a5fa;">0.00</span>
+                    <span id="analisa-ratio" style="color: var(--tc-60a5fa);">0.00</span>
                 </div>
                 <div style="display: flex; justify-content: center; gap: 1.5rem; margin-top: 0.75rem; font-size: 0.8rem; font-family: monospace; border-top: 1px solid rgba(59,130,246,0.15); padding-top: 0.75rem;">
-                    <span style="color: #fca5a5;">Risiko (S1): -<span id="analisa-pct-risk">0.0</span>%</span>
-                    <span style="color: #86efac;">Potensi (R2): +<span id="analisa-pct-reward">0.0</span>%</span>
+                    <span style="color: var(--tc-fca5a5);">Risiko (S1): -<span id="analisa-pct-risk">0.0</span>%</span>
+                    <span style="color: var(--tc-86efac);">Potensi (R2): +<span id="analisa-pct-reward">0.0</span>%</span>
                 </div>
             </div>
 
             <!-- Reversal Strength Prediction -->
-            <div id="analisa-reversal-card" style="background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.08); padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; border-left: 4px solid var(--color-primary);">
+            <div id="analisa-reversal-card" style="background: rgba(var(--tint-rgb), 0.02); border: 1px solid rgba(var(--tint-rgb), 0.08); padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; border-left: 4px solid var(--color-primary);">
                 <span style="font-size: 0.72rem; color: var(--text-muted); display: block; font-weight: 700; text-transform: uppercase; margin-bottom: 0.45rem; letter-spacing: 0.5px;">Kekuatan Reversal (Analisis Volume Harian)</span>
                 <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem;">
-                    <span id="analisa-reversal-class" style="font-size: 1.15rem; font-weight: 800; color: white;">--</span>
-                    <span style="font-size: 0.8rem; color: var(--text-muted);">Rasio Vol: <strong id="analisa-reversal-ratio" style="color: white; font-family: monospace;">-</strong></span>
+                    <span id="analisa-reversal-class" style="font-size: 1.15rem; font-weight: 800; color: var(--text-strong);">--</span>
+                    <span style="font-size: 0.8rem; color: var(--text-muted);">Rasio Vol: <strong id="analisa-reversal-ratio" style="color: var(--text-strong); font-family: monospace;">-</strong></span>
                 </div>
-                <p id="analisa-reversal-note" style="font-size: 0.8rem; color: #cbd5e1; line-height: 1.45; margin: 0; font-style: italic; margin-bottom: 0.5rem;">--</p>
-                <div style="border-top: 1px solid rgba(255,255,255,0.06); padding-top: 0.5rem; margin-top: 0.5rem; display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem;">
+                <p id="analisa-reversal-note" style="font-size: 0.8rem; color: var(--tc-cbd5e1); line-height: 1.45; margin: 0; font-style: italic; margin-bottom: 0.5rem;">--</p>
+                <div style="border-top: 1px solid rgba(var(--tint-rgb), 0.06); padding-top: 0.5rem; margin-top: 0.5rem; display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem;">
                     <span style="color: var(--text-muted); font-weight: 600;">Posisi Kotak (60D):</span>
-                    <strong id="analisa-box-zone" style="color: white;">--</strong>
+                    <strong id="analisa-box-zone" style="color: var(--text-strong);">--</strong>
                 </div>
             </div>
 
             <!-- Levels List -->
             <div style="margin-bottom: 1.5rem;">
-                <h4 style="font-size: 0.85rem; font-weight: 700; color: white; text-transform: uppercase; margin-bottom: 0.75rem; letter-spacing: 0.5px; margin-top: 0;">Level Pivot Teknikal (1D)</h4>
+                <h4 style="font-size: 0.85rem; font-weight: 700; color: var(--text-strong); text-transform: uppercase; margin-bottom: 0.75rem; letter-spacing: 0.5px; margin-top: 0;">Level Pivot Teknikal (1D)</h4>
                 <div style="display: flex; flex-direction: column; gap: 0.5rem;">
                     <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0.75rem; background: rgba(239, 68, 68, 0.05); border-left: 3px solid #ef4444; border-radius: 4px;">
-                        <span style="font-size: 0.85rem; color: #fca5a5; font-weight: 600;">Resisten 3 (R3 - Max Target)</span>
-                        <span id="analisa-r3" style="font-family: monospace; font-weight: 700; color: white;">$0.0000</span>
+                        <span style="font-size: 0.85rem; color: var(--tc-fca5a5); font-weight: 600;">Resisten 3 (R3 - Max Target)</span>
+                        <span id="analisa-r3" style="font-family: monospace; font-weight: 700; color: var(--text-strong);">$0.0000</span>
                     </div>
                     <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0.75rem; background: rgba(59, 130, 246, 0.05); border-left: 3px solid #3b82f6; border-radius: 4px;">
-                        <span style="font-size: 0.85rem; color: #93c5fd; font-weight: 600;">Resisten 2 (R2 - Swing Target)</span>
-                        <span id="analisa-r2" style="font-family: monospace; font-weight: 700; color: white;">$0.0000</span>
+                        <span style="font-size: 0.85rem; color: var(--tc-93c5fd); font-weight: 600;">Resisten 2 (R2 - Swing Target)</span>
+                        <span id="analisa-r2" style="font-family: monospace; font-weight: 700; color: var(--text-strong);">$0.0000</span>
                     </div>
-                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0.75rem; background: rgba(255, 255, 255, 0.02); border-left: 3px solid #94a3b8; border-radius: 4px;">
-                        <span style="font-size: 0.85rem; color: #cbd5e1; font-weight: 600;">Resisten 1 (R1 - Minor Target)</span>
-                        <span id="analisa-r1" style="font-family: monospace; font-weight: 700; color: white;">$0.0000</span>
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0.75rem; background: rgba(var(--tint-rgb), 0.02); border-left: 3px solid #94a3b8; border-radius: 4px;">
+                        <span style="font-size: 0.85rem; color: var(--tc-cbd5e1); font-weight: 600;">Resisten 1 (R1 - Minor Target)</span>
+                        <span id="analisa-r1" style="font-family: monospace; font-weight: 700; color: var(--text-strong);">$0.0000</span>
                     </div>
                     <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0.75rem; background: rgba(16, 185, 129, 0.05); border-left: 3px solid #10b981; border-radius: 4px;">
-                        <span style="font-size: 0.85rem; color: #a7f3d0; font-weight: 600;">Support 1 (S1 - Batas Stop Loss)</span>
-                        <span id="analisa-s1" style="font-family: monospace; font-weight: 700; color: white;">$0.0000</span>
+                        <span style="font-size: 0.85rem; color: var(--tc-a7f3d0); font-weight: 600;">Support 1 (S1 - Batas Stop Loss)</span>
+                        <span id="analisa-s1" style="font-family: monospace; font-weight: 700; color: var(--text-strong);">$0.0000</span>
                     </div>
                 </div>
             </div>
 
             <!-- Liquidation Data Card -->
             <div id="analisa-liquidation-card" style="margin-bottom: 1.5rem;">
-                <h4 style="font-size: 0.85rem; font-weight: 700; color: white; text-transform: uppercase; margin-bottom: 0.75rem; letter-spacing: 0.5px; margin-top: 0;">Data Likuidasi Futures (Coinalyze)</h4>
+                <h4 style="font-size: 0.85rem; font-weight: 700; color: var(--text-strong); text-transform: uppercase; margin-bottom: 0.75rem; letter-spacing: 0.5px; margin-top: 0;">Data Likuidasi Futures (Coinalyze)</h4>
                 <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
                     <!-- Long Liquidations -->
                     <div style="padding: 0.75rem; background: rgba(16, 185, 129, 0.05); border: 1px solid rgba(16, 185, 129, 0.15); border-radius: 6px; text-align: center;">
-                        <span style="font-size: 0.7rem; color: #a7f3d0; display: block; font-weight: 600; text-transform: uppercase; margin-bottom: 0.45rem;">Likuidasi Long</span>
-                        <div style="font-size: 0.8rem; color: white; display: flex; flex-direction: column; gap: 0.35rem;">
-                            <div style="width: 100%; display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 0.15rem;">
+                        <span style="font-size: 0.7rem; color: var(--tc-a7f3d0); display: block; font-weight: 600; text-transform: uppercase; margin-bottom: 0.45rem;">Likuidasi Long</span>
+                        <div style="font-size: 0.8rem; color: var(--text-strong); display: flex; flex-direction: column; gap: 0.35rem;">
+                            <div style="width: 100%; display: flex; justify-content: space-between; border-bottom: 1px solid rgba(var(--tint-rgb), 0.05); padding-bottom: 0.15rem;">
                                 <span style="color: var(--text-muted);">4 Jam:</span>
                                 <strong id="analisa-liq-long-4h" style="font-family: monospace;">-</strong>
                             </div>
-                            <div style="width: 100%; display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 0.15rem;">
+                            <div style="width: 100%; display: flex; justify-content: space-between; border-bottom: 1px solid rgba(var(--tint-rgb), 0.05); padding-bottom: 0.15rem;">
                                 <span style="color: var(--text-muted);">24 Jam:</span>
                                 <strong id="analisa-liq-long-24h" style="font-family: monospace;">-</strong>
                             </div>
-                            <div style="width: 100%; display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 0.15rem;">
+                            <div style="width: 100%; display: flex; justify-content: space-between; border-bottom: 1px solid rgba(var(--tint-rgb), 0.05); padding-bottom: 0.15rem;">
                                 <span style="color: var(--text-muted);">3 Hari:</span>
                                 <strong id="analisa-liq-long-3d" style="font-family: monospace;">-</strong>
                             </div>
@@ -227,17 +227,17 @@
                     </div>
                     <!-- Short Liquidations -->
                     <div style="padding: 0.75rem; background: rgba(239, 68, 68, 0.05); border: 1px solid rgba(239, 68, 68, 0.15); border-radius: 6px; text-align: center;">
-                        <span style="font-size: 0.7rem; color: #fca5a5; display: block; font-weight: 600; text-transform: uppercase; margin-bottom: 0.45rem;">Likuidasi Short</span>
-                        <div style="font-size: 0.8rem; color: white; display: flex; flex-direction: column; gap: 0.35rem;">
-                            <div style="width: 100%; display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 0.15rem;">
+                        <span style="font-size: 0.7rem; color: var(--tc-fca5a5); display: block; font-weight: 600; text-transform: uppercase; margin-bottom: 0.45rem;">Likuidasi Short</span>
+                        <div style="font-size: 0.8rem; color: var(--text-strong); display: flex; flex-direction: column; gap: 0.35rem;">
+                            <div style="width: 100%; display: flex; justify-content: space-between; border-bottom: 1px solid rgba(var(--tint-rgb), 0.05); padding-bottom: 0.15rem;">
                                 <span style="color: var(--text-muted);">4 Jam:</span>
                                 <strong id="analisa-liq-short-4h" style="font-family: monospace;">-</strong>
                             </div>
-                            <div style="width: 100%; display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 0.15rem;">
+                            <div style="width: 100%; display: flex; justify-content: space-between; border-bottom: 1px solid rgba(var(--tint-rgb), 0.05); padding-bottom: 0.15rem;">
                                 <span style="color: var(--text-muted);">24 Jam:</span>
                                 <strong id="analisa-liq-short-24h" style="font-family: monospace;">-</strong>
                             </div>
-                            <div style="width: 100%; display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 0.15rem;">
+                            <div style="width: 100%; display: flex; justify-content: space-between; border-bottom: 1px solid rgba(var(--tint-rgb), 0.05); padding-bottom: 0.15rem;">
                                 <span style="color: var(--text-muted);">3 Hari:</span>
                                 <strong id="analisa-liq-short-3d" style="font-family: monospace;">-</strong>
                             </div>
@@ -255,27 +255,27 @@
 
             <!-- Futures Metrics Card (Volume & OI) -->
             <div id="analisa-futures-metrics-card" style="margin-bottom: 1.5rem;">
-                <h4 style="font-size: 0.85rem; font-weight: 700; color: white; text-transform: uppercase; margin-bottom: 0.75rem; letter-spacing: 0.5px; margin-top: 0;">Metrik Futures 24 Jam Terakhir</h4>
+                <h4 style="font-size: 0.85rem; font-weight: 700; color: var(--text-strong); text-transform: uppercase; margin-bottom: 0.75rem; letter-spacing: 0.5px; margin-top: 0;">Metrik Futures 24 Jam Terakhir</h4>
                 <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
                     <!-- Volume Futures -->
-                    <div style="padding: 0.75rem; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.08); border-radius: 6px; text-align: center;">
+                    <div style="padding: 0.75rem; background: rgba(var(--tint-rgb), 0.02); border: 1px solid rgba(var(--tint-rgb), 0.08); border-radius: 6px; text-align: center;">
                         <span style="font-size: 0.7rem; color: var(--text-muted); display: block; font-weight: 600; text-transform: uppercase; margin-bottom: 0.25rem;">Volume Futures</span>
-                        <div id="analisa-fut-volume" style="font-size: 1.1rem; font-weight: 800; color: white; font-family: monospace;">-</div>
+                        <div id="analisa-fut-volume" style="font-size: 1.1rem; font-weight: 800; color: var(--text-strong); font-family: monospace;">-</div>
                         <div id="analisa-fut-volume-change" style="font-size: 0.75rem; font-weight: 600; margin-top: 0.15rem;">-</div>
                     </div>
                     <!-- Open Interest -->
-                    <div style="padding: 0.75rem; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.08); border-radius: 6px; text-align: center;">
+                    <div style="padding: 0.75rem; background: rgba(var(--tint-rgb), 0.02); border: 1px solid rgba(var(--tint-rgb), 0.08); border-radius: 6px; text-align: center;">
                         <span style="font-size: 0.7rem; color: var(--text-muted); display: block; font-weight: 600; text-transform: uppercase; margin-bottom: 0.25rem;">Open Interest (OI)</span>
-                        <div id="analisa-fut-oi" style="font-size: 1.1rem; font-weight: 800; color: white; font-family: monospace;">-</div>
+                        <div id="analisa-fut-oi" style="font-size: 1.1rem; font-weight: 800; color: var(--text-strong); font-family: monospace;">-</div>
                         <div id="analisa-fut-oi-change" style="font-size: 0.75rem; font-weight: 600; margin-top: 0.15rem;">-</div>
                     </div>
                 </div>
             </div>
 
             <!-- Recommendation Card -->
-            <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); padding: 1rem; border-radius: 8px;">
+            <div style="background: rgba(var(--tint-rgb), 0.02); border: 1px solid rgba(var(--tint-rgb), 0.05); padding: 1rem; border-radius: 8px;">
                 <span style="font-size: 0.75rem; color: var(--text-muted); display: block; font-weight: 600; text-transform: uppercase; margin-bottom: 0.35rem;">Saran Tindakan:</span>
-                <p id="analisa-advice" style="font-size: 0.85rem; color: #e2e8f0; line-height: 1.45; margin: 0;">--</p>
+                <p id="analisa-advice" style="font-size: 0.85rem; color: var(--tc-e2e8f0); line-height: 1.45; margin: 0;">--</p>
             </div>
         </div>
     </div>
@@ -459,7 +459,7 @@
         if (filteredItems.length > 0) {
             let html = '';
             filteredItems.forEach(item => {
-                const kColor = item.stochK < 7 ? '#00e676' : 'rgba(255, 255, 255, 0.05)';
+                const kColor = item.stochK < 7 ? '#00e676' : warnaTema(0.05);
                 const kTextColor = item.stochK < 7 ? 'black' : 'var(--text-muted)';
                 const rsiClass = item.rsi < 40 ? 'badge-bullish' : 'badge-neutral';
                 
@@ -469,18 +469,18 @@
                     badges.push(`<span class="badge badge-success" style="font-size: 0.75rem; font-weight: 600; padding: 0.2rem 0.5rem; border-radius: 4px;">Oversold</span>`);
                 }
                 if (item.is_double_bottom) {
-                    badges.push(`<span class="badge" style="background: rgba(59, 130, 246, 0.15); border: 1px solid rgba(59, 130, 246, 0.3); color: #60a5fa; font-size: 0.75rem; font-weight: 600; padding: 0.2rem 0.5rem; border-radius: 4px;">Double Bottom</span>`);
+                    badges.push(`<span class="badge" style="background: rgba(59, 130, 246, 0.15); border: 1px solid rgba(59, 130, 246, 0.3); color: var(--tc-60a5fa); font-size: 0.75rem; font-weight: 600; padding: 0.2rem 0.5rem; border-radius: 4px;">Double Bottom</span>`);
                 }
                 if (badges.length === 0) {
-                    badges.push(`<span class="badge" style="background: rgba(255,255,255,0.05); color: var(--text-muted); font-size: 0.75rem; padding: 0.2rem 0.5rem; border-radius: 4px; font-weight: 600;">Neutral</span>`);
+                    badges.push(`<span class="badge" style="background: rgba(var(--tint-rgb), 0.05); color: var(--text-muted); font-size: 0.75rem; padding: 0.2rem 0.5rem; border-radius: 4px; font-weight: 600;">Neutral</span>`);
                 }
                 const statusBadge = badges.join(' ');
                 
-                const journalBadge = item.is_journal ? `<span class="badge" style="background: rgba(147, 51, 234, 0.15); border: 1px solid rgba(147, 51, 234, 0.3); color: #c084fc; font-size: 0.7rem; margin-left: 0.5rem; padding: 0.15rem 0.35rem; border-radius: 4px; font-weight: 600;">Jurnal</span>` : '';
+                const journalBadge = item.is_journal ? `<span class="badge" style="background: rgba(147, 51, 234, 0.15); border: 1px solid rgba(147, 51, 234, 0.3); color: var(--tc-c084fc); font-size: 0.7rem; margin-left: 0.5rem; padding: 0.15rem 0.35rem; border-radius: 4px; font-weight: 600;">Jurnal</span>` : '';
                 
                 html += `
                     <tr>
-                        <td style="font-weight: 700; color: white; display: inline-flex; align-items: center; min-height: 38px;">
+                        <td style="font-weight: 700; color: var(--text-strong); display: inline-flex; align-items: center; min-height: 38px;">
                             ${item.symbol} ${journalBadge}
                         </td>
                         <td style="font-family: monospace;">$${parseFloat(item.price).toFixed(4)}</td>
@@ -531,7 +531,7 @@
                     iconSpan.style.color = 'var(--color-primary)';
                 } else {
                     iconSpan.innerHTML = '↕';
-                    iconSpan.style.color = 'rgba(255,255,255,0.2)';
+                    iconSpan.style.color = warnaTema(0.2);
                 }
             }
         });
@@ -542,7 +542,7 @@
         btn.addEventListener('click', function() {
             document.querySelectorAll('.btn-tab').forEach(b => {
                 b.classList.remove('active');
-                b.style.background = 'rgba(255,255,255,0.05)';
+                b.style.background = warnaTema(0.05);
                 b.style.color = 'var(--text-muted)';
             });
             

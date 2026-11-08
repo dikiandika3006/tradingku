@@ -66,7 +66,7 @@
                                             <form action="{{ route('role.destroy', $role->id) }}" method="POST" onsubmit="return confirm('Hapus role {{ $role->name }}?')">
                                                 @csrf
                                                 @method('DELETE')
-                                                <button type="submit" title="Hapus role" style="background: none; border: none; color: #ef4444; cursor: pointer; display: flex;">
+                                                <button type="submit" title="Hapus role" style="background: none; border: none; color: var(--tc-ef4444); cursor: pointer; display: flex;">
                                                     <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                                                 </button>
                                             </form>
@@ -96,7 +96,7 @@
         <label class="form-label">Menu yang Boleh Diakses</label>
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin-bottom: 1rem;">
             @foreach($menus as $group => $items)
-                <div style="border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 0.85rem 1rem;">
+                <div style="border: 1px solid rgba(var(--tint-rgb), 0.08); border-radius: 10px; padding: 0.85rem 1rem;">
                     <div style="font-weight: 700; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin-bottom: 0.5rem;">{{ $group }}</div>
                     @foreach($items as $key => $label)
                         <label style="display: flex; align-items: center; gap: 0.5rem; padding: 0.25rem 0; cursor: pointer; font-size: 0.9rem;">

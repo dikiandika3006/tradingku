@@ -9,6 +9,7 @@
     <meta name="theme-color" content="#060713">
     <link rel="manifest" href="{{ asset('manifest.json') }}">
     <link rel="apple-touch-icon" href="{{ asset('icons/icon-192.png') }}">
+    @include('partials.tema')
     <!-- Premium Stylesheet with Cache Busting -->
     <link rel="stylesheet" href="{{ asset('css/dashboard.css') }}?v={{ filemtime(public_path('css/dashboard.css')) }}">
     <!-- Chart.js for data visualization -->
@@ -74,6 +75,10 @@
             </ul>
 
             <div class="sidebar-footer">
+                <button type="button" class="theme-toggle" onclick="gantiTema()" title="Ganti tema terang/gelap">
+                    <span class="ikon-terang">☀️ Mode terang</span>
+                    <span class="ikon-gelap">🌙 Mode gelap</span>
+                </button>
                 <div class="user-profile">
                     <div class="avatar">{{ substr(Auth::user()->name ?? 'U', 0, 1) }}</div>
                     <div class="user-info">

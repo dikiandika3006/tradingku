@@ -17,14 +17,14 @@
 </div>
 
 @if(session('success'))
-    <div class="glass-card" style="padding: 1rem 1.25rem; margin-bottom: 1.5rem; border: 1px solid rgba(34,197,94,0.35); background: rgba(34,197,94,0.06); color: #22c55e;">
+    <div class="glass-card" style="padding: 1rem 1.25rem; margin-bottom: 1.5rem; border: 1px solid rgba(34,197,94,0.35); background: rgba(34,197,94,0.06); color: var(--tc-22c55e);">
         {{ session('success') }}
     </div>
 @endif
 
 @if($errors->any())
     <div class="glass-card" style="padding: 1rem 1.25rem; margin-bottom: 1.5rem; border: 1px solid rgba(239,68,68,0.35); background: rgba(239,68,68,0.06);">
-        <strong style="color: #ef4444;">Ada isian yang belum benar:</strong>
+        <strong style="color: var(--tc-ef4444);">Ada isian yang belum benar:</strong>
         <ul style="margin: 0.5rem 0 0 1.2rem; color: var(--text-muted); font-size: 0.9rem;">
             @foreach($errors->all() as $e)<li>{{ $e }}</li>@endforeach
         </ul>
@@ -35,19 +35,19 @@
 <div class="stats-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
     <div class="glass-card" style="padding: 1.15rem;">
         <div style="color: var(--text-muted); font-size: 0.85rem;">Total Setoran</div>
-        <div style="margin-top: 0.5rem; font-size: 1.3rem; font-weight: 700; color: #fff;">{{ $rp($summary['total_setoran']) }}</div>
+        <div style="margin-top: 0.5rem; font-size: 1.3rem; font-weight: 700; color: var(--text-strong);">{{ $rp($summary['total_setoran']) }}</div>
         <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.2rem;">
             modal awal + {{ number_format($summary['total_top_up'] > 0 ? $summary['total_top_up'] : 0, 0, ',', '.') }} top up
         </div>
     </div>
     <div class="glass-card" style="padding: 1.15rem;">
         <div style="color: var(--text-muted); font-size: 0.85rem;">Total Return</div>
-        <div style="margin-top: 0.5rem; font-size: 1.3rem; font-weight: 700; color: #22c55e;">{{ $rp($summary['total_return']) }}</div>
+        <div style="margin-top: 0.5rem; font-size: 1.3rem; font-weight: 700; color: var(--tc-22c55e);">{{ $rp($summary['total_return']) }}</div>
         <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.2rem;">hasil bunga berbunga</div>
     </div>
     <div class="glass-card" style="padding: 1.15rem; border: 1px solid rgba(59,130,246,0.4); background: rgba(59,130,246,0.05);">
-        <div style="color: #60a5fa; font-size: 0.85rem; font-weight: 600;">Saldo Akhir Proyeksi</div>
-        <div style="margin-top: 0.5rem; font-size: 1.3rem; font-weight: 700; color: #fff;">{{ $rp($summary['saldo_proyeksi']) }}</div>
+        <div style="color: var(--tc-60a5fa); font-size: 0.85rem; font-weight: 600;">Saldo Akhir Proyeksi</div>
+        <div style="margin-top: 0.5rem; font-size: 1.3rem; font-weight: 700; color: var(--text-strong);">{{ $rp($summary['saldo_proyeksi']) }}</div>
         <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.2rem;">sampai {{ $summary['bulan_terakhir'] }}</div>
     </div>
     <div class="glass-card" style="padding: 1.15rem;">
@@ -69,7 +69,7 @@
 
 <!-- Asumsi -->
 <details class="glass-card" style="padding: 1.25rem 1.5rem; margin-bottom: 1.5rem;" {{ $errors->any() ? 'open' : '' }}>
-    <summary style="cursor: pointer; font-size: 1.05rem; font-weight: 600; color: #fff;">Ubah Asumsi Proyeksi</summary>
+    <summary style="cursor: pointer; font-size: 1.05rem; font-weight: 600; color: var(--text-strong);">Ubah Asumsi Proyeksi</summary>
 
     <form method="POST" action="{{ route('portfolio.capital-projection.update') }}" style="margin-top: 1.25rem;">
         @csrf
@@ -139,7 +139,7 @@
 <div class="glass-card" style="padding: 1.5rem;">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 0.75rem;">
         <div>
-            <h3 style="font-size: 1.15rem; font-weight: 600; color: #fff; margin: 0;">Rincian Bulanan</h3>
+            <h3 style="font-size: 1.15rem; font-weight: 600; color: var(--text-strong); margin: 0;">Rincian Bulanan</h3>
             <span style="font-size: 0.8rem; color: var(--text-muted);">
                 Kolom bertepi biru bisa diisi langsung. Kosongkan untuk kembali ke hitungan otomatis.
             </span>
@@ -159,7 +159,7 @@
     <div class="table-responsive" style="overflow-x: auto;">
         <table class="table" style="width: 100%; border-collapse: collapse; text-align: left;">
             <thead>
-                <tr style="border-bottom: 1px solid rgba(255,255,255,0.1); color: var(--text-muted); font-size: 0.82rem;">
+                <tr style="border-bottom: 1px solid rgba(var(--tint-rgb), 0.1); color: var(--text-muted); font-size: 0.82rem;">
                     <th style="padding: 0.7rem 0.9rem;">Bulan</th>
                     <th style="padding: 0.7rem 0.9rem; text-align: right;">Modal Awal</th>
                     <th style="padding: 0.7rem 0.9rem; text-align: right;">Top Up</th>
@@ -174,10 +174,10 @@
             </thead>
             <tbody>
                 @foreach($rows as $r)
-                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 0.87rem;
-                               {{ $r['alokasi_timpang'] ? 'background: rgba(234,179,8,0.07);' : ($r['sudah_lewat'] ? 'background: rgba(255,255,255,0.02);' : '') }}"
+                    <tr style="border-bottom: 1px solid rgba(var(--tint-rgb), 0.05); font-size: 0.87rem;
+                               {{ $r['alokasi_timpang'] ? 'background: rgba(234,179,8,0.07);' : ($r['sudah_lewat'] ? 'background: rgba(var(--tint-rgb), 0.02);' : '') }}"
                         @if($r['alokasi_timpang']) title="Alokasi BTC + Alt tidak sama dengan saldo akhir" @endif>
-                        <td style="padding: 0.75rem 0.9rem; font-weight: 600; color: #fff; white-space: nowrap;">
+                        <td style="padding: 0.75rem 0.9rem; font-weight: 600; color: var(--text-strong); white-space: nowrap;">
                             {{ $r['month_name'] }} {{ $r['year'] }}
                         </td>
                         <td style="padding: 0.75rem 0.9rem; text-align: right; font-family: monospace;">{{ $rp($r['modal_awal']) }}</td>
@@ -185,34 +185,34 @@
                             <input type="text" form="formBaris" name="rows[{{ $r['year_month'] }}][top_up]"
                                    value="{{ $r['ditimpa']['top_up'] ? number_format($r['top_up'], 0, ',', '.') : '' }}"
                                    placeholder="{{ number_format($r['top_up'], 0, ',', '.') }}"
-                                   class="input-ribuan" inputmode="numeric" style="width: 100%; background: rgba(59,130,246,0.07); border: 1px solid rgba(59,130,246,0.3); border-radius: 5px; color: #fff; font-family: monospace; font-size: 0.83rem; padding: 0.35rem 0.5rem; text-align: right;">
+                                   class="input-ribuan" inputmode="numeric" style="width: 100%; background: rgba(59,130,246,0.07); border: 1px solid rgba(59,130,246,0.3); border-radius: 5px; color: var(--text-strong); font-family: monospace; font-size: 0.83rem; padding: 0.35rem 0.5rem; text-align: right;">
                         </td>
-                        <td style="padding: 0.75rem 0.9rem; text-align: center; font-family: monospace; color: #60a5fa;">
+                        <td style="padding: 0.75rem 0.9rem; text-align: center; font-family: monospace; color: var(--tc-60a5fa);">
                             {{ number_format($r['return_persen'], 2) }}%
                         </td>
 <td style="padding: 0.5rem 0.6rem; text-align: right;">
                             <input type="text" form="formBaris" name="rows[{{ $r['year_month'] }}][return_idr]"
                                    value="{{ $r['ditimpa']['return_idr'] ? number_format($r['return_idr'], 0, ',', '.') : '' }}"
                                    placeholder="{{ number_format($r['return_idr'], 0, ',', '.') }}"
-                                   class="input-ribuan" inputmode="numeric" style="width: 100%; background: rgba(59,130,246,0.07); border: 1px solid rgba(59,130,246,0.3); border-radius: 5px; color: #fff; font-family: monospace; font-size: 0.83rem; padding: 0.35rem 0.5rem; text-align: right;">
+                                   class="input-ribuan" inputmode="numeric" style="width: 100%; background: rgba(59,130,246,0.07); border: 1px solid rgba(59,130,246,0.3); border-radius: 5px; color: var(--text-strong); font-family: monospace; font-size: 0.83rem; padding: 0.35rem 0.5rem; text-align: right;">
                         </td>
-                        <td style="padding: 0.75rem 0.9rem; text-align: right; font-family: monospace; font-weight: 700; color: #fff;">{{ $rp($r['saldo_akhir']) }}</td>
+                        <td style="padding: 0.75rem 0.9rem; text-align: right; font-family: monospace; font-weight: 700; color: var(--text-strong);">{{ $rp($r['saldo_akhir']) }}</td>
 <td style="padding: 0.5rem 0.6rem; text-align: right; background: rgba(247,147,26,0.05);">
                             @if($r['alokasi_dari_portofolio'])
-                                <div style="font-family: monospace; font-weight: 700; color: #fff; padding: 0.35rem 0;">{{ $rp($r['alokasi_btc']) }}</div>
-                                <div style="font-size: 0.7rem; color: #f7931a;">{{ number_format($r['btc_persen'], 1) }}% &middot; portofolio</div>
+                                <div style="font-family: monospace; font-weight: 700; color: var(--text-strong); padding: 0.35rem 0;">{{ $rp($r['alokasi_btc']) }}</div>
+                                <div style="font-size: 0.7rem; color: var(--tc-f7931a);">{{ number_format($r['btc_persen'], 1) }}% &middot; portofolio</div>
                             @else
                             <input type="text" form="formBaris" name="rows[{{ $r['year_month'] }}][alokasi_btc]"
                                    value="{{ $r['ditimpa']['alokasi_btc'] ? number_format($r['alokasi_btc'], 0, ',', '.') : '' }}"
                                    placeholder="{{ number_format($r['alokasi_btc'], 0, ',', '.') }}"
-                                   class="input-ribuan" inputmode="numeric" style="width: 100%; background: rgba(59,130,246,0.07); border: 1px solid rgba(59,130,246,0.3); border-radius: 5px; color: #fff; font-family: monospace; font-size: 0.83rem; padding: 0.35rem 0.5rem; text-align: right;">
+                                   class="input-ribuan" inputmode="numeric" style="width: 100%; background: rgba(59,130,246,0.07); border: 1px solid rgba(59,130,246,0.3); border-radius: 5px; color: var(--text-strong); font-family: monospace; font-size: 0.83rem; padding: 0.35rem 0.5rem; text-align: right;">
                             <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.2rem;">{{ number_format($r['btc_persen'], 1) }}%</div>
                             @endif
                         </td>
 <td style="padding: 0.5rem 0.6rem; text-align: right; background: rgba(99,102,241,0.05);">
                             @if($r['alokasi_dari_portofolio'])
-                                <div style="font-family: monospace; font-weight: 700; color: #fff; padding: 0.35rem 0;">{{ $rp($r['alokasi_alt']) }}</div>
-                                <div style="font-size: 0.7rem; color: #818cf8;">{{ number_format($r['alt_persen'], 1) }}% &middot; portofolio</div>
+                                <div style="font-family: monospace; font-weight: 700; color: var(--text-strong); padding: 0.35rem 0;">{{ $rp($r['alokasi_alt']) }}</div>
+                                <div style="font-size: 0.7rem; color: var(--tc-818cf8);">{{ number_format($r['alt_persen'], 1) }}% &middot; portofolio</div>
                                 @if(($r['kas_idr'] ?? 0) > 0)
                                     <div style="font-size: 0.68rem; color: var(--text-muted);" title="Kas USDT/stablecoin yang belum dialokasikan">+ kas {{ $rp($r['kas_idr']) }}</div>
                                 @endif
@@ -220,14 +220,14 @@
                             <input type="text" form="formBaris" name="rows[{{ $r['year_month'] }}][alokasi_alt]"
                                    value="{{ $r['ditimpa']['alokasi_alt'] ? number_format($r['alokasi_alt'], 0, ',', '.') : '' }}"
                                    placeholder="{{ number_format($r['alokasi_alt'], 0, ',', '.') }}"
-                                   class="input-ribuan" inputmode="numeric" style="width: 100%; background: rgba(59,130,246,0.07); border: 1px solid rgba(59,130,246,0.3); border-radius: 5px; color: #fff; font-family: monospace; font-size: 0.83rem; padding: 0.35rem 0.5rem; text-align: right;">
+                                   class="input-ribuan" inputmode="numeric" style="width: 100%; background: rgba(59,130,246,0.07); border: 1px solid rgba(59,130,246,0.3); border-radius: 5px; color: var(--text-strong); font-family: monospace; font-size: 0.83rem; padding: 0.35rem 0.5rem; text-align: right;">
                             <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.2rem;">{{ number_format($r['alt_persen'], 1) }}%</div>
                             @endif
                         </td>
-                        <td style="padding: 0.75rem 0.9rem; text-align: right; font-family: monospace; font-weight: 600; color: #fff;">
+                        <td style="padding: 0.75rem 0.9rem; text-align: right; font-family: monospace; font-weight: 600; color: var(--text-strong);">
                             {{ $r['aktual'] !== null ? $rp($r['aktual']) : '—' }}
                             @if($r['alokasi_dari_portofolio'])
-                                <div style="font-size: 0.68rem; font-weight: 500; color: #22c55e;">&#9679; saldo saat ini</div>
+                                <div style="font-size: 0.68rem; font-weight: 500; color: var(--tc-22c55e);">&#9679; saldo saat ini</div>
                             @endif
                         </td>
                         <td style="padding: 0.75rem 0.9rem; text-align: right; font-family: monospace; font-weight: 700;
@@ -254,7 +254,7 @@
         <form method="POST" action="{{ route('portfolio.capital-projection.reset') }}" style="display: inline;"
               onsubmit="return confirm('Hapus semua isian manual dan kembalikan ke hitungan otomatis?')">
             @csrf
-            <button type="submit" style="background: none; border: none; color: #ef4444; text-decoration: underline; cursor: pointer; font-size: 0.78rem; padding: 0;">
+            <button type="submit" style="background: none; border: none; color: var(--tc-ef4444); text-decoration: underline; cursor: pointer; font-size: 0.78rem; padding: 0;">
                 Kembalikan semua ke otomatis
             </button>
         </form>

@@ -12,8 +12,8 @@
 
 @if(!$has_credentials)
     <div class="glass-card" style="text-align: center; padding: 4rem 2rem;">
-        <div style="font-size: 4rem; margin-bottom: 1.5rem; color: #f59e0b;">⚠️</div>
-        <h2 style="color: white; margin-bottom: 1rem;">API Key Tokocrypto Belum Terpasang</h2>
+        <div style="font-size: 4rem; margin-bottom: 1.5rem; color: var(--tc-f59e0b);">⚠️</div>
+        <h2 style="color: var(--text-strong); margin-bottom: 1rem;">API Key Tokocrypto Belum Terpasang</h2>
         <p style="color: var(--text-muted); max-width: 500px; margin: 0 auto 2rem auto; line-height: 1.6;">
             Untuk melihat antrean pesanan langsung dari akun Tokocrypto Anda, Anda harus mengonfigurasi API Key Anda terlebih dahulu di halaman pengaturan.
         </p>
@@ -26,20 +26,20 @@
         <div class="card-header" style="margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
             <div class="card-title">Daftar Order Aktif di Tokocrypto</div>
             @if(!empty($api_gagal))
-                <span class="badge" style="background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.3); color: #ef4444; font-weight: 600; padding: 0.3rem 0.6rem; border-radius: 6px;">
+                <span class="badge" style="background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.3); color: var(--tc-ef4444); font-weight: 600; padding: 0.3rem 0.6rem; border-radius: 6px;">
                     Gagal Terhubung Ke API
                 </span>
             @else
-                <span class="badge" style="background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.3); color: #10b981; font-weight: 600; padding: 0.3rem 0.6rem; border-radius: 6px;">
+                <span class="badge" style="background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.3); color: var(--tc-10b981); font-weight: 600; padding: 0.3rem 0.6rem; border-radius: 6px;">
                     Tersambung Ke API Live
                 </span>
             @endif
         </div>
 
         @if(!empty($api_gagal))
-            <div style="margin-bottom: 1.25rem; padding: 0.85rem 1rem; border-radius: 8px; background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.25); color: #fca5a5; font-size: 0.85rem; line-height: 1.5;">
+            <div style="margin-bottom: 1.25rem; padding: 0.85rem 1rem; border-radius: 8px; background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.25); color: var(--tc-fca5a5); font-size: 0.85rem; line-height: 1.5;">
                 Daftar order tidak bisa diambil dari Tokocrypto, jadi tabel di bawah belum tentu lengkap.
-                Periksa API key &amp; secret di <a href="{{ route('setting.index') }}" style="color: #fca5a5; text-decoration: underline;">Pengaturan</a>,
+                Periksa API key &amp; secret di <a href="{{ route('setting.index') }}" style="color: var(--tc-fca5a5); text-decoration: underline;">Pengaturan</a>,
                 lalu muat ulang halaman ini. Rincian error tercatat di log aplikasi.
             </div>
         @endif
@@ -86,7 +86,7 @@
                                 {{-- Zona aplikasi UTC; tampilkan WIB seperti jam di jurnal --}}
                                 {{ \Carbon\Carbon::createFromTimestampMs($order['time'], 'Asia/Jakarta')->format('d/m/Y H:i:s') }} WIB
                             </td>
-                            <td style="font-weight: 700; color: white;">
+                            <td style="font-weight: 700; color: var(--text-strong);">
                                 {{ $symbol }}
                             </td>
                             <td style="text-align: center;">
@@ -99,7 +99,7 @@
                             <td style="text-align: center; color: var(--text-muted);">
                                 {{ $order['type'] }}
                             </td>
-                            <td style="text-align: right; font-family: monospace; font-weight: 600; color: white;">
+                            <td style="text-align: right; font-family: monospace; font-weight: 600; color: var(--text-strong);">
                                 {{ $orderPriceFormatted }}
                             </td>
                             <td style="text-align: right; font-family: monospace;">
@@ -130,7 +130,7 @@
                                 @endif
                             </td>
                             <td style="text-align: center;">
-                                <span class="badge" style="background: rgba(255,255,255,0.05); color: white; padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600;">
+                                <span class="badge" style="background: rgba(var(--tint-rgb), 0.05); color: var(--text-strong); padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600;">
                                     {{ $order['status'] }}
                                 </span>
                             </td>

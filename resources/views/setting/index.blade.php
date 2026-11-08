@@ -134,7 +134,7 @@
 
         <form action="{{ route('setting.telegram.check') }}" method="POST" style="margin-top: 1rem;">
             @csrf
-            <button type="submit" class="btn btn-secondary" style="width: 100%; padding: 0.8rem; background: rgba(59, 130, 246, 0.15); border: 1px solid rgba(59, 130, 246, 0.3); color: #60a5fa;">
+            <button type="submit" class="btn btn-secondary" style="width: 100%; padding: 0.8rem; background: rgba(59, 130, 246, 0.15); border: 1px solid rgba(59, 130, 246, 0.3); color: var(--tc-60a5fa);">
                 ⚡ Jalankan Scan Harga Sekarang
             </button>
         </form>
@@ -145,9 +145,9 @@
         <div class="card-title" style="color: var(--color-primary);">Daftar Penerima Notifikasi</div>
         
         <!-- Add Recipient Form -->
-        <form action="{{ route('setting.telegram.recipient.store') }}" method="POST" style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); padding: 1.25rem; border-radius: 8px; margin-bottom: 1.5rem;">
+        <form action="{{ route('setting.telegram.recipient.store') }}" method="POST" style="background: rgba(var(--tint-rgb), 0.02); border: 1px solid rgba(var(--tint-rgb), 0.05); padding: 1.25rem; border-radius: 8px; margin-bottom: 1.5rem;">
             @csrf
-            <div style="font-weight: 600; color: white; margin-bottom: 1rem; font-size: 0.95rem;">Tambah Penerima Baru</div>
+            <div style="font-weight: 600; color: var(--text-strong); margin-bottom: 1rem; font-size: 0.95rem;">Tambah Penerima Baru</div>
             <div style="display: grid; grid-template-columns: 1fr 1fr auto; gap: 1rem; align-items: flex-end;">
                 <div class="form-group" style="margin-bottom: 0;">
                     <label for="name" class="form-label" style="font-size: 0.8rem; margin-bottom: 0.25rem;">Nama Pengenal</label>
@@ -180,7 +180,7 @@
                 <tbody>
                     @forelse($telegramRecipients as $recipient)
                         <tr>
-                            <td style="font-weight: 600; color: white;">{{ $recipient->name }}</td>
+                            <td style="font-weight: 600; color: var(--text-strong);">{{ $recipient->name }}</td>
                             <td style="font-family: monospace;">{{ $recipient->chat_id }}</td>
                             <td style="text-align: center;">
                                 <form action="{{ route('setting.telegram.recipient.toggle', $recipient->id) }}" method="POST" style="display: inline;">
@@ -188,7 +188,7 @@
                                     @if($recipient->is_active)
                                         <button type="submit" class="badge badge-success" style="border: none; cursor: pointer; padding: 0.25rem 0.5rem;">Aktif</button>
                                     @else
-                                        <button type="submit" class="badge" style="border: none; cursor: pointer; padding: 0.25rem 0.5rem; background: rgba(255,255,255,0.05); color: var(--text-muted);">Nonaktif</button>
+                                        <button type="submit" class="badge" style="border: none; cursor: pointer; padding: 0.25rem 0.5rem; background: rgba(var(--tint-rgb), 0.05); color: var(--text-muted);">Nonaktif</button>
                                     @endif
                                 </form>
                             </td>
@@ -229,11 +229,11 @@
         Sinkronisasikan seluruh perubahan data (jurnal transaksi, watchlist koin, user, dan setelan API) yang Anda lakukan di lingkungan **Local Development** langsung ke server **Produksi** ini menggunakan browser Anda sebagai jembatan penyeberang data.
     </p>
 
-    <div style="background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.05); padding: 1.5rem; border-radius: 12px;">
+    <div style="background: rgba(var(--tint-rgb), 0.02); border: 1px solid rgba(var(--tint-rgb), 0.05); padding: 1.5rem; border-radius: 12px;">
         <div style="display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; margin-bottom: 1.5rem;">
             <div style="display: flex; flex-direction: column; gap: 0.25rem;">
                 <label for="local_url" class="form-label" style="margin-bottom: 0;">URL Dashboard Lokal</label>
-                <input type="text" id="local_url" class="form-control" value="http://127.0.0.1:8000" placeholder="http://127.0.0.1:8000" style="background: rgba(0, 0, 0, 0.2); border: 1px solid rgba(255, 255, 255, 0.1); width: 280px; font-family: monospace;">
+                <input type="text" id="local_url" class="form-control" value="http://127.0.0.1:8000" placeholder="http://127.0.0.1:8000" style="background: rgba(0, 0, 0, 0.2); border: 1px solid rgba(var(--tint-rgb), 0.1); width: 280px; font-family: monospace;">
             </div>
             <button type="button" id="btnAutoDetect" class="btn btn-secondary" style="padding: 0.8rem 1.25rem; margin-top: 1.25rem;" title="Pindai port lokal yang umum dipakai dan isi otomatis">
                 🔍 Deteksi Otomatis
@@ -243,7 +243,7 @@
             </button>
         </div>
 
-        <div id="syncStatus" style="background: rgba(255, 255, 255, 0.02); border: 1px dashed rgba(255, 255, 255, 0.1); padding: 1rem; border-radius: 8px; font-size: 0.85rem; color: var(--text-muted); line-height: 1.5;">
+        <div id="syncStatus" style="background: rgba(var(--tint-rgb), 0.02); border: 1px dashed rgba(var(--tint-rgb), 0.1); padding: 1rem; border-radius: 8px; font-size: 0.85rem; color: var(--text-muted); line-height: 1.5;">
             Klik <strong>🔍 Deteksi Otomatis</strong> untuk memindai port lokal yang umum dipakai, lalu <strong>Cek Perubahan Lokal</strong> untuk melihat antrean perubahan yang tertunda. URL yang berhasil akan diingat otomatis.
         </div>
 
@@ -254,7 +254,7 @@
             
             <form action="{{ route('setting.database.migrate') }}" method="POST" style="margin: 0;" onsubmit="return confirm('Apakah Anda yakin ingin menjalankan migrasi database? Langkah ini akan membuat tabel baru jika belum terbuat di server produksi.')">
                 @csrf
-                <button type="submit" class="btn btn-secondary" style="padding: 0.8rem 2rem; font-size: 0.95rem; font-weight: 600; background: rgba(147, 51, 234, 0.15); border: 1px solid rgba(147, 51, 234, 0.3); color: #c084fc;">
+                <button type="submit" class="btn btn-secondary" style="padding: 0.8rem 2rem; font-size: 0.95rem; font-weight: 600; background: rgba(147, 51, 234, 0.15); border: 1px solid rgba(147, 51, 234, 0.3); color: var(--tc-c084fc);">
                     Jalankan Migrasi Database
                 </button>
             </form>
@@ -325,14 +325,14 @@ document.addEventListener("DOMContentLoaded", function() {
             .then(found => {
                 localUrlInput.value = found;
                 try { localStorage.setItem(LOCAL_URL_KEY, found); } catch (e) {}
-                statusDiv.innerHTML = `<span style="color: #22c55e;">✔ Server lokal ditemukan di <code>${found}</code>. Klik <strong>Cek Perubahan Lokal</strong> untuk melanjutkan.</span>`;
+                statusDiv.innerHTML = `<span style="color: var(--tc-22c55e);">✔ Server lokal ditemukan di <code>${found}</code>. Klik <strong>Cek Perubahan Lokal</strong> untuk melanjutkan.</span>`;
                 return found;
             })
             .catch(() => {
                 if (!silent) {
                     const isHttps = window.location.protocol === "https:";
                     statusDiv.innerHTML = `
-                        <span style="color: #ef4444;">✖ Tidak ada server lokal yang merespons.</span><br>
+                        <span style="color: var(--tc-ef4444);">✖ Tidak ada server lokal yang merespons.</span><br>
                         <span style="color: var(--text-muted);">Periksa berurutan:</span>
                         <ol style="margin: 0.5rem 0 0 1.2rem; color: var(--text-muted);">
                             <li>Server lokal menyala? Jalankan <code>php artisan serve</code> di folder project.</li>
@@ -410,7 +410,7 @@ document.addEventListener("DOMContentLoaded", function() {
                 pendingQueries = data;
 
                 if (pendingQueries.length === 0) {
-                    statusDiv.innerHTML = '<span style="color: #10b981; font-weight: 600;">✔ Sinkron! Database produksi Anda sudah sama dengan data local. Tidak ada perubahan yang tertunda.</span>';
+                    statusDiv.innerHTML = '<span style="color: var(--tc-10b981); font-weight: 600;">✔ Sinkron! Database produksi Anda sudah sama dengan data local. Tidak ada perubahan yang tertunda.</span>';
                     btnRun.style.display = "none";
                 } else {
                     let preview = '<ul style="margin: 0.5rem 0 0 1.25rem; padding: 0; color: var(--text-muted); max-height: 150px; overflow-y: auto; font-family: monospace; font-size: 0.75rem;">';
@@ -429,7 +429,7 @@ document.addEventListener("DOMContentLoaded", function() {
                             📢 Terdeteksi ${pendingQueries.length} perubahan database baru di local:
                         </div>
                         ${preview}
-                        <div style="color: #f87171; font-size: 0.75rem; margin-top: 0.75rem; font-weight: 500;">
+                        <div style="color: var(--tc-f87171); font-size: 0.75rem; margin-top: 0.75rem; font-weight: 500;">
                             *Peringatan: Klik tombol di bawah akan mengeksekusi semua perubahan ini secara berurutan ke database produksi.
                         </div>
                     `;
@@ -440,7 +440,7 @@ document.addEventListener("DOMContentLoaded", function() {
             .catch(err => {
                 btnCheck.disabled = false;
                 btnCheck.textContent = "Cek Perubahan Lokal";
-                statusDiv.innerHTML = `<span style="color: #ef4444; font-weight: 600;">✖ Hubungan Gagal:</span><br><span style="font-size: 0.8rem; color: var(--text-muted);">${err.message}</span><br><small style="color: var(--text-muted); display: block; margin-top: 0.5rem;">Periksa apakah XAMPP/server lokal menyala di port tersebut dan fitur CORS diizinkan.</small>`;
+                statusDiv.innerHTML = `<span style="color: var(--tc-ef4444); font-weight: 600;">✖ Hubungan Gagal:</span><br><span style="font-size: 0.8rem; color: var(--text-muted);">${err.message}</span><br><small style="color: var(--text-muted); display: block; margin-top: 0.5rem;">Periksa apakah XAMPP/server lokal menyala di port tersebut dan fitur CORS diizinkan.</small>`;
                 btnRun.style.display = "none";
                 console.error(err);
             });
@@ -485,7 +485,7 @@ document.addEventListener("DOMContentLoaded", function() {
                                 .map(r => `<li style="margin-bottom: 0.35rem; word-break: break-all;"><code>${r.replace(/</g, "&lt;")}</code></li>`)
                                 .join("");
                             statusDiv.innerHTML = `
-                                <span style="color: #ef4444; font-weight: 600;">⛔ ${err.message}</span>
+                                <span style="color: var(--tc-ef4444); font-weight: 600;">⛔ ${err.message}</span>
                                 <ul style="margin: 0.75rem 0 0 1.2rem; color: var(--text-muted); font-size: 0.8rem;">${daftar}</ul>
                                 <div style="margin-top: 0.75rem; color: var(--text-muted);">
                                     Tidak ada perubahan yang diterapkan ke produksi. Bersihkan antrean lokal, lalu ulangi dari perubahan yang sah saja.
@@ -499,7 +499,7 @@ document.addEventListener("DOMContentLoaded", function() {
             })
             .then(prodData => {
                 if (prodData.success) {
-                    statusDiv.innerHTML = `<span style="color: #10b981;">✔ Sukses diterapkan di produksi. Membersihkan antrean log di local...</span>`;
+                    statusDiv.innerHTML = `<span style="color: var(--tc-10b981);">✔ Sukses diterapkan di produksi. Membersihkan antrean log di local...</span>`;
                     
                     // 2. Clear pending log in local environment
                     return fetch(`${localUrl}/api/database/clear-pending-queries`, {
@@ -523,7 +523,7 @@ document.addEventListener("DOMContentLoaded", function() {
                 btnRun.disabled = false;
                 btnRun.style.display = "none";
                 alert("Sinkronisasi database berhasil! Seluruh perubahan di local telah sukses diterapkan di produksi.");
-                statusDiv.innerHTML = '<span style="color: #10b981; font-weight: 600;">✔ Sinkronisasi berhasil diselesaikan!</span>';
+                statusDiv.innerHTML = '<span style="color: var(--tc-10b981); font-weight: 600;">✔ Sinkronisasi berhasil diselesaikan!</span>';
                 pendingQueries = [];
                 
                 // Refresh dashboard to display latest synchronized states
@@ -536,7 +536,7 @@ document.addEventListener("DOMContentLoaded", function() {
                 btnRun.textContent = `Sinkron ${pendingQueries.length} Perubahan ke Produksi`;
                 // Daftar query yang ditolak sudah dirender di atas — jangan timpa
                 if (err.message !== "__sudah_ditampilkan__") {
-                    statusDiv.innerHTML = `<span style="color: #ef4444; font-weight: 600;">✖ Kegagalan Sinkronisasi:</span><br><span style="font-size: 0.8rem; color: var(--text-muted);">${err.message}</span>`;
+                    statusDiv.innerHTML = `<span style="color: var(--tc-ef4444); font-weight: 600;">✖ Kegagalan Sinkronisasi:</span><br><span style="font-size: 0.8rem; color: var(--text-muted);">${err.message}</span>`;
                 }
                 console.error(err);
             });

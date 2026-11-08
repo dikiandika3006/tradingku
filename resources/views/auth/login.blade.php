@@ -9,6 +9,7 @@
     <link rel="manifest" href="{{ asset('manifest.json') }}">
     <link rel="apple-touch-icon" href="{{ asset('icons/icon-192.png') }}">
     <!-- CSS File -->
+    @include('partials.tema')
     <link rel="stylesheet" href="{{ asset('css/dashboard.css') }}">
 </head>
 <body class="login-wrapper">

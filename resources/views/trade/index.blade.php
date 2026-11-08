@@ -235,7 +235,7 @@
                                         <form action="{{ route('trade.destroy', $trade->id) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menghapus catatan trade ini?')" style="margin: 0; display: inline;">
                                             @csrf
                                             @method('DELETE')
-                                            <button type="submit" style="background: none; border: none; color: #ef4444; cursor: pointer; display: flex; align-items: center; padding: 0;" title="Hapus transaksi">
+                                            <button type="submit" style="background: none; border: none; color: var(--tc-ef4444); cursor: pointer; display: flex; align-items: center; padding: 0;" title="Hapus transaksi">
                                                 <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                                             </button>
                                         </form>
@@ -526,7 +526,7 @@
 <style>
     /* Format default bootstrap simple pagination buttons for dark mode compatibility */
     .pagination .page-item .page-link {
-        background-color: rgba(255, 255, 255, 0.05);
+        background-color: rgba(var(--tint-rgb), 0.05);
         border: 1px solid var(--border-light);
         color: var(--text-main);
         padding: 0.5rem 1rem;

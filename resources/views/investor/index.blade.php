@@ -96,7 +96,7 @@
                             <td data-label="Total Dana" style="text-align: right; font-family: monospace; font-weight: 700;">{{ $rp($row['total']) }}</td>
                             <td data-label="Kepemilikan">
                                 <div style="font-weight: 700; font-family: monospace;">{{ number_format($row['kepemilikan'], 2) }}%</div>
-                                <div style="height: 6px; background: rgba(255,255,255,0.06); border-radius: 3px; margin-top: 0.3rem; overflow: hidden;">
+                                <div style="height: 6px; background: rgba(var(--tint-rgb), 0.06); border-radius: 3px; margin-top: 0.3rem; overflow: hidden;">
                                     <div style="height: 100%; width: {{ min(100, $row['kepemilikan']) }}%; background: {{ $warna[$inv->id] }};"></div>
                                 </div>
                             </td>
@@ -122,7 +122,7 @@
                                         <form action="{{ route('investor.destroy', $inv->id) }}" method="POST" onsubmit="return confirm('Hapus investor {{ $inv->name }}?')">
                                             @csrf
                                             @method('DELETE')
-                                            <button type="submit" title="Hapus investor" style="background: none; border: none; color: #ef4444; cursor: pointer; display: flex;">
+                                            <button type="submit" title="Hapus investor" style="background: none; border: none; color: var(--tc-ef4444); cursor: pointer; display: flex;">
                                                 <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                                             </button>
                                         </form>
@@ -338,7 +338,7 @@
                                     <form action="{{ route('investor.transaction.destroy', $tx->id) }}" method="POST" onsubmit="return confirm('Hapus transaksi {{ $tx->investor->name }} {{ $rp($tx->amount) }} tanggal {{ $tgl($tx->date) }}?')">
                                         @csrf
                                         @method('DELETE')
-                                        <button type="submit" title="Hapus transaksi" style="background: none; border: none; color: #ef4444; cursor: pointer; display: flex;">
+                                        <button type="submit" title="Hapus transaksi" style="background: none; border: none; color: var(--tc-ef4444); cursor: pointer; display: flex;">
                                             <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                                         </button>
                                     </form>
@@ -394,7 +394,7 @@
 
 <style>
     .investor-row { grid-template-columns: 1fr 2.4fr; }
-    .custom-table tfoot td { background: rgba(255, 255, 255, 0.02); }
+    .custom-table tfoot td { background: rgba(var(--tint-rgb), 0.02); }
     @media (max-width: 768px) {
         .custom-table.table-kartu tfoot { display: block; margin-top: 0.9rem; }
         .custom-table.table-kartu td.sembunyi-mobile { display: none; }
