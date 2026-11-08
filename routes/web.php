@@ -91,6 +91,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/pnl', [PortfolioController::class, 'pnl'])->name('portfolio.pnl')->middleware('menu:pnl');
     Route::get('/portfolio/monthly-report', [PortfolioController::class, 'monthlyReport'])->name('portfolio.monthly-report')->middleware('menu:monthly_report');
     Route::get('/open-orders', [PortfolioController::class, 'openOrders'])->name('portfolio.open-orders')->middleware('menu:open_orders');
+    Route::get('/portfolio/dca-calculator', [PortfolioController::class, 'dcaCalculator'])->name('portfolio.dca-calculator')->middleware('menu:dca_calculator');
 
     // Proyeksi pertumbuhan modal
     Route::middleware('menu:capital_projection')->group(function () {

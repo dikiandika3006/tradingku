@@ -21,6 +21,7 @@ class Menu
         'pnl'                    => ['Realisasi PNL', 'Portofolio', 'portfolio.pnl'],
         'monthly_report'         => ['Laporan Bulanan', 'Portofolio', 'portfolio.monthly-report'],
         'capital_projection'     => ['Proyeksi Modal', 'Portofolio', 'portfolio.capital-projection'],
+        'dca_calculator'         => ['Kalkulator DCA & TP', 'Portofolio', 'portfolio.dca-calculator'],
         'open_orders'            => ['Antrean Pesanan', 'Portofolio', 'portfolio.open-orders'],
         'investor'               => ['Master Investor', 'Investor', 'investor.index'],
         'investor_report'        => ['Investor Report (lihat & PDF)', 'Investor', 'investor-report.index'],

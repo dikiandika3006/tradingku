@@ -65,6 +65,50 @@ class PortfolioController extends Controller
     }
 
     /**
+     * Kalkulator DCA & target TP.
+     *
+     * Posisi tiap aset aktif (saldo, modal, harga rata-rata) diambil dari
+     * perhitungan yang sama dengan halaman Portofolio; simulasi DCA dan TP
+     * dihitung di browser supaya hasilnya langsung berubah saat diketik.
+     */
+    public function dcaCalculator(CostBasisService $costBasisService)
+    {
+        $portfolio = $this->tokocryptoService->getPortfolio();
+        $prices = $this->tokocryptoService->getAllPrices();
+        $holdings = $this->holdings($costBasisService, $portfolio, $prices);
+
+        // Kas & stablecoin tidak di-DCA; aset kecil disembunyikan seperti di
+        // Portofolio; aset tanpa harga tidak bisa disimulasikan.
+        $bukanAset = ['USDT', 'USDC', 'BUSD', 'FDUSD', 'TUSD', 'DAI', 'IDR', 'BIDR', 'IDRT'];
+
+        $assets = collect($holdings['assets'])
+            ->filter(fn($a) => !in_array($a['asset'], $bukanAset, true)
+                && ($a['can_be_valued'] ?? true)
+                && $a['current_price_usdt'] > 0
+                && $a['value_usdt'] >= self::BATAS_ASET_KECIL_USDT)
+            ->sortByDesc('value_usdt')
+            ->map(fn($a) => [
+                'asset' => $a['asset'],
+                'amount' => (float) $a['total'],
+                'avg_price' => (float) $a['avg_buy_price_usdt'],
+                'price' => (float) $a['current_price_usdt'],
+                'cost' => (float) $a['cost_usdt'],
+                'value' => (float) $a['value_usdt'],
+                'pnl' => (float) $a['pnl_usdt'],
+                'pnl_percent' => (float) $a['pnl_percent'],
+            ])
+            ->values()
+            ->all();
+
+        return view('portfolio.dca_calculator', [
+            'assets' => $assets,
+            'usdt_idr_rate' => (float) ($portfolio['usdt_idr_rate'] ?? 16400.0),
+            'total_value' => array_sum(array_column($assets, 'value')),
+            'total_cost' => array_sum(array_column($assets, 'cost')),
+        ]);
+    }
+
+    /**
      * Modal, nilai, dan PNL belum terealisasi tiap aset yang sedang dipegang.
      *
      * Dipakai halaman Portofolio maupun kartu Floating PNL di halaman Realisasi
