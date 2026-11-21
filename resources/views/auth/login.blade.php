@@ -30,8 +30,8 @@
             @csrf
             
             <div class="form-group">
-                <label for="email" class="form-label">Alamat Email</label>
-                <input type="email" name="email" id="email" class="form-control" placeholder="admin@pelagic.com" value="{{ old('email') }}" required autofocus>
+                <label for="username" class="form-label">Username</label>
+                <input type="text" name="username" id="username" class="form-control" placeholder="username" value="{{ old('username') }}" autocomplete="username" autocapitalize="none" spellcheck="false" required autofocus>
             </div>
 
             <div class="form-group">
@@ -49,11 +49,6 @@
                 Masuk ke Dashboard
             </button>
         </form>
-
-        <div style="margin-top: 2rem; text-align: center; font-size: 0.8rem; color: var(--text-muted);">
-            Kredensial Default:<br>
-            <strong>admin@pelagic.com</strong> / <strong>admin123</strong>
-        </div>
     </div>
 
     <!-- PWA Service Worker Clean-up (Self-heals browsers stuck with crashed service workers) -->

@@ -29,7 +29,8 @@ class UserController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users',
+            'username' => ['required', 'string', 'max:50', 'regex:/^[A-Za-z0-9_.]+$/', 'unique:users,username'],
+            'email' => 'nullable|string|email|max:255|unique:users',
             'password' => 'required|string|min:6|confirmed',
             'role' => ['required', 'string', Rule::in(Role::allSafe()->pluck('slug')->all())],
         ]);
@@ -40,7 +41,8 @@ class UserController extends Controller
 
         User::create([
             'name' => $request->name,
-            'email' => $request->email,
+            'username' => strtolower($request->username),
+            'email' => $request->email ?: null,
             'password' => Hash::make($request->password),
             'role' => $request->role,
         ]);
@@ -57,7 +59,8 @@ class UserController extends Controller
 
         $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users,email,' . $user->id,
+            'username' => ['required', 'string', 'max:50', 'regex:/^[A-Za-z0-9_.]+$/', 'unique:users,username,' . $user->id],
+            'email' => 'nullable|string|email|max:255|unique:users,email,' . $user->id,
             'password' => 'nullable|string|min:6|confirmed',
             'role' => ['required', 'string', Rule::in(Role::allSafe()->pluck('slug')->all())],
         ]);
@@ -72,7 +75,8 @@ class UserController extends Controller
         }
 
         $user->name = $request->name;
-        $user->email = $request->email;
+        $user->username = strtolower($request->username);
+        $user->email = $request->email ?: null;
         $user->role = $request->role;
 
         if ($request->filled('password')) {

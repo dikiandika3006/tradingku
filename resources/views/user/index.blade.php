@@ -43,8 +43,13 @@
             </div>
 
             <div class="form-group">
-                <label for="user_email" class="form-label">Alamat Email</label>
-                <input type="email" name="email" id="user_email" class="form-control" placeholder="user@example.com" required>
+                <label for="user_username" class="form-label">Username</label>
+                <input type="text" name="username" id="user_username" class="form-control" placeholder="contoh: dikiandika" pattern="[A-Za-z0-9_.]+" title="Huruf, angka, titik, atau garis bawah" autocapitalize="none" spellcheck="false" required>
+            </div>
+
+            <div class="form-group">
+                <label for="user_email" class="form-label">Alamat Email <span style="color: var(--text-muted); font-weight: 400;">(opsional)</span></label>
+                <input type="email" name="email" id="user_email" class="form-control" placeholder="user@example.com">
             </div>
 
             <div class="form-group">
@@ -91,6 +96,7 @@
                 <thead>
                     <tr>
                         <th>Nama</th>
+                        <th>Username</th>
                         <th>Email</th>
                         <th>Role</th>
                         <th>Tanggal Terdaftar</th>
@@ -106,7 +112,8 @@
                                     <span class="badge badge-success" style="font-size: 0.65rem; margin-left: 0.5rem; padding: 0.1rem 0.4rem;">SAYA</span>
                                 @endif
                             </td>
-                            <td>{{ $user->email }}</td>
+                            <td style="font-family: monospace;">{{ $user->username }}</td>
+                            <td>{{ $user->email ?: '-' }}</td>
                             <td>
                                 <span class="badge {{ $user->role === 'super_admin' ? 'badge-success' : 'badge-neutral' }}">
                                     {{ $user->roleName() }}
@@ -118,6 +125,7 @@
                                 <button type="button" class="btn-edit-user" 
                                         data-id="{{ $user->id }}"
                                         data-name="{{ $user->name }}"
+                                        data-username="{{ $user->username }}"
                                         data-email="{{ $user->email }}"
                                         data-role="{{ $user->role }}"
                                         style="background: none; border: none; color: var(--color-secondary); cursor: pointer; display: flex; align-items: center;" 
@@ -156,6 +164,7 @@
         const passwordHelp = document.getElementById("passwordHelp");
 
         const nameInput = document.getElementById("user_name");
+        const usernameInput = document.getElementById("user_username");
         const emailInput = document.getElementById("user_email");
         const passwordInput = document.getElementById("user_password");
         const passwordConfirmInput = document.getElementById("user_password_confirmation");
@@ -166,6 +175,7 @@
             btn.addEventListener("click", function() {
                 const id = btn.getAttribute("data-id");
                 const name = btn.getAttribute("data-name");
+                const username = btn.getAttribute("data-username");
                 const email = btn.getAttribute("data-email");
                 const role = btn.getAttribute("data-role");
 
@@ -178,6 +188,7 @@
                 
                 // Set fields
                 nameInput.value = name;
+                usernameInput.value = username;
                 emailInput.value = email;
                 document.getElementById("user_role").value = role;
                 passwordInput.value = ""; // blank password implies keep original
@@ -201,6 +212,7 @@
             
             // Clear fields
             nameInput.value = "";
+            usernameInput.value = "";
             emailInput.value = "";
             document.getElementById("user_role").selectedIndex = 0;
             passwordInput.value = "";

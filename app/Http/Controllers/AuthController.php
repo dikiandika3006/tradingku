@@ -23,10 +23,15 @@ class AuthController extends Controller
      */
     public function login(Request $request)
     {
-        $credentials = $request->validate([
-            'email' => 'required|email',
+        $data = $request->validate([
+            'username' => 'required|string|max:255',
             'password' => 'required',
         ]);
+
+        // Login pakai username; email masih diterima sebagai cadangan.
+        $login = trim($data['username']);
+        $field = str_contains($login, '@') ? 'email' : 'username';
+        $credentials = [$field => $login, 'password' => $data['password']];
 
         $remember = true;
 
@@ -38,8 +43,8 @@ class AuthController extends Controller
                 Auth::logout();
 
                 return back()->withErrors([
-                    'email' => 'Role akun Anda belum diberi akses ke menu apa pun. Hubungi admin.',
-                ])->onlyInput('email');
+                    'username' => 'Role akun Anda belum diberi akses ke menu apa pun. Hubungi admin.',
+                ])->onlyInput('username');
             }
 
             $request->session()->regenerate();
@@ -47,8 +52,8 @@ class AuthController extends Controller
         }
 
         return back()->withErrors([
-            'email' => 'Kredensial yang diberikan tidak cocok dengan catatan kami.',
-        ])->onlyInput('email');
+            'username' => 'Username atau kata sandi salah.',
+        ])->onlyInput('username');
     }
 
     /**
