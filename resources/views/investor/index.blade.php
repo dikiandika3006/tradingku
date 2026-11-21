@@ -6,7 +6,7 @@
     $rp = fn ($v) => 'Rp ' . number_format($v, 0, ',', '.');
     $tgl = fn ($d) => $d ? $d->locale('id')->translatedFormat('d M Y') : '-';
     // Warna per investor, dipakai bersama oleh bar kepemilikan dan grafik donat.
-    $palet = ['#9d4edd', '#00f2fe', '#00e676', '#ffb703', '#f72585', '#90be6d', '#4361ee', '#fb8500'];
+    $palet = ['#d4a64a', '#5eace6', '#16c784', '#e8833a', '#ea3943', '#7fb88a', '#3b6fd6', '#8a93a3'];
     $warna = $investors->values()->mapWithKeys(fn ($inv, $i) => [$inv->id => $palet[$i % count($palet)]]);
     $tipeBadge = ['initial_capital' => 'badge-neutral', 'top_up' => 'badge-success', 'withdrawal' => 'badge-danger'];
     $chartData = $summary->filter(fn ($r) => $r['total'] > 0)->values()->map(fn ($r) => [

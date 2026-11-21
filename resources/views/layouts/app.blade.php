@@ -4,11 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>@yield('title') - Jurnal Trading</title>
+    <title>@yield('title') - Tradingku</title>
     <!-- PWA Configuration -->
-    <meta name="theme-color" content="#060713">
+    <meta name="theme-color" content="#0b0e13">
+    <link rel="icon" type="image/svg+xml" href="{{ asset('favicon.svg') }}">
     <link rel="manifest" href="{{ asset('manifest.json') }}">
-    <link rel="apple-touch-icon" href="{{ asset('icons/icon-192.png') }}">
+    <link rel="apple-touch-icon" href="{{ asset('icons/apple-touch-icon.png') }}">
     @include('partials.tema')
     <!-- Premium Stylesheet with Cache Busting -->
     <link rel="stylesheet" href="{{ asset('css/dashboard.css') }}?v={{ filemtime(public_path('css/dashboard.css')) }}">
@@ -23,7 +24,7 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
             </svg>
         </button>
-        <div class="sidebar-logo" style="font-size: 1.25rem;">Jurnal<span>Trading</span></div>
+        <div class="brand brand-sm">@include('partials.logo', ['size' => 28])<span class="brand-name">Trading<span>ku</span></span></div>
         <div style="width: 24px;"></div> <!-- Spacer -->
     </header>
 
@@ -34,8 +35,7 @@
         <!-- Sidebar Navigation -->
         <aside class="sidebar">
             <div class="sidebar-header">
-                <div class="avatar">P</div>
-                <div class="sidebar-logo">Jurnal<span>Trading</span></div>
+                <div class="brand">@include('partials.logo', ['size' => 34])<span class="brand-name">Trading<span>ku</span></span></div>
             </div>
             
             @php
@@ -66,7 +66,7 @@
                     @if(Auth::user()->canAccess($key))
                     <li class="menu-item {{ request()->routeIs($activePattern) ? 'active' : '' }}">
                         <a href="{{ route($route) }}">
-                            <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">{!! $icon !!}</svg>
+                            <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">{!! $icon !!}</svg>
                             {{ $label }}
                         </a>
                     </li>

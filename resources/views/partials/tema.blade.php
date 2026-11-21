@@ -13,7 +13,7 @@
         document.documentElement.setAttribute('data-theme', tema);
         // Warna bilah browser di HP (meta theme-color sudah ada di atas partial ini)
         var meta = document.querySelector('meta[name="theme-color"]');
-        if (meta) meta.setAttribute('content', tema === 'light' ? '#f3f5fa' : '#060713');
+        if (meta) meta.setAttribute('content', tema === 'light' ? '#f5f6f8' : '#0b0e13');
     })();
 
     /** Warna lapisan tipis sesuai tema, untuk Chart.js & style dari JS. */
@@ -32,7 +32,7 @@
         document.documentElement.setAttribute('data-theme', baru);
         try { localStorage.setItem('tema', baru); } catch (e) {}
         var meta = document.querySelector('meta[name="theme-color"]');
-        if (meta) meta.setAttribute('content', baru === 'light' ? '#f3f5fa' : '#060713');
+        if (meta) meta.setAttribute('content', baru === 'light' ? '#f5f6f8' : '#0b0e13');
         // Grafik digambar di canvas dengan warna saat dibuat; muat ulang agar ikut tema
         if (window.Chart && Chart.instances && Object.keys(Chart.instances).length) location.reload();
     }

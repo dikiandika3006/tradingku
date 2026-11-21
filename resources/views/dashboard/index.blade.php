@@ -6,7 +6,7 @@
 <div class="page-header">
     <div class="page-title">
         <h1>Dashboard Overview</h1>
-        <p>Ringkasan performa akun trading Tokocrypto Jurnal Trading Anda</p>
+        <p>Ringkasan performa akun trading Tokocrypto Anda</p>
     </div>
     <div class="header-actions">
         <span class="badge {{ $portfolio['is_live'] ? 'badge-success' : 'badge-danger' }}">
@@ -223,13 +223,13 @@
                     datasets: [{
                         data: {!! json_encode($chartValues) !!},
                         backgroundColor: [
-                            '#9d4edd',
-                            '#00f2fe',
-                            '#00e676',
-                            '#ff9f00',
-                            '#ff1744',
-                            '#3a0ca3',
-                            '#4361ee'
+                            '#d4a64a',
+                            '#5eace6',
+                            '#16c784',
+                            '#e8833a',
+                            '#ea3943',
+                            '#8a93a3',
+                            '#3b6fd6'
                         ],
                         borderWidth: 1,
                         borderColor: warnaTema(0.05)
@@ -244,7 +244,7 @@
                             labels: {
                                 color: warnaTeksRedup(),
                                 font: {
-                                    family: 'Outfit',
+                                    family: 'Plus Jakarta Sans',
                                     size: 12
                                 }
                             }
@@ -357,7 +357,7 @@
                             const rsiClass = item.rsi < 40 ? 'badge-bullish' : 'badge-neutral';
                             
                             // Create a special badge for assets from the trade logs
-                            const journalBadge = item.is_journal ? `<span class="badge" style="background: rgba(147, 51, 234, 0.15); border: 1px solid rgba(147, 51, 234, 0.3); color: var(--tc-c084fc); font-size: 0.7rem; margin-left: 0.5rem; padding: 0.15rem 0.35rem; border-radius: 4px; font-weight: 600;">Jurnal</span>` : '';
+                            const journalBadge = item.is_journal ? `<span class="badge" style="background: rgba(var(--primary-rgb), 0.15); border: 1px solid rgba(var(--primary-rgb), 0.3); color: var(--tc-c084fc); font-size: 0.7rem; margin-left: 0.5rem; padding: 0.15rem 0.35rem; border-radius: 4px; font-weight: 600;">Jurnal</span>` : '';
                             
                             html += `
                                 <tr>

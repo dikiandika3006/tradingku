@@ -122,7 +122,7 @@
                                 $ch  = $e["volume_change_percent_{$tf}"] ?? null;
                                 $alpha = $intensitas($vol, $maxima[$tf] ?? 0);
                                 // Warna = arah perubahan volume, kepekatan = besar volume
-                                $rgb = $ch === null ? '99,102,241' : ($ch >= 0 ? '34,197,94' : '239,68,68');
+                                $rgb = $ch === null ? '100,116,139' : ($ch >= 0 ? '34,197,94' : '239,68,68');
                             @endphp
                             <td style="padding: 0.9rem 1rem; text-align: right; font-family: monospace; color: var(--text-strong); font-weight: 600;
                                        background: rgba({{ $rgb }},{{ number_format($alpha * 0.30, 3) }});">

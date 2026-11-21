@@ -12,14 +12,15 @@ use Illuminate\Console\Command;
 /**
  * Auto-post pembelian di Tokocrypto ke jurnal transaksi.
  *
- * - Hanya sisi beli, mulai MULAI (atau --since).
+ * - Beli dan jual, mulai MULAI (atau --since; sebelum MULAI hanya dengan --backfill).
  * - Satu order = satu baris jurnal, dijumlah dari seluruh fill-nya.
  * - Order yang masih terbuka (terisi sebagian) ditunda sampai selesai.
- * - Fee dalam koin yang dibeli mengurangi jumlah; fee dalam quote menambah
- *   modal. Jadi jumlah di jurnal = saldo yang benar-benar diterima, dan
- *   harga = modal / jumlah.
- * - Stablecoin yang dibeli pakai rupiah (USDT_IDR) dicatat DEPOSIT, sesuai
- *   kebiasaan jurnal: itu suntikan modal, bukan pertumbuhan.
+ * - BUY: fee dalam koin yang dibeli mengurangi jumlah; fee dalam quote
+ *   menambah modal. Jadi jumlah di jurnal = saldo yang benar-benar diterima.
+ * - SELL: fee dalam koin menambah jumlah yang keluar; fee dalam quote
+ *   mengurangi hasil jual. Harga = total / jumlah.
+ * - Stablecoin yang dibeli pakai rupiah (USDT_IDR) dicatat DEPOSIT, dan yang
+ *   dijual ke rupiah dicatat WITHDRAW, sesuai kebiasaan jurnal.
  * - Order yang sudah dicatat manual tidak diduplikasi: baris manualnya
  *   ditandai dengan nomor order.
  */
@@ -27,12 +28,13 @@ class SyncTokocryptoBuys extends Command
 {
     protected $signature = 'tokocrypto:sync-buys
         {--since= : Mulai dari waktu ini (WIB), mis. "2026-11-06 00:00". Bawaan: sejak sinkron terakhir}
+        {--backfill : Izinkan --since sebelum batas MULAI (tarik riwayat lama)}
         {--dry-run : Tampilkan saja, tidak menulis ke jurnal}';
 
-    protected $description = 'Catat otomatis pembelian di Tokocrypto ke jurnal trading';
+    protected $description = 'Catat otomatis pembelian & penjualan di Tokocrypto ke jurnal trading';
 
     /** Auto-post berlaku untuk pembelian mulai waktu ini (WIB). */
-    public const MULAI = '2026-11-06 00:00:00';
+    public const MULAI = '2026-11-12 00:00:00';
 
     /**
      * Jam di jurnal adalah jam WIB apa adanya (form mengisinya dari jam browser),
@@ -71,7 +73,8 @@ class SyncTokocryptoBuys extends Command
         $mulaiMs = Carbon::parse(self::MULAI, 'Asia/Jakarta')->getTimestampMs();
 
         if ($this->option('since')) {
-            $dariMs = max($mulaiMs, Carbon::parse($this->option('since'), 'Asia/Jakarta')->getTimestampMs());
+            $sinceMs = Carbon::parse($this->option('since'), 'Asia/Jakarta')->getTimestampMs();
+            $dariMs = $this->option('backfill') ? $sinceMs : max($mulaiMs, $sinceMs);
         } else {
             $terakhir = (int) Setting::where('key', self::SETTING_TERAKHIR)->value('value');
             $dariMs = max($mulaiMs, $terakhir - self::TUMPANG_TINDIH_MS);
@@ -93,7 +96,7 @@ class SyncTokocryptoBuys extends Command
         $batasAman = $sekarangMs; // sinkron berikutnya tidak boleh melewati fill order yang ditunda
 
         foreach ($orders as $o) {
-            $label = "{$o['symbol']} #{$o['order_id']}";
+            $label = Carbon::createFromTimestampMs($o['waktu_ms'], $zona)->format('d M Y H:i') . " {$o['symbol']} #{$o['order_id']}";
 
             if (in_array($o['order_id'], $idTerbuka, true)) {
                 $batasAman = min($batasAman, $o['fill_pertama_ms']);
@@ -126,7 +129,7 @@ class SyncTokocryptoBuys extends Command
         if ($baris) {
             $this->table(['Order', 'Tipe', 'Jumlah', 'Hasil'], $baris);
         } else {
-            $this->info('Tidak ada pembelian baru sejak ' . Carbon::createFromTimestampMs($dariMs)->setTimezone($zona)->format('d M Y H:i') . '.');
+            $this->info('Tidak ada transaksi baru sejak ' . Carbon::createFromTimestampMs($dariMs)->setTimezone($zona)->format('d M Y H:i') . '.');
         }
 
         if (!$this->option('dry-run') && !$this->option('since')) {
@@ -137,7 +140,7 @@ class SyncTokocryptoBuys extends Command
     }
 
     /**
-     * Kelompokkan fill beli per order dan hitung jumlah bersih, modal, harga.
+     * Kelompokkan fill per order dan hitung jumlah bersih, total, harga.
      *
      * @param  array<int, array>  $fills  baris mentah /open/v1/orders/trades
      * @return array<int, array>
@@ -147,9 +150,7 @@ class SyncTokocryptoBuys extends Command
         $grup = [];
 
         foreach ($fills as $f) {
-            if (!filter_var($f['isBuyer'] ?? false, FILTER_VALIDATE_BOOLEAN)) {
-                continue;
-            }
+            $beli = filter_var($f['isBuyer'] ?? false, FILTER_VALIDATE_BOOLEAN);
 
             $id = (string) ($f['orderId'] ?? '');
             if ($id === '') {
@@ -163,12 +164,15 @@ class SyncTokocryptoBuys extends Command
 
             $g = &$grup[$id];
             $g['order_id'] = $id;
+            $g['beli'] = $beli;
             $g['base'] = $base;
             $g['quote'] = $quote;
             $g['qty'] = ($g['qty'] ?? 0) + (float) ($f['qty'] ?? 0);
             $g['quote_qty'] = ($g['quote_qty'] ?? 0) + (float) ($f['quoteQty'] ?? 0);
-            $g['fee'][strtoupper((string) ($f['commissionAsset'] ?? ''))] =
-                ($g['fee'][strtoupper((string) ($f['commissionAsset'] ?? ''))] ?? 0) + (float) ($f['commission'] ?? 0);
+            // Pajak transaksi (taxAmount) dipotong dari aset yang sama dengan fee
+            $feeAset = strtoupper((string) ($f['commissionAsset'] ?? ''));
+            $g['fee'][$feeAset] = ($g['fee'][$feeAset] ?? 0)
+                + (float) ($f['commission'] ?? 0) + (float) ($f['taxAmount'] ?? 0);
             $t = (int) ($f['time'] ?? 0);
             $g['waktu_ms'] = max($g['waktu_ms'] ?? 0, $t);
             $g['fill_pertama_ms'] = min($g['fill_pertama_ms'] ?? PHP_INT_MAX, $t);
@@ -180,13 +184,19 @@ class SyncTokocryptoBuys extends Command
             $feeBase = $g['fee'][$g['base']] ?? 0.0;
             $feeQuote = $g['fee'][$g['quote']] ?? 0.0;
 
-            $amount = round($g['qty'] - $feeBase, 8);
-            $modal = $g['quote_qty'] + $feeQuote;
-            if ($amount <= 0) {
+            if ($g['beli']) {
+                $amount = round($g['qty'] - $feeBase, 8);
+                $modal = $g['quote_qty'] + $feeQuote;
+            } else {
+                $amount = round($g['qty'] + $feeBase, 8);
+                $modal = $g['quote_qty'] - $feeQuote;
+            }
+            if ($amount <= 0 || $modal <= 0) {
                 continue;
             }
 
-            $fiatKeStable = in_array($g['base'], self::STABLECOIN, true) && in_array($g['quote'], self::FIAT, true);
+            $stableFiat = in_array($g['base'], self::STABLECOIN, true) && in_array($g['quote'], self::FIAT, true);
+            $tipe = $g['beli'] ? ($stableFiat ? 'DEPOSIT' : 'BUY') : ($stableFiat ? 'WITHDRAW' : 'SELL');
 
             $feeTeks = [];
             foreach ($g['fee'] as $aset => $nilai) {
@@ -200,7 +210,7 @@ class SyncTokocryptoBuys extends Command
                 'symbol' => $g['base'] . $g['quote'],
                 'base' => $g['base'],
                 'quote' => $g['quote'],
-                'type' => $fiatKeStable ? 'DEPOSIT' : 'BUY',
+                'type' => $tipe,
                 'qty_kotor' => round($g['qty'], 8),
                 'amount' => $amount,
                 'total' => round($modal, 8),
@@ -259,7 +269,7 @@ class SyncTokocryptoBuys extends Command
             'divergence' => 'None',
             'exchange_order_id' => $o['order_id'],
             'notes' => sprintf(
-                'Auto dari Tokocrypto · order #%s · harga fill %s %s · fee %s',
+                'Auto dari Tokocrypto Â· order #%s Â· harga fill %s %s Â· fee %s',
                 $o['order_id'],
                 rtrim(rtrim(number_format($o['harga_fill'], 8, '.', ''), '0'), '.'),
                 $o['quote'],

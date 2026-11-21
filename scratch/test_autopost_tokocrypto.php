@@ -56,21 +56,21 @@ $fill = fn($order, $sym, $qty, $quote, $fee, $feeAset, $wib, $buyer = 1) => [
 
 $fills = [
     // XPL: satu order terisi dua kali, fee dalam XPL
-    $fill('111', 'XPL_USDT', 200, 12, 0.3, 'XPL', '2026-11-06 09:00:00'),
-    $fill('111', 'XPL_USDT', 250, 15, 0.375, 'XPL', '2026-11-06 09:05:00'),
-    // jual: diabaikan
-    $fill('222', 'POL_USDT', 1000, 98, 0.098, 'USDT', '2026-11-06 10:00:00', 0),
+    $fill('111', 'XPL_USDT', 200, 12, 0.3, 'XPL', '2026-11-12 09:00:00'),
+    $fill('111', 'XPL_USDT', 250, 15, 0.375, 'XPL', '2026-11-12 09:05:00'),
+    // jual, fee dalam USDT -> SELL, hasil jual dikurangi fee
+    $fill('222', 'POL_USDT', 1000, 98, 0.098, 'USDT', '2026-11-12 10:00:00', 0),
     // USDT dibeli pakai rupiah, fee USDT -> DEPOSIT USDTIDR
-    $fill('333', 'USDT_IDR', 55.18, 999971.96, 0.05518, 'USDT', '2026-11-06 11:00:00'),
+    $fill('333', 'USDT_IDR', 55.18, 999971.96, 0.05518, 'USDT', '2026-11-12 11:00:00'),
     // BTC, fee dalam BNB (tidak mengubah jumlah / modal)
-    $fill('444', 'BTC_USDT', 0.001, 75, 0.0001, 'BNB', '2026-11-06 12:00:00'),
+    $fill('444', 'BTC_USDT', 0.001, 75, 0.0001, 'BNB', '2026-11-12 12:00:00'),
     // ONDO: fee dalam quote USDT -> menambah modal
-    $fill('555', 'ONDO_USDT', 100, 35, 0.035, 'USDT', '2026-11-06 13:00:00'),
+    $fill('555', 'ONDO_USDT', 100, 35, 0.035, 'USDT', '2026-11-12 13:00:00'),
     // order masih terbuka (terisi sebagian) -> ditunda
-    $fill('666', 'SUI_USDT', 10, 20, 0.01, 'SUI', '2026-11-06 08:00:00'),
+    $fill('666', 'SUI_USDT', 10, 20, 0.01, 'SUI', '2026-11-12 08:00:00'),
 ];
 $terbuka = [['orderId' => '666', 'symbol' => 'SUI_USDT', 'side' => 0, 'type' => 1, 'status' => 1,
-    'price' => '2', 'origQty' => '50', 'executedQty' => '10', 'createTime' => $ms('2026-11-06 07:00:00')]];
+    'price' => '2', 'origQty' => '50', 'executedQty' => '10', 'createTime' => $ms('2026-11-12 07:00:00')]];
 
 $mode = 'sukses';
 $permintaan = [];
@@ -97,13 +97,13 @@ $catatan = fn($order) => Trade::where('exchange_order_id', $order)->first();
 
 // Catatan manual ONDO yang sudah Anda isi sendiri (harga order, jumlah kotor)
 $manualOndo = Trade::create(['symbol' => 'ONDOUSDT', 'type' => 'BUY', 'price' => 0.35, 'amount' => 100,
-    'total' => 35, 'trade_time' => '2026-11-06 12:40:00', 'notes' => 'manual']);
+    'total' => 35, 'trade_time' => '2026-11-12 12:40:00', 'notes' => 'manual']);
 // Catatan lama yang mirip tapi sudah lewat jendela waktu -> tidak boleh dicocokkan
 Trade::create(['symbol' => 'BTCUSDT', 'type' => 'BUY', 'price' => 75000, 'amount' => 0.001,
-    'total' => 75, 'trade_time' => '2026-11-03 12:00:00', 'notes' => 'lama']);
+    'total' => 75, 'trade_time' => '2026-11-09 12:00:00', 'notes' => 'lama']);
 
 echo "=== UJI 1: dry-run tidak menulis apa pun ===\n";
-Carbon::setTestNow(Carbon::parse('2026-11-06 14:00:00', 'Asia/Jakarta'));
+Carbon::setTestNow(Carbon::parse('2026-11-12 14:00:00', 'Asia/Jakarta'));
 [$kode, $out] = $jalankan(['--dry-run' => true]);
 periksa('kode keluar sukses', $kode, 0, $lulus);
 periksa('jumlah baris jurnal tetap 2', Trade::count(), 2, $lulus);
@@ -114,7 +114,7 @@ echo "\n=== UJI 2: auto-post ===\n";
 $permintaan = [];
 [$kode, $out] = $jalankan();
 periksa('kode keluar sukses', $kode, 0, $lulus);
-periksa('startTime >= 6 Nov 00:00 WIB', (int)$permintaan[0]['startTime'], $ms(SyncTokocryptoBuys::MULAI), $lulus);
+periksa('startTime >= 12 Nov 00:00 WIB', (int)$permintaan[0]['startTime'], $ms(SyncTokocryptoBuys::MULAI), $lulus);
 echo $out;
 
 $xpl = $catatan('111');
@@ -123,10 +123,13 @@ periksa('XPL: BUY', $xpl->type, 'BUY', $lulus);
 periksa('XPL: jumlah bersih 450 - 0,675 fee', (float)$xpl->amount, 449.325, $lulus);
 periksa('XPL: total = 27 USDT', (float)$xpl->total, 27.0, $lulus);
 periksa('XPL: harga = 27 / 449,325', (float)$xpl->price, round(27 / 449.325, 8), $lulus);
-periksa('XPL: jam fill terakhir, WIB', $xpl->getRawOriginal('trade_time'), '2026-11-06 09:05:00', $lulus);
+periksa('XPL: jam fill terakhir, WIB', $xpl->getRawOriginal('trade_time'), '2026-11-12 09:05:00', $lulus);
 periksa('XPL: catatan menyebut order & fee', str_contains($xpl->notes, '#111') && str_contains($xpl->notes, '0.675 XPL'), true, $lulus);
 
-periksa('jual POL tidak dicatat', Trade::where('symbol', 'POLUSDT')->exists(), false, $lulus);
+$pol = $catatan('222');
+periksa('POL: jual dicatat SELL', $pol?->type, 'SELL', $lulus);
+periksa('POL: jumlah 1000', (float)($pol->amount ?? 0), 1000.0, $lulus);
+periksa('POL: total 98 - 0,098 fee', (float)($pol->total ?? 0), 97.902, $lulus);
 
 $usdt = $catatan('333');
 periksa('USDT_IDR -> DEPOSIT', $usdt->type, 'DEPOSIT', $lulus);
@@ -137,14 +140,14 @@ periksa('total dalam rupiah', (float)$usdt->total, 999971.96, $lulus);
 $btc = $catatan('444');
 periksa('BTC: fee BNB tidak mengurangi jumlah', (float)$btc->amount, 0.001, $lulus);
 periksa('BTC: modal tetap 75', (float)$btc->total, 75.0, $lulus);
-periksa('BTC: catatan lama 3 Nov tidak dicocokkan', Trade::where('notes', 'lama')->first()->exchange_order_id, null, $lulus);
+periksa('BTC: catatan lama 9 Nov tidak dicocokkan', Trade::where('notes', 'lama')->first()->exchange_order_id, null, $lulus);
 
 periksa('ONDO: catatan manual ditandai, bukan duplikat', $manualOndo->fresh()->exchange_order_id, '555', $lulus);
 periksa('ONDO: tetap satu baris', Trade::where('symbol', 'ONDOUSDT')->count(), 1, $lulus);
 periksa('ONDO: isi manual tidak diubah', (float)$manualOndo->fresh()->price, 0.35, $lulus);
 
 periksa('SUI terbuka: ditunda', $catatan('666'), null, $lulus);
-periksa('sinkron berikutnya mulai dari fill SUI', (int)Setting::where('key', SyncTokocryptoBuys::SETTING_TERAKHIR)->value('value'), $ms('2026-11-06 08:00:00'), $lulus);
+periksa('sinkron berikutnya mulai dari fill SUI', (int)Setting::where('key', SyncTokocryptoBuys::SETTING_TERAKHIR)->value('value'), $ms('2026-11-12 08:00:00'), $lulus);
 
 echo "\n=== UJI 3: saldo jurnal = saldo yang benar-benar diterima ===\n";
 $saldo = app(App\Services\TokocryptoService::class)->holdingsFromJournal();
@@ -159,8 +162,8 @@ periksa('ringkasan "sudah ada di jurnal"', str_contains($out, 'sudah ada di jurn
 
 echo "\n=== UJI 5: order SUI selesai -> dicatat ===\n";
 $terbuka = [];
-$fills[] = $fill('666', 'SUI_USDT', 40, 80, 0.04, 'SUI', '2026-11-06 14:30:00');
-Carbon::setTestNow(Carbon::parse('2026-11-06 14:35:00', 'Asia/Jakarta'));
+$fills[] = $fill('666', 'SUI_USDT', 40, 80, 0.04, 'SUI', '2026-11-12 14:30:00');
+Carbon::setTestNow(Carbon::parse('2026-11-12 14:35:00', 'Asia/Jakarta'));
 $jalankan();
 $sui = $catatan('666');
 periksa('SUI dicatat', $sui !== null, true, $lulus);
@@ -171,27 +174,31 @@ echo "\n=== UJI 6: API gagal -> tidak menulis, tidak memajukan waktu ===\n";
 $waktuSebelum = Setting::where('key', SyncTokocryptoBuys::SETTING_TERAKHIR)->value('value');
 $sebelum = Trade::count();
 $mode = 'gagal';
-$fills[] = $fill('777', 'TIA_USDT', 5, 10, 0, 'TIA', '2026-11-06 14:40:00');
+$fills[] = $fill('777', 'TIA_USDT', 5, 10, 0, 'TIA', '2026-11-12 14:40:00');
 [$kode] = $jalankan();
 periksa('kode keluar gagal', $kode, 1, $lulus);
 periksa('jurnal tidak berubah', Trade::count(), $sebelum, $lulus);
 periksa('waktu sinkron tidak maju', Setting::where('key', SyncTokocryptoBuys::SETTING_TERAKHIR)->value('value'), $waktuSebelum, $lulus);
 $mode = 'sukses';
-Carbon::setTestNow(Carbon::parse('2026-11-06 14:45:00', 'Asia/Jakarta'));
+Carbon::setTestNow(Carbon::parse('2026-11-12 14:45:00', 'Asia/Jakarta'));
 $jalankan();
 periksa('setelah pulih, TIA tercatat', $catatan('777') !== null, true, $lulus);
 
 echo "\n=== UJI 7: rentang > 24 jam dipecah per hari ===\n";
 $permintaan = [];
-Carbon::setTestNow(Carbon::parse('2026-11-08 12:00:00', 'Asia/Jakarta'));
-$jalankan(['--since' => '2026-11-06 00:00']);
+Carbon::setTestNow(Carbon::parse('2026-11-14 12:00:00', 'Asia/Jakarta'));
+$jalankan(['--since' => '2026-11-12 00:00']);
 periksa('3 permintaan untuk ~2,5 hari', count($permintaan), 3, $lulus);
 $rentangMaks = max(array_map(fn($q) => (int)$q['endTime'] - (int)$q['startTime'], $permintaan));
 periksa('tiap jendela < 24 jam', $rentangMaks < 24 * 3600 * 1000, true, $lulus);
-periksa('--since sebelum 6 Nov tetap dibatasi 6 Nov', (function () use ($jalankan, &$permintaan, $ms) {
+periksa('--since sebelum 12 Nov tetap dibatasi 12 Nov', (function () use ($jalankan, &$permintaan, $ms) {
     $permintaan = []; $jalankan(['--since' => '2026-10-01 00:00', '--dry-run' => true]);
     return (int)$permintaan[0]['startTime'];
 })(), $ms(SyncTokocryptoBuys::MULAI), $lulus);
+periksa('--backfill mengizinkan sebelum 12 Nov', (function () use ($jalankan, &$permintaan, $ms) {
+    $permintaan = []; $jalankan(['--since' => '2026-11-10 00:00', '--backfill' => true, '--dry-run' => true]);
+    return (int)$permintaan[0]['startTime'];
+})(), $ms('2026-11-10 00:00'), $lulus);
 
 echo "\n=== UJI 8: tanpa API key -> dilewati dengan tenang ===\n";
 Setting::query()->delete();

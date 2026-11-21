@@ -209,7 +209,7 @@
                             <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.2rem;">{{ number_format($r['btc_persen'], 1) }}%</div>
                             @endif
                         </td>
-<td style="padding: 0.5rem 0.6rem; text-align: right; background: rgba(99,102,241,0.05);">
+<td style="padding: 0.5rem 0.6rem; text-align: right; background: rgba(var(--secondary-rgb),0.05);">
                             @if($r['alokasi_dari_portofolio'])
                                 <div style="font-family: monospace; font-weight: 700; color: var(--text-strong); padding: 0.35rem 0;">{{ $rp($r['alokasi_alt']) }}</div>
                                 <div style="font-size: 0.7rem; color: var(--tc-818cf8);">{{ number_format($r['alt_persen'], 1) }}% &middot; portofolio</div>

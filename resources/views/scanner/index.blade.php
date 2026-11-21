@@ -476,7 +476,7 @@
                 }
                 const statusBadge = badges.join(' ');
                 
-                const journalBadge = item.is_journal ? `<span class="badge" style="background: rgba(147, 51, 234, 0.15); border: 1px solid rgba(147, 51, 234, 0.3); color: var(--tc-c084fc); font-size: 0.7rem; margin-left: 0.5rem; padding: 0.15rem 0.35rem; border-radius: 4px; font-weight: 600;">Jurnal</span>` : '';
+                const journalBadge = item.is_journal ? `<span class="badge" style="background: rgba(var(--primary-rgb), 0.15); border: 1px solid rgba(var(--primary-rgb), 0.3); color: var(--tc-c084fc); font-size: 0.7rem; margin-left: 0.5rem; padding: 0.15rem 0.35rem; border-radius: 4px; font-weight: 600;">Jurnal</span>` : '';
                 
                 html += `
                     <tr>

@@ -73,7 +73,7 @@
                 <li>Salin <strong>API Key</strong> dan <strong>API Secret</strong> ke form di sebelah kiri lalu klik simpan.</li>
             </ol>
 
-            <div style="background: rgba(147, 51, 234, 0.1); border: 1px solid rgba(147, 51, 234, 0.2); padding: 1rem; border-radius: 10px; font-size: 0.8rem; color: var(--text-muted); margin-top: 0.5rem;">
+            <div style="background: rgba(var(--primary-rgb), 0.1); border: 1px solid rgba(var(--primary-rgb), 0.2); padding: 1rem; border-radius: 10px; font-size: 0.8rem; color: var(--text-muted); margin-top: 0.5rem;">
                 <strong style="color: var(--color-primary); display: block; margin-bottom: 0.25rem;">Informasi Fallback</strong>
                 Jika API Secret dikosongkan, sistem tetap berfungsi normal dengan memperhitungkan saldo portofolio dan average buy price secara kalkulatif dari riwayat transaksi yang Anda catat pada menu <strong>Jurnal Transaksi</strong>.
             </div>
@@ -254,7 +254,7 @@
             
             <form action="{{ route('setting.database.migrate') }}" method="POST" style="margin: 0;" onsubmit="return confirm('Apakah Anda yakin ingin menjalankan migrasi database? Langkah ini akan membuat tabel baru jika belum terbuat di server produksi.')">
                 @csrf
-                <button type="submit" class="btn btn-secondary" style="padding: 0.8rem 2rem; font-size: 0.95rem; font-weight: 600; background: rgba(147, 51, 234, 0.15); border: 1px solid rgba(147, 51, 234, 0.3); color: var(--tc-c084fc);">
+                <button type="submit" class="btn btn-secondary" style="padding: 0.8rem 2rem; font-size: 0.95rem; font-weight: 600; background: rgba(var(--primary-rgb), 0.15); border: 1px solid rgba(var(--primary-rgb), 0.3); color: var(--tc-c084fc);">
                     Jalankan Migrasi Database
                 </button>
             </form>

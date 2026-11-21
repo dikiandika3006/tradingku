@@ -3,11 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Jurnal Trading</title>
+    <title>Login - Tradingku</title>
     <!-- PWA Configuration -->
-    <meta name="theme-color" content="#060713">
+    <meta name="theme-color" content="#0b0e13">
+    <link rel="icon" type="image/svg+xml" href="{{ asset('favicon.svg') }}">
     <link rel="manifest" href="{{ asset('manifest.json') }}">
-    <link rel="apple-touch-icon" href="{{ asset('icons/icon-192.png') }}">
+    <link rel="apple-touch-icon" href="{{ asset('icons/apple-touch-icon.png') }}">
     <!-- CSS File -->
     @include('partials.tema')
     <link rel="stylesheet" href="{{ asset('css/dashboard.css') }}">
@@ -15,7 +16,7 @@
 <body class="login-wrapper">
     <div class="glass-card login-card">
         <div class="login-header">
-            <h2 class="sidebar-logo" style="display:inline-block; font-size:2rem; margin-bottom:0.5rem;">Jurnal<span>Trading</span></h2>
+            <div class="brand brand-lg">@include('partials.logo', ['size' => 48])<span class="brand-name">Trading<span>ku</span></span></div>
             <p>Silakan login untuk memantau trading akun Tokocrypto Anda</p>
         </div>
 
