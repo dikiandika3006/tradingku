@@ -1,0 +1,12 @@
+# Untuk hosting yang document root-nya = root repo (mis. Hostinger public_html).
+# Semua request diteruskan ke folder public/, jadi .env, storage, vendor, dll.
+# tidak pernah bisa diakses langsung dari web.
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteRule ^(.*)$ public/$1 [L]
+</IfModule>
+
+# Cadangan bila mod_rewrite mati: tolak akses ke file sensitif.
+<FilesMatch "^\.|\.(env|log|sh|sql|md|json|lock|xml|yml|yaml)$">
+    Require all denied
+</FilesMatch>
