@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Console\Commands\SyncTokocryptoBuys;
 use App\Models\Trade;
 use App\Services\CostBasisService;
 use App\Services\MonthlyReportService;
 use App\Services\TokocryptoService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Artisan;
 
 class PortfolioController extends Controller
 {
@@ -41,14 +43,18 @@ class PortfolioController extends Controller
         $totalPnlPercent = $totalCostUsdt > 0 ? ($totalPnlUsdt / $totalCostUsdt) * 100 : 0.0;
 
         // Aset bernilai di bawah batas hanya disembunyikan dari tabel; total di
-        // atas tetap menghitungnya. Aset yang tidak bisa dinilai (harga tidak
-        // ketemu) tetap tampil karena nilainya belum tentu kecil.
-        [$asetKecil, $asetTampil] = collect($holdings['assets'])->partition(
-            fn($a) => ($a['can_be_valued'] ?? true) && $a['value_usdt'] < self::BATAS_ASET_KECIL_USDT
+        // atas tetap menghitungnya. Aset tanpa harga pasar juga disembunyikan,
+        // tetapi namanya disebut di bawah tabel supaya tidak hilang diam-diam.
+        [$tanpaHarga, $bisaDinilai] = collect($holdings['assets'])->partition(
+            fn($a) => !($a['can_be_valued'] ?? true)
+        );
+        [$asetKecil, $asetTampil] = $bisaDinilai->partition(
+            fn($a) => $a['value_usdt'] < self::BATAS_ASET_KECIL_USDT
         );
 
         return view('portfolio.index', [
             'assets' => $asetTampil->values()->all(),
+            'aset_tanpa_harga' => $tanpaHarga->pluck('asset')->all(),
             'aset_kecil_jumlah' => $asetKecil->count(),
             'aset_kecil_nilai_usdt' => $asetKecil->sum('value_usdt'),
             'batas_aset_kecil_usdt' => self::BATAS_ASET_KECIL_USDT,
@@ -60,8 +66,51 @@ class PortfolioController extends Controller
             'total_pnl_idr' => $totalPnlUsdt * $usdtIdr,
             'total_pnl_percent' => $totalPnlPercent,
             'usdt_idr_rate' => $usdtIdr,
-            'is_live' => $portfolio['is_live']
+            'is_live' => $portfolio['is_live'],
+            'sinkron_terakhir' => $this->waktuSinkronTerakhir(),
+            'boleh_sinkron' => (bool) auth()->user()?->canAccess('trade'),
         ]);
+    }
+
+    /** Waktu sinkron Tokocrypto terakhir (WIB), null kalau belum pernah. */
+    protected function waktuSinkronTerakhir(): ?\Carbon\Carbon
+    {
+        $ms = (int) \App\Models\Setting::where('key', SyncTokocryptoBuys::SETTING_TERAKHIR)->value('value');
+
+        return $ms > 0
+            ? \Carbon\Carbon::createFromTimestampMs($ms, SyncTokocryptoBuys::ZONA_JURNAL)
+            : null;
+    }
+
+    /**
+     * Tombol "Sinkron sekarang": jalankan auto-post Tokocrypto saat itu juga,
+     * tanpa menunggu cron.
+     */
+    public function syncTokocrypto()
+    {
+        // Di lokal, tulisan jurnal ikut antrean sinkronisasi ke produksi,
+        // padahal produksi mencatat order yang sama sendiri -> dobel.
+        if (app()->environment('local')) {
+            return back()->with('error', 'Sinkron Tokocrypto tidak dijalankan di lokal supaya jurnal produksi tidak dobel. Jalankan dari server.');
+        }
+
+        try {
+            $kode = Artisan::call('tokocrypto:sync-buys');
+            $keluaran = Artisan::output();
+        } catch (\Throwable $e) {
+            \Log::error('Sinkron Tokocrypto manual gagal: ' . $e->getMessage());
+            return back()->with('error', 'Sinkron Tokocrypto gagal: ' . $e->getMessage());
+        }
+
+        if ($kode !== 0) {
+            return back()->with('error', 'Sinkron Tokocrypto gagal: ' . trim(strip_tags($keluaran)));
+        }
+
+        $baru = substr_count($keluaran, 'DICATAT');
+
+        return back()->with('success', $baru > 0
+            ? "Sinkron selesai: {$baru} transaksi baru dicatat ke jurnal."
+            : 'Sinkron selesai: tidak ada transaksi baru.');
     }
 
     /**

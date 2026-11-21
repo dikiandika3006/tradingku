@@ -76,14 +76,16 @@ $saldo = [
     ['asset' => 'XLM', 'free' => '10', 'locked' => '0'],          // $1,50  -> sembunyi
     ['asset' => 'TRX', 'free' => '8', 'locked' => '0'],           // $2,00  -> tampil (tepat batas)
     ['asset' => 'USDT', 'free' => '0.4', 'locked' => '0'],        // $0,40  -> sembunyi
-    ['asset' => 'ANEH', 'free' => '5', 'locked' => '0'],          // tanpa harga -> tetap tampil
+    ['asset' => 'ANEH', 'free' => '5', 'locked' => '0'],          // tanpa harga -> sembunyi, disebut namanya
 ];
 [$d, $html] = $buka();
 periksa('BTC tampil', in_array('BTC', $nama($d), true), true, $lulus);
 periksa('TRX tepat $2 tampil', in_array('TRX', $nama($d), true), true, $lulus);
 periksa('XLM $1,50 disembunyikan', in_array('XLM', $nama($d), true), false, $lulus);
 periksa('USDT $0,40 disembunyikan', in_array('USDT', $nama($d), true), false, $lulus);
-periksa('aset tanpa harga tetap tampil', in_array('ANEH', $nama($d), true), true, $lulus);
+periksa('aset tanpa harga disembunyikan', in_array('ANEH', $nama($d), true), false, $lulus);
+periksa('nama aset tanpa harga disebut', $d['aset_tanpa_harga'], ['ANEH'], $lulus);
+periksa('catatan tanpa harga tampil', str_contains($html, 'Tanpa harga pasar, disembunyikan: ANEH'), true, $lulus);
 periksa('jumlah disembunyikan', $d['aset_kecil_jumlah'], 2, $lulus);
 periksa('nilai disembunyikan', (float)$d['aset_kecil_nilai_usdt'], 1.9, $lulus);
 periksa('total tetap hitung semua (1000+1,5+2+0,4)', (float)$d['total_valuation_usdt'], 1003.9, $lulus);

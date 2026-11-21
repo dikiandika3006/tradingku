@@ -15,8 +15,25 @@
         <span class="badge {{ $is_live ? 'badge-success' : 'badge-danger' }}">
             {{ $is_live ? 'Koneksi API Tokocrypto: LIVE' : 'Mode Fallback: Database Trade Logs' }}
         </span>
+        @if($boleh_sinkron ?? false)
+            <form method="POST" action="{{ route('portfolio.sync-tokocrypto') }}" style="display: flex; align-items: center; gap: 0.5rem; margin: 0;"
+                  onsubmit="this.querySelector('button').disabled = true; this.querySelector('button').textContent = 'Menyinkronkan…';">
+                @csrf
+                <span style="font-size: 0.75rem; color: var(--text-muted);">
+                    Sinkron jurnal: {{ $sinkron_terakhir ? $sinkron_terakhir->format('d M H:i') . ' WIB' : 'belum pernah' }}
+                </span>
+                <button type="submit" class="btn btn-secondary" style="padding: 0.35rem 0.85rem; font-size: 0.8rem;">Sinkron sekarang</button>
+            </form>
+        @endif
     </div>
 </div>
+
+@if(session('success'))
+    <div class="alert alert-success mb-4">{{ session('success') }}</div>
+@endif
+@if(session('error'))
+    <div class="alert alert-danger mb-4">{{ session('error') }}</div>
+@endif
 
 <!-- Portfolio Performance Boxes -->
 <div class="stats-grid">
@@ -79,15 +96,15 @@
             <thead>
                 <tr>
                     <th class="th-sort" data-sort-key="asset" data-sort-type="text">Aset</th>
-                    <th class="th-sort" data-sort-key="saldo">Jumlah Saldo</th>
-                    <th class="th-sort" data-sort-key="durasi">Durasi</th>
+                    <th class="th-sort kol-full" data-sort-key="saldo">Jumlah Saldo</th>
+                    <th class="th-sort kol-full" data-sort-key="durasi">Durasi</th>
                     <th class="th-sort" data-sort-key="avg">Harga Rata-rata Beli</th>
                     <th class="th-sort" data-sort-key="harga">Harga Pasar</th>
                     <th class="th-sort" data-sort-key="modal">Modal (Cost Basis)</th>
                     <th class="th-sort" data-sort-key="nilai">Nilai Saat Ini</th>
                     <th class="th-sort" data-sort-key="pnl">PNL Belum Terealisasi</th>
                     <th class="th-sort" data-sort-key="pnlpct">PNL (%)</th>
-                    <th class="th-sort" data-sort-key="sumber" data-sort-type="text">Sumber</th>
+                    <th class="th-sort kol-full" data-sort-key="sumber" data-sort-type="text">Sumber</th>
                 </tr>
             </thead>
             <tbody>
@@ -107,13 +124,13 @@
                         <td class="kartu-judul" style="font-weight: 800; font-size: 1.1rem; color: var(--color-secondary);">
                             {{ $asset['asset'] }}
                         </td>
-                        <td data-label="Jumlah Saldo" style="font-family: monospace; font-weight: 600;">
+                        <td class="kol-full" data-label="Jumlah Saldo" style="font-family: monospace; font-weight: 600;">
                             {{ number_format($asset['total'], 6) }}
                             <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 400; margin-top: 0.15rem;">
                                 Tersedia: {{ number_format($asset['free'], 4) }} | Order: {{ number_format($asset['locked'], 4) }}
                             </div>
                         </td>
-                        <td data-label="Durasi">
+                        <td class="kol-full" data-label="Durasi">
                             <span class="badge" style="background: rgba(var(--tint-rgb), 0.06); border: 1px solid rgba(var(--tint-rgb), 0.1); color: var(--text-main); font-weight: 600; padding: 0.35rem 0.65rem; border-radius: 6px; display: inline-block;">
                                 {{ $asset['duration_text'] }}
                             </span>
@@ -173,15 +190,15 @@
                                 <span style="color: var(--text-muted);" title="Tidak punya harga pasar, jadi tidak bisa dinilai">tidak dinilai</span>
                             @endif
                         </td>
-                        <td data-label="Sumber" style="font-size: 0.75rem; color: var(--text-muted); font-style: italic;">
+                        <td class="kol-full" data-label="Sumber" style="font-size: 0.75rem; color: var(--text-muted); font-style: italic;">
                             {{ $asset['source'] }}
                         </td>
                     </tr>
                 @empty
                     <tr>
                         <td colspan="10" class="kartu-kosong" style="text-align: center; color: var(--text-muted); padding: 3rem 0;">
-                            @if(($aset_kecil_jumlah ?? 0) > 0)
-                                Semua aset bernilai di bawah ${{ number_format($batas_aset_kecil_usdt, 0) }}, jadi disembunyikan.
+                            @if(($aset_kecil_jumlah ?? 0) > 0 || !empty($aset_tanpa_harga))
+                                Semua aset bernilai di bawah ${{ number_format($batas_aset_kecil_usdt, 0) }} atau tanpa harga pasar, jadi disembunyikan.
                             @else
                                 Tidak ada saldo aset aktif di portfolio saat ini.
                             @endif
@@ -195,6 +212,11 @@
         <div style="margin-top: 0.85rem; font-size: 0.8rem; color: var(--text-muted);">
             {{ $aset_kecil_jumlah }} aset bernilai di bawah ${{ number_format($batas_aset_kecil_usdt, 0) }} disembunyikan
             (total ${{ number_format($aset_kecil_nilai_usdt, 2) }}). Nilainya tetap dihitung di total portofolio.
+        </div>
+    @endif
+    @if(!empty($aset_tanpa_harga))
+        <div style="margin-top: 0.35rem; font-size: 0.8rem; color: var(--text-muted);">
+            Tanpa harga pasar, disembunyikan: {{ implode(', ', $aset_tanpa_harga) }}.
         </div>
     @endif
 </div>

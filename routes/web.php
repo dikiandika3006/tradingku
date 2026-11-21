@@ -88,7 +88,8 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/derivatives/volume-heatmap', [VolumeHeatmapController::class, 'index'])->name('derivatives.volume-heatmap')->middleware('menu:volume_heatmap');
 
     Route::get('/portfolio', [PortfolioController::class, 'index'])->name('portfolio.index')->middleware('menu:portfolio');
-    Route::get('/pnl', [PortfolioController::class, 'pnl'])->name('portfolio.pnl')->middleware('menu:pnl');
+    Route::post('/portfolio/sync-tokocrypto', [PortfolioController::class, 'syncTokocrypto'])->name('portfolio.sync-tokocrypto')->middleware('menu:trade');
+    Route::get('/pnl',[PortfolioController::class, 'pnl'])->name('portfolio.pnl')->middleware('menu:pnl');
     Route::get('/portfolio/monthly-report', [PortfolioController::class, 'monthlyReport'])->name('portfolio.monthly-report')->middleware('menu:monthly_report');
     Route::get('/open-orders', [PortfolioController::class, 'openOrders'])->name('portfolio.open-orders')->middleware('menu:open_orders');
     Route::get('/portfolio/dca-calculator', [PortfolioController::class, 'dcaCalculator'])->name('portfolio.dca-calculator')->middleware('menu:dca_calculator');
