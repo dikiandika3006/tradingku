@@ -1139,3 +1139,41 @@ html { font-size: 15px; }
 .last-deploy { font-size: 0.72rem; color: var(--text-muted); text-align: center; line-height: 1.4; }
 .last-deploy strong { font-weight: 600; color: var(--text-main); }
 .last-deploy-sha { font-family: var(--font-mono); font-size: 0.68rem; opacity: 0.75; margin-left: 0.25rem; }
+
+/* ==========================================================================
+   Hamburger desktop: sidebar bisa dilipat jadi ikon saja
+   ========================================================================== */
+.sidebar-header { justify-content: space-between; }
+.sidebar-collapse-btn {
+    display: flex; align-items: center; justify-content: center;
+    width: 34px; height: 34px; flex-shrink: 0;
+    border: 1px solid var(--border-light); border-radius: 9px;
+    background: transparent; color: var(--text-muted); cursor: pointer;
+    transition: var(--transition-smooth);
+}
+.sidebar-collapse-btn:hover { color: var(--text-strong); background: rgba(var(--tint-rgb), 0.05); }
+
+@media (min-width: 1025px) {
+    .sidebar, .main-content { transition: width 0.22s ease, margin-left 0.22s ease; }
+
+    .sidebar-collapsed .sidebar { width: 72px; overflow-x: hidden; }
+    .sidebar-collapsed .main-content { margin-left: 72px; }
+
+    .sidebar-collapsed .sidebar-header { justify-content: center; padding: 1.4rem 0; }
+    .sidebar-collapsed .sidebar-header .brand { display: none; }
+
+    .sidebar-collapsed .sidebar-menu { padding: 1rem 0.6rem; }
+    .sidebar-collapsed .menu-item a { justify-content: center; padding: 0.65rem 0; gap: 0; }
+    .sidebar-collapsed .menu-label { display: none; }
+
+    .sidebar-collapsed .sidebar-footer { padding: 1rem 0.6rem; align-items: center; }
+    .sidebar-collapsed .user-info,
+    .sidebar-collapsed .last-deploy { display: none; }
+    .sidebar-collapsed .user-profile { justify-content: center; }
+    .sidebar-collapsed .theme-toggle,
+    .sidebar-collapsed .logout-btn { padding: 0.55rem 0; gap: 0; }
+}
+/* HP/tablet sudah punya hamburger sendiri di header atas */
+@media (max-width: 1024px) {
+    .sidebar-collapse-btn { display: none; }
+}

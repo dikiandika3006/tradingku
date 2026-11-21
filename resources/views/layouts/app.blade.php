@@ -11,6 +11,7 @@
     <link rel="manifest" href="{{ asset('manifest.json') }}">
     <link rel="apple-touch-icon" href="{{ asset('icons/apple-touch-icon.png') }}">
     @include('partials.tema')
+    <script>try { if (localStorage.getItem('sidebar') === 'collapsed') document.documentElement.classList.add('sidebar-collapsed'); } catch (e) {}</script>
     <!-- Premium Stylesheet with Cache Busting -->
     <link rel="stylesheet" href="{{ asset('css/dashboard.css') }}?v={{ filemtime(public_path('css/dashboard.css')) }}">
     <!-- Chart.js for data visualization -->
@@ -36,6 +37,9 @@
         <aside class="sidebar">
             <div class="sidebar-header">
                 <div class="brand">@include('partials.logo', ['size' => 34])<span class="brand-name">Trading<span>ku</span></span></div>
+                <button type="button" id="sidebarCollapseBtn" class="sidebar-collapse-btn" title="Lipat/buka menu" aria-label="Lipat/buka menu">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+                </button>
             </div>
             
             @php
@@ -65,9 +69,9 @@
                 @foreach($sidebar as [$key, $label, $route, $activePattern, $icon])
                     @if(Auth::user()->canAccess($key))
                     <li class="menu-item {{ request()->routeIs($activePattern) ? 'active' : '' }}">
-                        <a href="{{ route($route) }}">
+                        <a href="{{ route($route) }}" title="{{ $label }}">
                             <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">{!! $icon !!}</svg>
-                            {{ $label }}
+                            <span class="menu-label">{{ $label }}</span>
                         </a>
                     </li>
                     @endif
@@ -76,8 +80,8 @@
 
             <div class="sidebar-footer">
                 <button type="button" class="theme-toggle" onclick="gantiTema()" title="Ganti tema terang/gelap">
-                    <span class="ikon-terang">☀️ Mode terang</span>
-                    <span class="ikon-gelap">🌙 Mode gelap</span>
+                    <span class="ikon-terang">☀️ <span class="menu-label">Mode terang</span></span>
+                    <span class="ikon-gelap">🌙 <span class="menu-label">Mode gelap</span></span>
                 </button>
                 <div class="user-profile">
                     <div class="avatar">{{ substr(Auth::user()->name ?? 'U', 0, 1) }}</div>
@@ -91,7 +95,7 @@
                     @csrf
                     <button type="submit" class="logout-btn">
                         <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
-                        Keluar
+                        <span class="menu-label">Keluar</span>
                     </button>
                 </form>
                 @php
@@ -149,10 +153,24 @@
         }
     }
 
+    // Hamburger desktop: lipat sidebar jadi ikon saja; pilihan disimpan di browser.
+    function initSidebarCollapse() {
+        const btn = document.getElementById("sidebarCollapseBtn");
+        if (!btn) return;
+        btn.addEventListener("click", function () {
+            const lipat = document.documentElement.classList.toggle("sidebar-collapsed");
+            try { localStorage.setItem("sidebar", lipat ? "collapsed" : "open"); } catch (e) {}
+            // Grafik Chart.js menyesuaikan lebar baru setelah animasi selesai
+            setTimeout(() => window.dispatchEvent(new Event("resize")), 260);
+        });
+    }
+
     if (document.readyState !== 'loading') {
         initMobileSidebar();
+        initSidebarCollapse();
     } else {
         document.addEventListener('DOMContentLoaded', initMobileSidebar);
+        document.addEventListener('DOMContentLoaded', initSidebarCollapse);
     }
     </script>
 
