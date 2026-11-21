@@ -94,6 +94,22 @@
                         Keluar
                     </button>
                 </form>
+                @php
+                    // Ditulis deploy.sh setiap selesai deploy: isi = hash commit, waktu file = waktu deploy.
+                    $stampDeploy = storage_path('app/last_deploy');
+                    $lastDeploy = is_file($stampDeploy)
+                        ? [\Carbon\Carbon::createFromTimestamp(filemtime($stampDeploy), 'Asia/Jakarta'), substr(trim((string) @file_get_contents($stampDeploy)), 0, 7)]
+                        : null;
+                @endphp
+                <div class="last-deploy" @if($lastDeploy) title="{{ $lastDeploy[0]->translatedFormat('l, d F Y H:i:s') }} WIB" @endif>
+                    Last deploy:
+                    @if($lastDeploy)
+                        <strong>{{ $lastDeploy[0]->format('d M Y H:i') }} WIB</strong>
+                        <span class="last-deploy-sha">{{ $lastDeploy[1] }}</span>
+                    @else
+                        <strong>belum ada (lokal)</strong>
+                    @endif
+                </div>
             </div>
         </aside>
 
