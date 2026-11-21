@@ -7,6 +7,7 @@
 </IfModule>
 
 # Cadangan bila mod_rewrite mati: tolak akses ke file sensitif.
-<FilesMatch "^\.|\.(env|log|sh|sql|md|json|lock|xml|yml|yaml)$">
+# (Berlaku juga di dalam public/, jadi jangan masukkan ekstensi yang dipakai di sana, mis. .json.)
+<FilesMatch "^\.env|\.(log|sh|sql|lock)$">
     Require all denied
 </FilesMatch>
