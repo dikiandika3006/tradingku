@@ -83,6 +83,10 @@
 <div class="glass-card mb-6">
     <div class="card-title" style="flex-wrap: wrap; gap: 0.75rem;">
         <span>Rincian Kepemilikan Aset</span>
+        <div class="mode-tabel" role="group" aria-label="Mode tampilan">
+            <button type="button" class="btn btn-sm" data-mode="simple">Simple</button>
+            <button type="button" class="btn btn-sm" data-mode="full">Full</button>
+        </div>
         <!-- Di ponsel judul kolom disembunyikan, jadi urutan dipilih dari sini -->
         <div class="sort-mobile" style="gap: 0.5rem; align-items: center;">
             <select id="sortKeySelect" class="form-control" style="padding: 0.45rem 0.75rem; font-size: 0.85rem; width: auto;">
@@ -223,7 +227,45 @@
 @endsection
 
 @section('scripts')
+<style>
+    .mode-tabel { display: inline-flex; gap: 0.25rem; margin-left: auto; }
+    .mode-tabel .btn { padding: 0.35rem 0.85rem; font-size: 0.8rem; }
+    #assetTable.mode-simple .kol-full { display: none !important; }
+    @media (max-width: 768px) {
+        /* Sumber (kolom terakhir) disembunyikan, jadi PNL (%) yang jadi baris terakhir kartu */
+        #assetTable.mode-simple tr td:nth-last-child(2) { border-bottom: none; }
+    }
+</style>
 <script>
+    // ---- Mode tampilan tabel: Simple / Full ----
+    document.addEventListener("DOMContentLoaded", function() {
+        const table = document.getElementById("assetTable");
+        const buttons = [...document.querySelectorAll(".mode-tabel [data-mode]")];
+        const KEY = "portfolioTableMode";
+        let mode = null;
+        try { mode = localStorage.getItem(KEY); } catch (e) {}
+        if (mode !== "simple" && mode !== "full") {
+            mode = window.matchMedia("(max-width: 768px)").matches ? "simple" : "full";
+        }
+
+        function setMode(m) {
+            mode = m;
+            table.classList.toggle("mode-simple", m === "simple");
+            buttons.forEach(b => {
+                const aktif = b.dataset.mode === m;
+                b.classList.toggle("btn-primary", aktif);
+                b.classList.toggle("btn-secondary", !aktif);
+                b.setAttribute("aria-pressed", aktif);
+            });
+        }
+
+        buttons.forEach(b => b.addEventListener("click", () => {
+            setMode(b.dataset.mode);
+            try { localStorage.setItem(KEY, mode); } catch (e) {}
+        }));
+        setMode(mode);
+    });
+
     // ---- Sorting tabel aset (sisi klien) ----
     document.addEventListener("DOMContentLoaded", function() {
         const table = document.getElementById("assetTable");
