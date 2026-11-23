@@ -17,15 +17,15 @@
 
 <!-- Stats Summary Grid -->
 <div class="stats-grid">
-    <!-- Stat 1: Total Valuation -->
-    <div class="glass-card">
+    <!-- Stat 1: Total Valuation (klik untuk buka detail portofolio) -->
+    @php $bisaPorto = Auth::user()->canAccess('portfolio'); @endphp
+    <{{ $bisaPorto ? 'a href=' . route('portfolio.index') : 'div' }} class="glass-card {{ $bisaPorto ? 'kartu-link' : '' }}">
         <div class="card-title">
             <span>Estimasi Nilai Portofolio</span>
             <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
         </div>
         <div class="stat-value text-success">${{ number_format($portfolio['total_usdt'], 2) }}</div>
-        <div class="stat-desc">≈ Rp {{ number_format($portfolio['total_idr'], 0, ',', '.') }}</div>
-    </div>
+        <div class="stat-desc">≈ Rp {{ number_format($portfolio['total_idr'], 0, ',', '.') }}</div>    </{{ $bisaPorto ? 'a' : 'div' }}>
 
     <!-- Stat 2: Active Watchlist -->
     <div class="glass-card">
@@ -210,6 +210,9 @@
 @endsection
 
 @section('scripts')
+<style>
+    a.kartu-link { display: block; color: inherit; text-decoration: none; cursor: pointer; }
+    a.kartu-link:hover { border-color: var(--color-secondary); }</style>
 <script>
     document.addEventListener("DOMContentLoaded", function() {
         // 1. Chart.js allocation code (only if canvas exists)
