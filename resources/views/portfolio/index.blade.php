@@ -5,7 +5,14 @@
 @section('content')
 <div class="page-header">
     <div class="page-title">
-        <h1>Portofolio Detail</h1>
+        <div class="judul-baris">
+            <h1>Portofolio Detail</h1>
+            <div class="mode-tabel" role="group" aria-label="Mode tampilan">
+                <button type="button" class="btn btn-sm" data-mode="super">Super Simple</button>
+                <button type="button" class="btn btn-sm" data-mode="simple">Simple</button>
+                <button type="button" class="btn btn-sm" data-mode="full">Full</button>
+            </div>
+        </div>
         <p>Pantau saldo kepemilikan aset, harga rata-rata beli (average price), serta keuntungan/kerugian belum terealisasi</p>
     </div>
     <div class="header-actions" style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
@@ -36,11 +43,11 @@
 @endif
 
 <!-- Portfolio Performance Boxes -->
-<div class="stats-grid">
+<div class="stats-grid stats-porto">
     <!-- Card 1: Valuation -->
     <div class="glass-card">
         <div class="card-title">
-            <span>Nilai Portofolio Saat Ini</span>
+            <span><span class="lbl-panjang">Nilai Portofolio Saat Ini</span><span class="lbl-pendek">Nilai</span></span>
             <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
         </div>
         <div class="stat-value text-success">${{ number_format($total_valuation_usdt, 2) }}</div>
@@ -50,7 +57,7 @@
     <!-- Card 2: Cost Basis -->
     <div class="glass-card">
         <div class="card-title">
-            <span>Modal Investasi (Cost Basis)</span>
+            <span><span class="lbl-panjang">Modal Investasi (Cost Basis)</span><span class="lbl-pendek">Modal</span></span>
             <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/></svg>
         </div>
         <div class="stat-value" style="color: var(--text-main);">${{ number_format($total_cost_usdt, 2) }}</div>
@@ -60,7 +67,7 @@
     <!-- Card 3: Unrealized Profit/Loss -->
     <div class="glass-card">
         <div class="card-title">
-            <span>PNL Belum Terealisasi (Unrealized PNL)</span>
+            <span><span class="lbl-panjang">PNL Belum Terealisasi (Unrealized PNL)</span><span class="lbl-pendek">PNL</span></span>
             @if($total_pnl_usdt >= 0)
                 <span class="badge badge-success">PROFIT</span>
             @else
@@ -69,7 +76,7 @@
         </div>
         <div class="stat-value {{ $total_pnl_usdt >= 0 ? 'text-success' : 'text-danger' }}">
             {{ $total_pnl_usdt >= 0 ? '+' : '-' }}${{ number_format(abs($total_pnl_usdt), 2) }}
-            <span style="font-size: 1.1rem; font-weight: 600; margin-left: 0.25rem;">
+            <span class="pnl-pct" style="font-size: 1.1rem; font-weight: 600; margin-left: 0.25rem;">
                 ({{ $total_pnl_usdt >= 0 ? '+' : '' }}{{ number_format($total_pnl_percent, 2) }}%)
             </span>
         </div>
@@ -83,11 +90,6 @@
 <div class="glass-card mb-6">
     <div class="card-title" style="flex-wrap: wrap; gap: 0.75rem;">
         <span>Rincian Kepemilikan Aset</span>
-        <div class="mode-tabel" role="group" aria-label="Mode tampilan">
-            <button type="button" class="btn btn-sm" data-mode="super">Super Simple</button>
-            <button type="button" class="btn btn-sm" data-mode="simple">Simple</button>
-            <button type="button" class="btn btn-sm" data-mode="full">Full</button>
-        </div>
         <!-- Di ponsel judul kolom disembunyikan, jadi urutan dipilih dari sini -->
         <div class="sort-mobile" style="gap: 0.5rem; align-items: center;">
             <select id="sortKeySelect" class="form-control" style="padding: 0.45rem 0.75rem; font-size: 0.85rem; width: auto;">
@@ -210,8 +212,8 @@
                             @if($dinilai)
                                 <div class="baris-1">Rp {{ number_format($asset['cost_idr'], 0, ',', '.') }}</div>
                                 <div class="baris-2 {{ $asset['pnl_idr'] >= 0 ? 'text-success' : 'text-danger' }}" style="font-weight: 600;">
-                                    {{ $asset['pnl_idr'] >= 0 ? '+' : '-' }}Rp {{ number_format(abs($asset['pnl_idr']), 0, ',', '.') }}
-                                    ({{ $asset['pnl_percent'] >= 0 ? '+' : '' }}{{ number_format($asset['pnl_percent'], 1) }}%)
+                                    <span class="nilai-rp">{{ $asset['pnl_idr'] >= 0 ? '+' : '-' }}Rp {{ number_format(abs($asset['pnl_idr']), 0, ',', '.') }}</span>
+                                    <span class="pnl-persen">({{ $asset['pnl_percent'] >= 0 ? '+' : '' }}{{ number_format($asset['pnl_percent'], 1) }}%)</span>
                                 </div>
                             @else
                                 <span style="color: var(--text-muted);">&mdash;</span>
@@ -251,7 +253,26 @@
 
 @section('scripts')
 <style>
-    .mode-tabel { display: inline-flex; gap: 0.25rem; margin-left: auto; }
+    .judul-baris { display: flex; align-items: center; gap: 0.5rem 1rem; flex-wrap: wrap; }
+    .mode-tabel { display: inline-flex; gap: 0.25rem; }
+    .stats-porto .lbl-pendek { display: none; }
+
+    /* ---- Super Simple: bagian atas diringkas supaya tabel langsung terlihat ---- */
+    body.porto-super .page-header { gap: 0.6rem; margin-bottom: 1rem; }
+    body.porto-super .page-title p { display: none; }
+    body.porto-super .page-title h1 { font-size: 1.35rem; }
+    body.porto-super .header-actions { gap: 0.35rem !important; }
+    body.porto-super .header-actions .badge { font-size: 0.65rem !important; padding: 0.2rem 0.45rem; }
+    body.porto-super .stats-porto { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; gap: 0.5rem; margin-bottom: 1rem; }
+    body.porto-super .stats-porto .glass-card { padding: 0.65rem 0.7rem; min-width: 0; }
+    body.porto-super .stats-porto .card-title { margin-bottom: 0.3rem; font-size: 0.72rem; }
+    body.porto-super .stats-porto .card-title svg,
+    body.porto-super .stats-porto .card-title .badge,
+    body.porto-super .stats-porto .lbl-panjang { display: none; }
+    body.porto-super .stats-porto .lbl-pendek { display: inline; }
+    body.porto-super .stats-porto .stat-value { font-size: 1rem !important; margin-bottom: 0.15rem; letter-spacing: 0; white-space: nowrap; }
+    body.porto-super .stats-porto .stat-value .pnl-pct { display: block; font-size: 0.72rem !important; margin-left: 0 !important; }
+    body.porto-super .stats-porto .stat-desc { font-size: 0.68rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .mode-tabel .btn { padding: 0.35rem 0.85rem; font-size: 0.8rem; }
     #assetTable.mode-simple .kol-full { display: none !important; }
     #assetTable:not(.mode-super) .kol-super { display: none !important; }
@@ -268,6 +289,14 @@
     #assetTable.mode-super th .sub-th { opacity: 0.7; }
     #assetTable.mode-super td.kol-super { font-family: monospace; white-space: nowrap; text-align: right; font-size: 0.82rem; }
     #assetTable.mode-super td.kol-super .baris-2 { margin-top: 0.2rem; }
+    #assetTable.mode-super td.kol-super .pnl-persen { white-space: nowrap; }
+    #assetTable.mode-super { width: 100%; table-layout: auto; }
+    @media (max-width: 400px) {
+        #assetTable.mode-super td.kol-super { font-size: 0.74rem; white-space: normal; }
+        #assetTable.mode-super td.kol-super .baris-1,
+        #assetTable.mode-super td.kol-super .nilai-rp { white-space: nowrap; }
+        #assetTable.mode-super td.kartu-judul { font-size: 0.9rem !important; }
+    }
     #assetTable.mode-super td.kol-super > div:not(.text-success):not(.text-danger).baris-2 { color: var(--text-muted); }
     #assetTable.mode-super td.kartu-judul { font-size: 1rem !important; }
     .glass-card.mode-super .sort-mobile { display: none !important; }
@@ -295,6 +324,7 @@
             // Super Simple selalu tabel ringkas, tidak jadi kartu di ponsel
             table.classList.toggle("table-kartu", m !== "super");
             table.closest(".glass-card").classList.toggle("mode-super", m === "super");
+            document.body.classList.toggle("porto-super", m === "super");
             buttons.forEach(b => {
                 const aktif = b.dataset.mode === m;
                 b.classList.toggle("btn-primary", aktif);
