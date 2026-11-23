@@ -84,6 +84,7 @@
     <div class="card-title" style="flex-wrap: wrap; gap: 0.75rem;">
         <span>Rincian Kepemilikan Aset</span>
         <div class="mode-tabel" role="group" aria-label="Mode tampilan">
+            <button type="button" class="btn btn-sm" data-mode="super">Super Simple</button>
             <button type="button" class="btn btn-sm" data-mode="simple">Simple</button>
             <button type="button" class="btn btn-sm" data-mode="full">Full</button>
         </div>
@@ -102,12 +103,14 @@
                     <th class="th-sort" data-sort-key="asset" data-sort-type="text">Aset</th>
                     <th class="th-sort kol-full" data-sort-key="saldo">Jumlah Saldo</th>
                     <th class="th-sort kol-full" data-sort-key="durasi">Durasi</th>
-                    <th class="th-sort" data-sort-key="avg">Harga Rata-rata Beli</th>
-                    <th class="th-sort" data-sort-key="harga">Harga Pasar</th>
-                    <th class="th-sort" data-sort-key="modal">Modal (Cost Basis)</th>
-                    <th class="th-sort" data-sort-key="nilai">Nilai Saat Ini</th>
-                    <th class="th-sort" data-sort-key="pnl">PNL Belum Terealisasi</th>
-                    <th class="th-sort" data-sort-key="pnlpct">PNL (%)</th>
+                    <th class="th-sort kol-biasa" data-sort-key="avg">Harga Rata-rata Beli</th>
+                    <th class="th-sort kol-biasa" data-sort-key="harga">Harga Pasar</th>
+                    <th class="th-sort kol-biasa" data-sort-key="modal">Modal (Cost Basis)</th>
+                    <th class="th-sort kol-biasa" data-sort-key="nilai">Nilai Saat Ini</th>
+                    <th class="th-sort kol-biasa" data-sort-key="pnl">PNL Belum Terealisasi</th>
+                    <th class="th-sort kol-biasa" data-sort-key="pnlpct">PNL (%)</th>
+                    <th class="th-sort kol-super" data-sort-key="harga">Beli<br><span class="sub-th">Pasar (USD)</span></th>
+                    <th class="th-sort kol-super" data-sort-key="pnl">Modal<br><span class="sub-th">PNL (Rp)</span></th>
                     <th class="th-sort kol-full" data-sort-key="sumber" data-sort-type="text">Sumber</th>
                 </tr>
             </thead>
@@ -144,19 +147,19 @@
                                 </div>
                             @endif
                         </td>
-                        <td data-label="Rata-rata Beli" style="font-family: monospace;">
+                        <td class="kol-biasa" data-label="Rata-rata Beli" style="font-family: monospace;">
                             ${{ number_format($asset['avg_buy_price_usdt'], 4) }}
                             <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.15rem;">
                                 Rp {{ number_format($asset['avg_buy_price_idr'], 0, ',', '.') }}
                             </div>
                         </td>
-                        <td data-label="Harga Pasar" style="font-family: monospace; font-weight: 500;">
+                        <td class="kol-biasa" data-label="Harga Pasar" style="font-family: monospace; font-weight: 500;">
                             ${{ number_format($asset['current_price_usdt'], 4) }}
                             <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.15rem;">
                                 Rp {{ number_format($asset['current_price_idr'], 0, ',', '.') }}
                             </div>
                         </td>
-                        <td data-label="Modal" style="font-family: monospace;">
+                        <td class="kol-biasa" data-label="Modal" style="font-family: monospace;">
                             @if($asset['can_be_valued'] ?? true)
                                 ${{ number_format($asset['cost_usdt'], 2) }}
                                 <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.15rem;">
@@ -166,13 +169,13 @@
                                 <span style="color: var(--text-muted);">&mdash;</span>
                             @endif
                         </td>
-                        <td data-label="Nilai Saat Ini" style="font-family: monospace; font-weight: 600;">
+                        <td class="kol-biasa" data-label="Nilai Saat Ini" style="font-family: monospace; font-weight: 600;">
                             ${{ number_format($asset['value_usdt'], 2) }}
                             <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.15rem;">
                                 Rp {{ number_format($asset['value_idr'], 0, ',', '.') }}
                             </div>
                         </td>
-                        <td data-label="PNL Belum Terealisasi" style="font-family: monospace; font-weight: 600;" class="{{ ($asset['can_be_valued'] ?? true) ? ($asset['pnl_usdt'] >= 0 ? 'text-success' : 'text-danger') : '' }}">
+                        <td data-label="PNL Belum Terealisasi" style="font-family: monospace; font-weight: 600;" class="kol-biasa {{ ($asset['can_be_valued'] ?? true) ? ($asset['pnl_usdt'] >= 0 ? 'text-success' : 'text-danger') : '' }}">
                             @if(!($asset['can_be_valued'] ?? true))
                                 <span style="color: var(--text-muted);">&mdash;</span>
                             @elseif($asset['pnl_usdt'] >= 0)
@@ -187,11 +190,31 @@
                                 </div>
                             @endif
                         </td>
-                        <td data-label="PNL (%)" style="font-family: monospace; font-weight: 700;" class="{{ ($asset['can_be_valued'] ?? true) ? ($asset['pnl_percent'] >= 0 ? 'text-success' : 'text-danger') : '' }}">
+                        <td data-label="PNL (%)" style="font-family: monospace; font-weight: 700;" class="kol-biasa {{ ($asset['can_be_valued'] ?? true) ? ($asset['pnl_percent'] >= 0 ? 'text-success' : 'text-danger') : '' }}">
                             @if($asset['can_be_valued'] ?? true)
                                 {{ $asset['pnl_percent'] >= 0 ? '+' : '' }}{{ number_format($asset['pnl_percent'], 2) }}%
                             @else
                                 <span style="color: var(--text-muted);" title="Tidak punya harga pasar, jadi tidak bisa dinilai">tidak dinilai</span>
+                            @endif
+                        </td>
+                        {{-- Kolom mode Super Simple --}}
+                        @php
+                            // Harga >= $1 cukup 2 desimal supaya kolom tidak melebar
+                            $usd = fn($v) => '$' . number_format($v, abs($v) >= 1 ? 2 : 4);
+                        @endphp
+                        <td class="kol-super">
+                            <div class="baris-1">{{ $usd($asset['avg_buy_price_usdt']) }}</div>
+                            <div class="baris-2">{{ $usd($asset['current_price_usdt']) }}</div>
+                        </td>
+                        <td class="kol-super">
+                            @if($dinilai)
+                                <div class="baris-1">Rp {{ number_format($asset['cost_idr'], 0, ',', '.') }}</div>
+                                <div class="baris-2 {{ $asset['pnl_idr'] >= 0 ? 'text-success' : 'text-danger' }}" style="font-weight: 600;">
+                                    {{ $asset['pnl_idr'] >= 0 ? '+' : '-' }}Rp {{ number_format(abs($asset['pnl_idr']), 0, ',', '.') }}
+                                    ({{ $asset['pnl_percent'] >= 0 ? '+' : '' }}{{ number_format($asset['pnl_percent'], 1) }}%)
+                                </div>
+                            @else
+                                <span style="color: var(--text-muted);">&mdash;</span>
                             @endif
                         </td>
                         <td class="kol-full" data-label="Sumber" style="font-size: 0.75rem; color: var(--text-muted); font-style: italic;">
@@ -200,7 +223,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="10" class="kartu-kosong" style="text-align: center; color: var(--text-muted); padding: 3rem 0;">
+                        <td colspan="14" class="kartu-kosong" style="text-align: center; color: var(--text-muted); padding: 3rem 0;">
                             @if(($aset_kecil_jumlah ?? 0) > 0 || !empty($aset_tanpa_harga))
                                 Semua aset bernilai di bawah ${{ number_format($batas_aset_kecil_usdt, 0) }} atau tanpa harga pasar, jadi disembunyikan.
                             @else
@@ -231,6 +254,23 @@
     .mode-tabel { display: inline-flex; gap: 0.25rem; margin-left: auto; }
     .mode-tabel .btn { padding: 0.35rem 0.85rem; font-size: 0.8rem; }
     #assetTable.mode-simple .kol-full { display: none !important; }
+    #assetTable:not(.mode-super) .kol-super { display: none !important; }
+    #assetTable.mode-super .kol-full,
+    #assetTable.mode-super .kol-biasa { display: none !important; }
+    /* Super Simple: 3 kolom ringkas, tiap sel 2 baris, muat di ponsel tanpa geser */
+    #assetTable.mode-super th,
+    #assetTable.mode-super td { padding: 0.6rem 0.4rem; vertical-align: middle; }
+    #assetTable.mode-super th:first-child,
+    #assetTable.mode-super td:first-child { padding-left: 0; }
+    #assetTable.mode-super th:last-child,
+    #assetTable.mode-super td:last-child { padding-right: 0; }
+    #assetTable.mode-super th.kol-super { text-align: right; line-height: 1.3; }
+    #assetTable.mode-super th .sub-th { opacity: 0.7; }
+    #assetTable.mode-super td.kol-super { font-family: monospace; white-space: nowrap; text-align: right; font-size: 0.82rem; }
+    #assetTable.mode-super td.kol-super .baris-2 { margin-top: 0.2rem; }
+    #assetTable.mode-super td.kol-super > div:not(.text-success):not(.text-danger).baris-2 { color: var(--text-muted); }
+    #assetTable.mode-super td.kartu-judul { font-size: 1rem !important; }
+    .glass-card.mode-super .sort-mobile { display: none !important; }
     @media (max-width: 768px) {
         /* Sumber (kolom terakhir) disembunyikan, jadi PNL (%) yang jadi baris terakhir kartu */
         #assetTable.mode-simple tr td:nth-last-child(2) { border-bottom: none; }
@@ -244,13 +284,17 @@
         const KEY = "portfolioTableMode";
         let mode = null;
         try { mode = localStorage.getItem(KEY); } catch (e) {}
-        if (mode !== "simple" && mode !== "full") {
+        if (!["super", "simple", "full"].includes(mode)) {
             mode = window.matchMedia("(max-width: 768px)").matches ? "simple" : "full";
         }
 
         function setMode(m) {
             mode = m;
             table.classList.toggle("mode-simple", m === "simple");
+            table.classList.toggle("mode-super", m === "super");
+            // Super Simple selalu tabel ringkas, tidak jadi kartu di ponsel
+            table.classList.toggle("table-kartu", m !== "super");
+            table.closest(".glass-card").classList.toggle("mode-super", m === "super");
             buttons.forEach(b => {
                 const aktif = b.dataset.mode === m;
                 b.classList.toggle("btn-primary", aktif);
@@ -279,7 +323,8 @@
         const rows = [...tbody.querySelectorAll("tr[data-sort-asset]")];
         rows.forEach((tr, i) => tr.dataset.urutanAsli = i);
 
-        headers.forEach(th => {
+        // Kolom Super Simple memakai kunci yang sama; cukup satu opsi per kunci
+        headers.filter(th => !th.classList.contains("kol-super")).forEach(th => {
             keySelect.add(new Option(th.textContent.trim(), th.dataset.sortKey));
         });
 
@@ -313,7 +358,7 @@
 
             headers.forEach(h => {
                 h.classList.remove("sort-asc", "sort-desc");
-                if (h === th) h.classList.add(state.dir === "asc" ? "sort-asc" : "sort-desc");
+                if (th && h.dataset.sortKey === state.key) h.classList.add(state.dir === "asc" ? "sort-asc" : "sort-desc");
             });
             keySelect.value = state.key;
             dirBtn.textContent = state.dir === "asc" ? "↑" : "↓";
