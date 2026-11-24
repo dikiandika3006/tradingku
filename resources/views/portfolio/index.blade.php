@@ -120,7 +120,7 @@
                 @forelse($assets as $asset)
                     @php $dinilai = $asset['can_be_valued'] ?? true; @endphp
                     {{-- Nilai mentah untuk sorting; kosong = tidak bisa dinilai, selalu ditaruh paling bawah --}}
-                    <tr data-sort-asset="{{ $asset['asset'] }}"
+                    <tr @class(['aset-tersembunyi' => $asset['tersembunyi'] ?? false]) data-sort-asset="{{ $asset['asset'] }}"
                         data-sort-saldo="{{ $asset['total'] }}"
                         data-sort-durasi="{{ $asset['first_buy_date'] ? (int) floor((time() - strtotime($asset['first_buy_date'])) / 86400) : '' }}"
                         data-sort-avg="{{ $asset['avg_buy_price_usdt'] }}"
@@ -226,26 +226,34 @@
                 @empty
                     <tr>
                         <td colspan="14" class="kartu-kosong" style="text-align: center; color: var(--text-muted); padding: 3rem 0;">
-                            @if(($aset_kecil_jumlah ?? 0) > 0 || !empty($aset_tanpa_harga))
-                                Semua aset bernilai di bawah ${{ number_format($batas_aset_kecil_usdt, 0) }} atau tanpa harga pasar, jadi disembunyikan.
-                            @else
-                                Tidak ada saldo aset aktif di portfolio saat ini.
-                            @endif
+                            Tidak ada saldo aset aktif di portfolio saat ini.
                         </td>
                     </tr>
                 @endforelse
+                @if(count($assets) > 0 && ($aset_tampil_jumlah ?? 0) === 0)
+                    <tr class="baris-semua-tersembunyi">
+                        <td colspan="14" class="kartu-kosong" style="text-align: center; color: var(--text-muted); padding: 3rem 0;">
+                            Semua aset bernilai di bawah ${{ number_format($batas_aset_kecil_usdt, 0) }} atau tanpa harga pasar, jadi disembunyikan.
+                        </td>
+                    </tr>
+                @endif
             </tbody>
         </table>
     </div>
-    @if(($aset_kecil_jumlah ?? 0) > 0)
-        <div style="margin-top: 0.85rem; font-size: 0.8rem; color: var(--text-muted);">
-            {{ $aset_kecil_jumlah }} aset bernilai di bawah ${{ number_format($batas_aset_kecil_usdt, 0) }} disembunyikan
-            (total ${{ number_format($aset_kecil_nilai_usdt, 2) }}). Nilainya tetap dihitung di total portofolio.
-        </div>
-    @endif
-    @if(!empty($aset_tanpa_harga))
-        <div style="margin-top: 0.35rem; font-size: 0.8rem; color: var(--text-muted);">
-            Tanpa harga pasar, disembunyikan: {{ implode(', ', $aset_tanpa_harga) }}.
+    @php $jumlahTersembunyi = ($aset_kecil_jumlah ?? 0) + count($aset_tanpa_harga ?? []); @endphp
+    @if($jumlahTersembunyi > 0)
+        <div class="info-tersembunyi" style="margin-top: 0.85rem; font-size: 0.8rem; color: var(--text-muted); display: flex; gap: 0.5rem 0.75rem; align-items: center; flex-wrap: wrap;">
+            <span>
+                @if(($aset_kecil_jumlah ?? 0) > 0)
+                    {{ $aset_kecil_jumlah }} aset di bawah ${{ number_format($batas_aset_kecil_usdt, 0) }}
+                    (total ${{ number_format($aset_kecil_nilai_usdt, 2) }})
+                @endif
+                @if(!empty($aset_tanpa_harga))
+                    {{ ($aset_kecil_jumlah ?? 0) > 0 ? '+' : '' }} {{ count($aset_tanpa_harga) }} tanpa harga pasar
+                @endif
+                <span class="teks-status">disembunyikan</span>. Nilainya tetap dihitung di total portofolio.
+            </span>
+            <button type="button" id="toggleSemuaAset" class="btn btn-secondary btn-sm">Tampilkan semua ({{ $jumlahTersembunyi }})</button>
         </div>
     @endif
 </div>
@@ -300,6 +308,9 @@
     #assetTable.mode-super td.kol-super > div:not(.text-success):not(.text-danger).baris-2 { color: var(--text-muted); }
     #assetTable.mode-super td.kartu-judul { font-size: 1rem !important; }
     .glass-card.mode-super .sort-mobile { display: none !important; }
+    #assetTable:not(.tampil-semua) tr.aset-tersembunyi,
+    #assetTable.tampil-semua tr.baris-semua-tersembunyi { display: none !important; }
+    #assetTable.tampil-semua tr.aset-tersembunyi { opacity: 0.6; }
     @media (max-width: 768px) {
         /* Sumber (kolom terakhir) disembunyikan, jadi PNL (%) yang jadi baris terakhir kartu */
         #assetTable.mode-simple tr td:nth-last-child(2) { border-bottom: none; }
@@ -338,6 +349,20 @@
             try { localStorage.setItem(KEY, mode); } catch (e) {}
         }));
         setMode(mode);
+    });
+
+    // ---- Tampilkan/sembunyikan aset kecil & tanpa harga (bawaan: disembunyikan) ----
+    document.addEventListener("DOMContentLoaded", function() {
+        const btn = document.getElementById("toggleSemuaAset");
+        if (!btn) return;
+        const table = document.getElementById("assetTable");
+        const status = document.querySelector(".info-tersembunyi .teks-status");
+        const labelTampil = btn.textContent;
+        btn.addEventListener("click", () => {
+            const semua = table.classList.toggle("tampil-semua");
+            btn.textContent = semua ? "Sembunyikan aset kecil" : labelTampil;
+            if (status) status.textContent = semua ? "ditampilkan (redup)" : "disembunyikan";
+        });
     });
 
     // ---- Sorting tabel aset (sisi klien) ----

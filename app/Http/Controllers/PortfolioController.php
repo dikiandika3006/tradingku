@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\Artisan;
 class PortfolioController extends Controller
 {
     /** Aset bernilai di bawah ini (USDT) disembunyikan dari tabel Portofolio. */
-    protected const BATAS_ASET_KECIL_USDT = 2.0;
+    protected const BATAS_ASET_KECIL_USDT = 5.0;
 
     protected $tokocryptoService;
 
@@ -42,18 +42,22 @@ class PortfolioController extends Controller
         $totalPnlUsdt = $totalCurrentValuationUsdt - $totalCostUsdt;
         $totalPnlPercent = $totalCostUsdt > 0 ? ($totalPnlUsdt / $totalCostUsdt) * 100 : 0.0;
 
-        // Aset bernilai di bawah batas hanya disembunyikan dari tabel; total di
-        // atas tetap menghitungnya. Aset tanpa harga pasar juga disembunyikan,
-        // tetapi namanya disebut di bawah tabel supaya tidak hilang diam-diam.
-        [$tanpaHarga, $bisaDinilai] = collect($holdings['assets'])->partition(
+        // Aset bernilai di bawah batas dan aset tanpa harga pasar tetap dikirim ke
+        // tabel, tetapi disembunyikan secara bawaan (tombol "Tampilkan semua"
+        // di bawah tabel). Total di atas tetap menghitung semuanya.
+        $semuaAset = collect($holdings['assets'])->map(function ($a) {
+            $a['tersembunyi'] = !($a['can_be_valued'] ?? true)
+                || $a['value_usdt'] < self::BATAS_ASET_KECIL_USDT;
+            return $a;
+        });
+        [$tanpaHarga, $bisaDinilai] = $semuaAset->partition(
             fn($a) => !($a['can_be_valued'] ?? true)
         );
-        [$asetKecil, $asetTampil] = $bisaDinilai->partition(
-            fn($a) => $a['value_usdt'] < self::BATAS_ASET_KECIL_USDT
-        );
+        $asetKecil = $bisaDinilai->where('tersembunyi', true);
 
         return view('portfolio.index', [
-            'assets' => $asetTampil->values()->all(),
+            'assets' => $semuaAset->values()->all(),
+            'aset_tampil_jumlah' => $semuaAset->where('tersembunyi', false)->count(),
             'aset_tanpa_harga' => $tanpaHarga->pluck('asset')->all(),
             'aset_kecil_jumlah' => $asetKecil->count(),
             'aset_kecil_nilai_usdt' => $asetKecil->sum('value_usdt'),
